@@ -1,11 +1,14 @@
-name: Devths-FE CI 파이프라인
+name: Devths-FE CICD 파이프라인
 
 on:
-  pull_request:
+  push:
     branches: [develop, release, main]
 
 env:
   NODE_VERSION: '22.x'
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+  S3_PREFIX: ci/${{ github.repository }}/${{ github.ref_name }}/${{ github.sha }}
 
 jobs:
   # 1. 통합 품질 검사 (Lint + Prettier + TypeCheck)
@@ -43,18 +46,15 @@ jobs:
     steps:
       - name: 체크아웃
         uses: actions/checkout@v4
-
       - name: CodeQL 초기화
         uses: github/codeql-action/init@v3
         with:
           languages: javascript-typescript
-
       - name: 분석 수행
         uses: github/codeql-action/analyze@v3
 
-  # 3. 빌드 테스트
+  # 3. 빌드 및 S3 업로드
   build:
-    name: build
     needs: [static-analysis]
     runs-on: ubuntu-22.04
     steps:
@@ -76,6 +76,35 @@ jobs:
 
       - name: 프로젝트 빌드
         run: pnpm build
+
+      - name: AWS 자격 증명 설정
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{secrets.AWS_ACCESS_KEY}}
+          aws-secret-access-key: ${{secrets.AWS_SECRET_KEY}}
+          aws-region: ${{secrets.AWS_REGION}}
+
+      - name: S3에 빌드 결과물 업로드
+        run: |
+          # 1. Next.js 빌드 결과물 경로 감지
+          if [ -d "./.next" ]; then
+            SOURCE_DIR="./.next"
+          elif [ -d "./out" ]; then
+            SOURCE_DIR="./out"
+          else
+            echo "❌ 빌드 폴더(.next 또는 out)를 찾을 수 없습니다."
+            exit 1
+          fi
+
+          # 2. S3 최종 경로 설정
+          DEST_URL="s3://${{ env.S3_BUCKET }}/${{ env.S3_PREFIX }}"
+
+          echo "🚀 $SOURCE_DIR 폴더의 파일들을 $DEST_URL 경로로 전송합니다."
+
+          # sync 명령어로 로컬과 S3를 동일하게 맞춤
+          # --delete 옵션은 로컬에 없는 파일이 S3에 있다면 삭제하여 동기화합니다.
+          aws s3 sync $SOURCE_DIR $DEST_URL --delete --only-show-errors
+      # --------------------------------
 
   # 4. 디스코드 통합 알림
   notify-discord:
@@ -128,7 +157,6 @@ jobs:
             **작성자**: ${{ steps.prep.outputs.author }}
             **리뷰어**: ${{ steps.prep.outputs.reviewers }}
             **작업 내용**: ${{ steps.prep.outputs.description }}...
-            **경로**: `${{ github.event.pull_request.head.ref }}` → `${{ github.event.pull_request.base.ref }}`
 
             **📊 상세 결과**:
             - Lint/Type: ${{ needs.lint.result == 'success' && ' ✅' || ' ❌' }}
