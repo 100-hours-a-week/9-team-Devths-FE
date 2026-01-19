@@ -3,18 +3,70 @@ import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTs from 'eslint-config-next/typescript';
 import prettier from 'eslint-config-prettier/flat';
 
+import { defineConfig, globalIgnores } from 'eslint/config';
+import nextVitals from 'eslint-config-next/core-web-vitals';
+import nextTs from 'eslint-config-next/typescript';
+import prettier from 'eslint-config-prettier/flat';
+
+import unusedImports from 'eslint-plugin-unused-imports';
+import importPlugin from 'eslint-plugin-import';
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  // Override default ignores of eslint-config-next.
+
   globalIgnores([
-    // Default ignores of eslint-config-next:
     '.next/**',
     'out/**',
     'build/**',
     'next-env.d.ts',
+    'node_modules/**',
+    'dist/**',
+    'coverage/**',
   ]),
+
   prettier,
+
+  {
+    plugins: {
+      'unused-imports': unusedImports,
+      import: importPlugin,
+    },
+    rules: {
+      // === 코드 품질 / 버그 방지 ===
+      eqeqeq: 'error',
+      'prefer-const': 'error',
+
+      // === console 정책 ===
+      // 개발 중 warn/error만 허용, log는 경고
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+
+      // === unused vars (TS 버전) ===
+      // Next TS 설정이 이미 TS eslint를 깔아주기 때문에 rule만 조정하면 됨
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+        },
+      ],
+
+      // === unused imports  ===
+      'unused-imports/no-unused-imports': 'error',
+
+      // === import 정리 ===
+      'import/order': [
+        'warn',
+        {
+          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index', 'type'],
+          'newlines-between': 'always',
+          alphabetize: { order: 'asc', caseInsensitive: true },
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;
