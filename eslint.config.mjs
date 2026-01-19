@@ -20,6 +20,7 @@ const eslintConfig = defineConfig([
     'out/**',
     'build/**',
     'next-env.d.ts',
+
     'node_modules/**',
     'dist/**',
     'coverage/**',
@@ -33,16 +34,15 @@ const eslintConfig = defineConfig([
       import: importPlugin,
     },
     rules: {
-      // === 코드 품질 / 버그 방지 ===
+      // 코드 품질 / 버그 방지
       eqeqeq: 'error',
       'prefer-const': 'error',
 
-      // === console 정책 ===
+      // console 정책
       // 개발 중 warn/error만 허용, log는 경고
       'no-console': ['warn', { allow: ['warn', 'error'] }],
 
-      // === unused vars (TS 버전) ===
-      // Next TS 설정이 이미 TS eslint를 깔아주기 때문에 rule만 조정하면 됨
+      // unused vars
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',
@@ -53,10 +53,10 @@ const eslintConfig = defineConfig([
         },
       ],
 
-      // === unused imports  ===
+      // unused imports
       'unused-imports/no-unused-imports': 'error',
 
-      // === import 정리 ===
+      // import 정리
       'import/order': [
         'warn',
         {
