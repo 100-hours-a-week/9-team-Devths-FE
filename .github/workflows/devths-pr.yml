@@ -1,11 +1,11 @@
-name: Devths-FE PR 파이프라인
+name: Devths-FE CI 파이프라인
 
 on:
   pull_request:
     branches: [develop, release, main]
 
 env:
-  NODE_VERSION: "22.x"
+  NODE_VERSION: '22.x'
 
 jobs:
   # 1. 통합 품질 검사 (Lint + Prettier + TypeCheck)
@@ -78,7 +78,7 @@ jobs:
   notify-discord:
     name: notify
     runs-on: ubuntu-22.04
-    needs: [ lint, static-analysis, build ]
+    needs: [lint, static-analysis, build]
     if: always()
     steps:
       - name: 데이터 준비
@@ -91,7 +91,7 @@ jobs:
           AUTHOR_RAW=$(echo "$USER_MAP" | jq -r --arg id "$LOGIN_ID" '.[$id] // $id')
           [[ $AUTHOR_RAW =~ (<@[^>]+>) ]] && AUTHOR_TAG="${BASH_REMATCH[1]}" || AUTHOR_TAG="$AUTHOR_RAW"
           echo "author=$AUTHOR_TAG" >> $GITHUB_OUTPUT
-          
+
           # 2. 리뷰어 멘션화
           REVIEWERS_JSON='${{ toJson(github.event.pull_request.requested_reviewers) }}'
           REVIEWER_TAGS=$(echo "$REVIEWERS_JSON" | jq -r --argjson map "$USER_MAP" '
@@ -100,7 +100,7 @@ jobs:
             | join(", ")
           ')
           echo "reviewers=${REVIEWER_TAGS:-없음}" >> $GITHUB_OUTPUT
-          
+
           # 3. 작업 내용 요약 (정규식 수정 완료)
           PR_RAW_BODY=$(cat << 'EOF'
           ${{ github.event.pull_request.body }}
@@ -126,12 +126,12 @@ jobs:
             **작성자**: ${{ steps.prep.outputs.author }}
             **리뷰어**: ${{ steps.prep.outputs.reviewers }}
             **작업 내용**: ${{ steps.prep.outputs.description }}...
-            
+
             **📊 상세 결과**:
             - Lint/Type: ${{ needs.lint.result == 'success' && ' ✅' || ' ❌' }}
             - Static Analysis: ${{ needs.static_analysis.result == 'success' && ' ✅' || ' ❌' }}
             - Build: ${{ needs.build.result == 'success' && ' ✅' || ' ❌' }}
-            
+
             **🔗 링크**: [PR 확인하기](${{ github.event.pull_request.html_url }})
           color: "${{ (needs.lint.result == 'success' && needs.static_analysis.result == 'success' && needs.build.result == 'success') && 65280 || 16711680 }}"
           username: GitHub FE Bot
