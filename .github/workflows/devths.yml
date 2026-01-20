@@ -8,7 +8,7 @@ env:
   NODE_VERSION: '22.x'
   AWS_REGION: ${{ secrets.AWS_REGION }}
   S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-  S3_PREFIX: ci/${{ github.repository }}/${{ github.ref_name }}/${{ github.sha }}
+  S3_PREFIX: ${{ github.repository }}/${{ github.ref_name }}/${{ github.sha }}
 
 jobs:
   # 1. 통합 품질 검사 (Lint + Prettier + TypeCheck)
@@ -37,7 +37,6 @@ jobs:
 
   # 2. 정적 분석 (CodeQL)
   static-analysis:
-    needs: [lint]
     runs-on: ubuntu-22.04
     permissions:
       actions: read
@@ -56,7 +55,7 @@ jobs:
 
   # 3. 빌드 및 S3 업로드
   build:
-    needs: [static-analysis]
+    needs: [lint, static-analysis]
     runs-on: ubuntu-22.04
     steps:
       - name: 체크아웃

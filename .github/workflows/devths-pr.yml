@@ -34,7 +34,6 @@ jobs:
 
   # 2. 정적 분석 (CodeQL)
   static-analysis:
-    needs: [lint]
     runs-on: ubuntu-22.04
     permissions:
       actions: read
@@ -55,7 +54,7 @@ jobs:
   # 3. 빌드 테스트
   build:
     name: build
-    needs: [static-analysis]
+    needs: [lint, static-analysis]
     runs-on: ubuntu-22.04
     steps:
       - name: 체크아웃
