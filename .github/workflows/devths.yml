@@ -134,12 +134,12 @@ jobs:
             **커밋 메시지**: ${{ steps.prep.outputs.title }}
             **브랜치**: `${{ steps.prep.outputs.branch }}`
             **환경**: ${{ github.ref_name == 'main' && '🚀 운영(PROD)' || (github.ref_name == 'release' && '🧪 스테이징(STAGING)' || '🛠️ 개발(DEV)') }}
-            
+
             **📊 상세 결과**:
             - Lint/Type: ${{ needs.lint.result == 'success' && ' ✅' || ' ❌' }}
             - Static Analysis: ${{ needs.static-analysis.result == 'success' && ' ✅' || ' ❌' }}
             - Build: ${{ needs.build.result == 'success' && ' ✅' || ' ❌' }}
-            
+
             **🔗 링크**: [커밋 확인하기](${{ github.event.repository.html_url }}/commit/${{ github.sha }})
 
           color: "${{ (needs.lint.result == 'success' && needs.static-analysis.result == 'success' && needs.build.result == 'success') && 65280 || 16711680 }}"
