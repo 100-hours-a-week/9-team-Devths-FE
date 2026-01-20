@@ -118,27 +118,31 @@ jobs:
         env:
           USER_MAP: ${{ secrets.USER_MAP_JSON }}
         run: |
-          # 1. 작성자 멘션화
-          LOGIN_ID="${{ github.event.push.user.login }}"
-          AUTHOR_RAW=$(echo "$USER_MAP" | jq -r --arg id "$LOGIN_ID" '.[$id] // $id')
-          [[ $AUTHOR_RAW =~ (<@[^>]+>) ]] && AUTHOR_TAG="${BASH_REMATCH[1]}" || AUTHOR_TAG="$AUTHOR_RAW"
-          echo "author=$AUTHOR_TAG" >> $GITHUB_OUTPUT
+          # 1. 커밋 메시지 추출 (Push 제목 대용)
+          COMMIT_MSG=$(echo "${{ github.event.head_commit.message }}" | head -n 1)
+          echo "title=$COMMIT_MSG" >> $GITHUB_OUTPUT
+
+          # 2. 브랜치 정보
+          echo "branch=${{ github.ref_name }}" >> $GITHUB_OUTPUT
 
       - name: Discord 알림 전송
         uses: sarisia/actions-status-discord@v1
         with:
           webhook: ${{ github.ref_name == 'main' && secrets.DISCORD_WEBHOOK_PROD_URL || secrets.DISCORD_WEBHOOK_NON_PROD_URL }}
           status: ${{ (needs.lint.result == 'success' && needs.static-analysis.result == 'success' && needs.build.result == 'success') && 'success' || 'failure' }}
-          title: "${{ github.event.pull_request.base.ref }} FE PR [${{ (needs.lint.result == 'success' && needs.static-analysis.result == 'success' && needs.build.result == 'success') && '✅성공' || '❌실패' }}]"
+          title: "${{ steps.prep.outputs.branch }} 결과 [${{ (needs.lint.result == 'success' && needs.static-analysis.result == 'success' && needs.build.result == 'success') && '✅성공' || '❌실패' }}]"
           description: |
-            **작성자**: ${{ steps.prep.outputs.author }}
-
+            **커밋 메시지**: ${{ steps.prep.outputs.title }}
+            **브랜치**: `${{ steps.prep.outputs.branch }}`
+            **환경**: ${{ github.ref_name == 'main' && '🚀 운영(PROD)' || (github.ref_name == 'release' && '🧪 스테이징(STAGING)' || '🛠️ 개발(DEV)') }}
+            
             **📊 상세 결과**:
             - Lint/Type: ${{ needs.lint.result == 'success' && ' ✅' || ' ❌' }}
             - Static Analysis: ${{ needs.static-analysis.result == 'success' && ' ✅' || ' ❌' }}
             - Build: ${{ needs.build.result == 'success' && ' ✅' || ' ❌' }}
+            
+            **🔗 링크**: [커밋 확인하기](${{ github.event.repository.html_url }}/commit/${{ github.sha }})
 
-            **🔗 링크**: [PR 확인하기](${{ github.event.pull_request.html_url }})
           color: "${{ (needs.lint.result == 'success' && needs.static-analysis.result == 'success' && needs.build.result == 'success') && 65280 || 16711680 }}"
-          username: GitHub FE Bot
+          username: GitHub FE Merge Bot
           avatar_url: https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png
