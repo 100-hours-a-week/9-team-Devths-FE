@@ -1,4 +1,4 @@
-import GoogleLoginButton from '@/components/auths/GoogleLoginButton';
+import GoogleLoginButton from '@/components/auth/GoogleLoginButton';
 import LandingCarousel from '@/components/common/LandingCarousel';
 
 export default function LandingPage() {

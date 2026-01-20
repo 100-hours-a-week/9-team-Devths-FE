@@ -30,5 +30,8 @@ export async function postGoogleAuth(authCode: string) {
 
   const json = (await res.json().catch(() => null)) as GoogleAuthResponse | null;
 
-  return { res, json };
+  const authHeader = res.headers.get('authorization');
+  const accessToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+  return { res, json, accessToken };
 }
