@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { postGoogleAuth } from '@/lib/api/auth';
 import { setAccessToken, setTempToken } from '@/lib/auth/token';
@@ -10,7 +10,12 @@ export default function AuthCallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const didRunRef = useRef(false);
+
   useEffect(() => {
+    if (didRunRef.current) return;
+    didRunRef.current = true;
+
     const code = searchParams.get('code');
     const error = searchParams.get('error');
 
@@ -19,14 +24,29 @@ export default function AuthCallbackPage() {
       router.replace('/');
       return;
     }
-    if (!code) return;
+
+    if (!code) {
+      alert('인가 코드(code)가 없어요. 다시 로그인 해주세요.');
+      router.replace('/');
+      return;
+    }
 
     const run = async () => {
       try {
-        const { res, json, accessToken } = await postGoogleAuth(code);
+        const { ok, status, json, accessToken } = await postGoogleAuth(code);
 
-        if (!res.ok || !json) {
-          alert('로그인 서버가 아직 연결되지 않았어요. (백엔드 준비 후 다시 시도)');
+        if (!ok) {
+          const msg =
+            (json && 'message' in json && typeof json.message === 'string' && json.message) ||
+            `로그인 실패 (HTTP ${status})`;
+
+          alert(msg);
+          router.replace('/');
+          return;
+        }
+
+        if (!json || !('data' in json) || !json.data) {
+          alert('로그인 응답을 해석하지 못했어요. (응답 형식 확인 필요)');
           router.replace('/');
           return;
         }
@@ -45,13 +65,14 @@ export default function AuthCallbackPage() {
 
         setTempToken(json.data.tempToken);
         router.replace('/signup');
-      } catch {
-        alert('로그인 처리 중 오류가 발생했어요.');
+      } catch (err) {
+        console.warn(err);
+        alert('로그인 처리 중 오류가 발생했어요. (서버/네트워크 상태 확인)');
         router.replace('/');
       }
     };
 
-    run();
+    void run();
   }, [router, searchParams]);
 
   return (
