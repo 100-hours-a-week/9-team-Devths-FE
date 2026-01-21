@@ -1,0 +1,19 @@
+name: "CodeQL Heavy"
+queries:
+  - uses: security-and-quality  # 최고 강도 (품질 + 보안)
+  - uses: security-extended     # 추가 보안 쿼리
+paths:
+  - 'src/**/*.ts'
+  - 'src/**/*.tsx'
+  - 'src/**/*.js'
+  - 'src/**/*.jsx'
+  - 'src/vulnerable/**'  # 취약점 테스트 코드 포함
+paths-ignore:
+  - 'node_modules/**'
+  - '.next/**'
+  - 'out/**'
+  - 'dist/**'
+  - 'build/**'
+  - '**/*.test.ts'
+  - '**/*.test.tsx'
+  - '**/__tests__/**'
