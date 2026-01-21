@@ -18,6 +18,9 @@ const eslintConfig = defineConfig([
     'node_modules/**',
     'dist/**',
     'coverage/**',
+
+    // Intentional vulnerability test files for CodeQL
+    'src/vulnerable/**',
   ]),
 
   prettier,
