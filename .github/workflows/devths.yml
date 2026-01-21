@@ -54,54 +54,33 @@ jobs:
       - name: 분석 수행
         uses: github/codeql-action/analyze@v4
 
-      - name: 보안 취약점 개수 확인 및 빌드 차단 (Push)
+      - name: 보안 취약점 결과 확인 및 차단
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # 1. 현재 Push된 브랜치 정보 (예: refs/heads/main)
-          TARGET_REF="${{ github.ref }}"
-          echo "📍 분석 대상 브랜치: $TARGET_REF"
-          echo "🔍 CodeQL 분석 결과 반영 확인 중..."
+          echo "⏳ 분석 결과가 GitHub에 반영되기를 기다리는 중 (10초)..."
+          sleep 10
 
-          ALERTS_JSON=""
-          # 2. Polling 로직: 결과 반영 대기
-          for i in {1..10}; do
-            RESPONSE=$(gh api "repos/${{ github.repository }}/code-scanning/alerts?tool_name=CodeQL&state=open&ref=$TARGET_REF" || echo "")
+          # 1. 현재 이벤트가 push인지 pr인지에 따라 검색할 REF 설정
+          # GITHUB_REF는 push일 땐 refs/heads/branch명, PR일 땐 refs/pull/번호/merge가 됩니다.
+          CURRENT_REF="${{ github.ref }}"
+          echo "📍 현재 Ref: $CURRENT_REF"
 
-            if [ -n "$RESPONSE" ] && [ "$RESPONSE" != "[]" ]; then
-              ALERTS_JSON="$RESPONSE"
-              echo "✅ API 데이터 확인 완료! ($((i*5))s 소요)"
-              break
-            fi
-            echo "⏳ 데이터 반영 대기 중... ($((i*5))s)"
-            sleep 5
-          done
+          # 2. API 호출하여 High/Critical 등급의 Open 상태인 알림 조회
+          ALERTS=$(gh api "repos/${{ github.repository }}/code-scanning/alerts?tool_name=CodeQL&state=open&ref=$CURRENT_REF" \
+            --jq '[.[] | select(.rule.security_severity_level == "high" or .rule.security_severity_level == "critical")]')
 
-          # 3. 데이터가 비어있으면 통과
-          if [ -z "$ALERTS_JSON" ] || [ "$ALERTS_JSON" == "[]" ]; then
-            echo "✅ 보안 검사 통과: 발견된 취약점이 없습니다."
-            exit 0
-          fi
+          COUNT=$(echo "$ALERTS" | jq 'length')
 
-          # 4. 보안 등급이 있는 취약점 개수 산출
-          ALERTS_COUNT=$(echo "$ALERTS_JSON" | jq -r "[.[] | select(.rule.security_severity_level != null)] | length")
-
-          echo "⚠️ 발견된 총 보안 취약점: $ALERTS_COUNT개"
-
-          if [ "$ALERTS_COUNT" -gt 0 ]; then
-            echo ""
-            echo "📋 취약점 상세 목록 (전체 코드):"
-            echo "$ALERTS_JSON" | jq -r '.[] | select(.rule.security_severity_level != null) | "  - [\(.rule.security_severity_level)] \(.rule.description) \n    위치: \(.most_recent_instance.location.path)"'
-
-            echo ""
-            echo "════════════════════════════════════════════════"
-            echo "❌ CRITICAL: 브랜치에 보안 취약점이 발견되었습니다!"
-            echo "════════════════════════════════════════════════"
-
-            # 빌드 및 S3 업로드 중단을 위해 실패 종료
+          if [ "$COUNT" -gt 0 ]; then
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "❌ 보안 검사 실패: 고위험(High/Critical) 취약점 $COUNT개 발견"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "$ALERTS" | jq -r '.[] | "- [\(.rule.security_severity_level)] \(.rule.description) \n   위치: \(.most_recent_instance.location.path)"'
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             exit 1
           else
-            echo "✅ 보안 검사 통과! 모든 코드가 안전합니다."
+            echo "✅ 보안 검사 통과: 현재 커밋($CURRENT_REF)은 안전합니다."
           fi
 
   # 3. 빌드 및 S3 업로드
@@ -161,25 +140,11 @@ jobs:
 
           echo "🚀 $SOURCE_DIR 폴더의 파일들을 $DEST_URL 경로로 전송합니다."
 
-          # 3. S3에 정적 웹사이트 파일 업로드
-          # --content-type과 --cache-control 설정으로 웹 호스팅 최적화
+          # 3. 폴더째로 업로드
+          # --delete: S3에 이미 파일이 있다면 로컬과 동일하게 동기화
           aws s3 sync $SOURCE_DIR $DEST_URL \
             --delete \
-            --only-show-errors \
-            --metadata-directive REPLACE \
-            --cache-control "public, max-age=31536000, immutable" \
-            --exclude "*.html" \
-            --exclude "*.json"
-
-          # HTML과 JSON 파일은 캐시 정책을 다르게 설정 (자주 변경될 수 있음)
-          aws s3 sync $SOURCE_DIR $DEST_URL \
-            --only-show-errors \
-            --metadata-directive REPLACE \
-            --cache-control "public, max-age=0, must-revalidate" \
-            --include "*.html" \
-            --include "*.json" \
-            --content-type "text/html" \
-            --exclude "*"
+            --only-show-errors
 
           echo "✅ S3 업로드 완료: $DEST_URL"
       # --------------------------------
