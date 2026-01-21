@@ -8,7 +8,7 @@ env:
   NODE_VERSION: '22.x'
   AWS_REGION: ${{ secrets.AWS_REGION }}
   S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-  S3_PREFIX: ${{ github.repository }}/${{ github.ref_name }}
+  S3_PREFIX: FE/${{ github.ref_name }}
 
 jobs:
   # 1. 통합 품질 검사 (Lint + Prettier + TypeCheck)
@@ -137,7 +137,11 @@ jobs:
 
       - name: 타임스탬프 생성
         id: timestamp
-        run: echo "value=$(date +'%Y%m%d_%H%M%S')-${{ github.sha }}" >> $GITHUB_OUTPUT
+        run: |
+          # SHA의 앞 7자리만 변수에 저장
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          # 날짜와 SHORT_SHA를 결합하여 OUTPUT에 저장
+          echo "value=$(date +'%Y%m%d_%H%M%S')-$SHORT_SHA" >> $GITHUB_OUTPUT
 
       - name: S3에 빌드 결과물 업로드
         run: |
