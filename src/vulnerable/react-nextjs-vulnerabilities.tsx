@@ -145,7 +145,7 @@ export const SensitiveContext = React.createContext({
 export const UnsafeMemo = React.memo(({ code }: { code: string }) => {
   // VULNERABLE: Executing code in render
   eval(code);
-  return <div>Rendered</div>
+  return <div>Rendered</div>;
 });
 
 // Vulnerability 15: Unsafe useLayoutEffect

@@ -67,7 +67,9 @@ export function generateRandomToken(): string {
 
 export function generateOTP(): string {
   // VULNERABLE: Predictable OTP
-  return Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+  return Math.floor(Math.random() * 1000000)
+    .toString()
+    .padStart(6, '0');
 }
 
 // Vulnerability 8: Weak password reset token

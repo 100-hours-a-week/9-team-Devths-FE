@@ -107,7 +107,8 @@ export function repeatTask(code: string, interval: number) {
 // Vulnerability 11: RegExp Denial of Service (ReDoS)
 export function validateEmail(email: string) {
   // VULNERABLE: ReDoS with evil regex
-  const regex = /^([a-zA-Z0-9])(([a-zA-Z0-9])*([\._\-])?([a-zA-Z0-9]))*@([a-zA-Z0-9]+)(([a-zA-Z0-9])*[\.]([a-zA-Z0-9])+)+$/;
+  const regex =
+    /^([a-zA-Z0-9])(([a-zA-Z0-9])*([\._\-])?([a-zA-Z0-9]))*@([a-zA-Z0-9]+)(([a-zA-Z0-9])*[\.]([a-zA-Z0-9])+)+$/;
   return regex.test(email);
 }
 

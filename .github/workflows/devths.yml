@@ -62,12 +62,12 @@ jobs:
           TARGET_REF="${{ github.ref }}"
           echo "📍 분석 대상 브랜치: $TARGET_REF"
           echo "🔍 CodeQL 분석 결과 반영 확인 중..."
-          
+
           ALERTS_JSON=""
           # 2. Polling 로직: 결과 반영 대기
           for i in {1..10}; do
             RESPONSE=$(gh api "repos/${{ github.repository }}/code-scanning/alerts?tool_name=CodeQL&state=open&ref=$TARGET_REF" || echo "")
-          
+
             if [ -n "$RESPONSE" ] && [ "$RESPONSE" != "[]" ]; then
               ALERTS_JSON="$RESPONSE"
               echo "✅ API 데이터 확인 완료! ($((i*5))s 소요)"
@@ -76,28 +76,28 @@ jobs:
             echo "⏳ 데이터 반영 대기 중... ($((i*5))s)"
             sleep 5
           done
-          
+
           # 3. 데이터가 비어있으면 통과
           if [ -z "$ALERTS_JSON" ] || [ "$ALERTS_JSON" == "[]" ]; then
             echo "✅ 보안 검사 통과: 발견된 취약점이 없습니다."
             exit 0
           fi
-          
+
           # 4. 보안 등급이 있는 취약점 개수 산출
           ALERTS_COUNT=$(echo "$ALERTS_JSON" | jq -r "[.[] | select(.rule.security_severity_level != null)] | length")
-          
+
           echo "⚠️ 발견된 총 보안 취약점: $ALERTS_COUNT개"
-          
+
           if [ "$ALERTS_COUNT" -gt 0 ]; then
             echo ""
             echo "📋 취약점 상세 목록 (전체 코드):"
             echo "$ALERTS_JSON" | jq -r '.[] | select(.rule.security_severity_level != null) | "  - [\(.rule.security_severity_level)] \(.rule.description) \n    위치: \(.most_recent_instance.location.path)"'
-          
+
             echo ""
             echo "════════════════════════════════════════════════"
             echo "❌ CRITICAL: 브랜치에 보안 취약점이 발견되었습니다!"
             echo "════════════════════════════════════════════════"
-          
+
             # 빌드 및 S3 업로드 중단을 위해 실패 종료
             exit 1
           else
