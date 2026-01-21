@@ -1,0 +1,17 @@
+name: 'CodeQL Light'
+queries:
+  - uses: security-extended # 중간 강도 (보안 중심)
+paths:
+  - 'src/**/*.ts'
+  - 'src/**/*.tsx'
+  - 'src/**/*.js'
+  - 'src/**/*.jsx'
+paths-ignore:
+  - 'node_modules/**'
+  - '.next/**'
+  - 'out/**'
+  - 'dist/**'
+  - 'build/**'
+  - '**/*.test.ts'
+  - '**/*.test.tsx'
+  - '**/__tests__/**'
