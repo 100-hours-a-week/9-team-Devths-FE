@@ -1,4 +1,12 @@
+'use client';
+
+import { useState } from 'react';
+
+import NicknameField from '@/components/common/NicknameField';
+
 export default function SignupPage() {
+  const [nickname, setNickname] = useState('');
+
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[420px] flex-col px-5 py-8">
       <header className="mb-8">
@@ -6,16 +14,14 @@ export default function SignupPage() {
         <p className="text-muted-foreground mt-2 text-sm">닉네임과 관심 분야를 설정해 주세요.</p>
       </header>
 
-      <section className="flex flex-1 flex-col gap-6">
+      <section className="flex flex-1 flex-col gap-8">
         <div className="bg-background rounded-2xl border p-4">
           <div className="text-sm font-semibold">프로필 이미지</div>
           <div className="bg-muted mt-3 h-20 rounded-xl" />
         </div>
 
-        <div className="bg-background rounded-2xl border p-4">
-          <div className="text-sm font-semibold">닉네임</div>
-          <div className="bg-muted mt-3 h-12 rounded-xl" />
-          <div className="bg-muted/70 mt-2 h-4 w-2/3 rounded" />
+        <div>
+          <NicknameField value={nickname} onChange={setNickname} errorMessage={null} />
         </div>
 
         <div className="bg-background rounded-2xl border p-4">
