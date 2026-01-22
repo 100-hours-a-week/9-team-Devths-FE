@@ -50,6 +50,7 @@ jobs:
 
       - name: 분석 수행
         uses: github/codeql-action/analyze@v4
+        queries: './codeql/code-ql-light.yml'
 
       - name: 보안 취약점 결과 확인 및 차단
         env:

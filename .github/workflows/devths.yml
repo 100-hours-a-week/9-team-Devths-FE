@@ -52,6 +52,7 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: javascript-typescript
+          queries: './codeql/code-ql-heavy.yml'
 
       - name: 분석 수행
         uses: github/codeql-action/analyze@v4
@@ -196,10 +197,10 @@ jobs:
             --application-name "${{ env.CODEDEPLOY_APP_NAME }}" \
             --deployment-group-name "${{ env.CODEDEPLOY_DEPLOYMENT_GROUP }}" \
             --s3-location bucket="${{ env.S3_BUCKET }}",key="${{ env.S3_PREFIX }}/${{ needs.build.outputs.artifact_name }}",bundleType=zip \
-            --description "Deploy from GitHub Actions - ${{ github.ref_name }} - ${{ github.sha }}" \
+            --description "Deploy from GitHub Actions - ${{ needs.build.outputs.artifact_name }}" \
             --query 'deploymentId' \
             --output text)
-
+            
           echo "deployment_id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
           echo "✅ 배포 ID: $DEPLOYMENT_ID"
 
@@ -208,10 +209,10 @@ jobs:
           DEPLOYMENT_ID="${{ steps.deploy.outputs.deployment_id }}"
           echo "⏳ 배포 상태를 확인합니다 (ID: $DEPLOYMENT_ID)..."
 
-          # 배포 완료까지 대기 (최대 10분)
+          # 배포 완료까지 대기 (최대 3분)
           aws deploy wait deployment-successful \
             --deployment-id "$DEPLOYMENT_ID" \
-            --cli-read-timeout 600
+            --cli-read-timeout 180
 
           echo "✅ CodeDeploy 배포가 성공적으로 완료되었습니다!"
 
