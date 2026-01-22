@@ -27,7 +27,7 @@ export default function SignupPage() {
           <NicknameField value={nickname} onChange={setNickname} errorMessage={null} />
         </div>
 
-        <div>
+        <div className="px-1">
           <div className="text-sm font-semibold">관심 분야</div>
           <div className="mt-3">
             <InterestChips options={INTEREST_OPTIONS} selected={['FE']} />
@@ -35,7 +35,7 @@ export default function SignupPage() {
         </div>
       </section>
 
-      <footer className="mt-8">
+      <footer className="mt-auto pt-8">
         <PrimaryButton disabled={false} onClick={() => setIsFileTooLargeOpen(true)}>
           시작하기
         </PrimaryButton>
