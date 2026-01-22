@@ -5,10 +5,12 @@ import { useState } from 'react';
 import InterestChips from '@/components/common/InterestChips';
 import NicknameField from '@/components/common/NicknameField';
 import PrimaryButton from '@/components/common/PrimaryButton';
+import { toast } from '@/lib/toast/store';
+
+const INTEREST_OPTIONS = ['BE', 'FE', 'Cloud', 'AI'];
 
 export default function SignupPage() {
   const [nickname, setNickname] = useState('');
-  const INTEREST_OPTIONS = ['BE', 'FE', 'Cloud', 'AI'];
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[420px] flex-col px-5 py-8">
@@ -30,13 +32,15 @@ export default function SignupPage() {
         <div>
           <div className="text-sm font-semibold">관심 분야</div>
           <div className="mt-3">
-            <InterestChips options={INTEREST_OPTIONS} selected={['프론트엔드']} />
+            <InterestChips options={INTEREST_OPTIONS} selected={['FE']} />
           </div>
         </div>
       </section>
 
       <footer className="mt-8">
-        <PrimaryButton disabled>시작하기</PrimaryButton>
+        <PrimaryButton disabled={false} onClick={() => toast('회원가입이 완료되었습니다.')}>
+          시작하기
+        </PrimaryButton>
       </footer>
     </main>
   );
