@@ -7,7 +7,7 @@ files:
 
 permissions:
   - object: /var/www/devths-fe
-    pattern: "**"
+    pattern: '**'
     owner: ubuntu
     group: ubuntu
     mode: 755
