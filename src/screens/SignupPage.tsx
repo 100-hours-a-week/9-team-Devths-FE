@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 
+import InterestChips from '@/components/common/InterestChips';
 import NicknameField from '@/components/common/NicknameField';
 
 export default function SignupPage() {
   const [nickname, setNickname] = useState('');
+  const INTEREST_OPTIONS = ['BE', 'FE', 'Cloud', 'AI'];
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[420px] flex-col px-5 py-8">
@@ -24,13 +26,10 @@ export default function SignupPage() {
           <NicknameField value={nickname} onChange={setNickname} errorMessage={null} />
         </div>
 
-        <div className="bg-background rounded-2xl border p-4">
+        <div>
           <div className="text-sm font-semibold">관심 분야</div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <div className="bg-muted h-9 w-20 rounded-full" />
-            <div className="bg-muted h-9 w-24 rounded-full" />
-            <div className="bg-muted h-9 w-16 rounded-full" />
-            <div className="bg-muted h-9 w-28 rounded-full" />
+          <div className="mt-3">
+            <InterestChips options={INTEREST_OPTIONS} selected={['프론트엔드']} />
           </div>
         </div>
       </section>
