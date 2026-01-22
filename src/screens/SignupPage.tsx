@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import InterestChips from '@/components/common/InterestChips';
 import NicknameField from '@/components/common/NicknameField';
+import PrimaryButton from '@/components/common/PrimaryButton';
 
 export default function SignupPage() {
   const [nickname, setNickname] = useState('');
@@ -35,7 +36,7 @@ export default function SignupPage() {
       </section>
 
       <footer className="mt-8">
-        <div className="bg-muted h-14 w-full rounded-full" />
+        <PrimaryButton disabled>시작하기</PrimaryButton>
       </footer>
     </main>
   );
