@@ -103,6 +103,16 @@ jobs:
       - name: 의존성 설치
         run: pnpm install --frozen-lockfile
 
+      - name: 환경 변수 설정
+        run: |
+          if [ "${{ github.event.pull_request.base.ref }}" == "main" ]; then
+            echo "${{ secrets.ENV_FILE_PROD }}" > .env
+          elif [ "${{ github.event.pull_request.base.ref }}" == "release" ]; then
+            echo "${{ secrets.ENV_FILE_STAGING }}" > .env
+          else
+            echo "${{ secrets.ENV_FILE_DEV }}" > .env
+          fi
+
       - name: 프로젝트 빌드
         run: pnpm build
 
