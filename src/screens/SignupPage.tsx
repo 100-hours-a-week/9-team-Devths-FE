@@ -6,12 +6,13 @@ import InterestChips from '@/components/common/InterestChips';
 import NicknameField from '@/components/common/NicknameField';
 import PrimaryButton from '@/components/common/PrimaryButton';
 import ProfileImagePicker from '@/components/common/ProfileImagePicker';
-import { toast } from '@/lib/toast/store';
+import FileTooLargeModal from '@/components/signup/FileTooLargeModal';
 
 const INTEREST_OPTIONS = ['BE', 'FE', 'Cloud', 'AI'];
 
 export default function SignupPage() {
   const [nickname, setNickname] = useState('');
+  const [isFileTooLargeOpen, setIsFileTooLargeOpen] = useState(false);
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[420px] flex-col px-5 pt-20 pb-10">
@@ -20,7 +21,7 @@ export default function SignupPage() {
       </header>
 
       <section className="flex flex-1 flex-col gap-8">
-        <ProfileImagePicker onClickAdd={() => toast('프로필 이미지 추가(UI 데모)')} />
+        <ProfileImagePicker onClickAdd={() => setIsFileTooLargeOpen(true)} />
 
         <div className="px-1">
           <NicknameField value={nickname} onChange={setNickname} errorMessage={null} />
@@ -35,10 +36,12 @@ export default function SignupPage() {
       </section>
 
       <footer className="mt-8">
-        <PrimaryButton disabled={false} onClick={() => toast('회원가입이 완료되었습니다.')}>
+        <PrimaryButton disabled={false} onClick={() => setIsFileTooLargeOpen(true)}>
           시작하기
         </PrimaryButton>
       </footer>
+
+      <FileTooLargeModal open={isFileTooLargeOpen} onClose={() => setIsFileTooLargeOpen(false)} />
     </main>
   );
 }
