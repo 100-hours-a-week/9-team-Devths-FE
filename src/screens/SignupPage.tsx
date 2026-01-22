@@ -14,7 +14,7 @@ export default function SignupPage() {
   const [nickname, setNickname] = useState('');
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-[420px] flex-col px-5 pt-18 pb-10">
+    <main className="mx-auto flex min-h-dvh w-full max-w-[420px] flex-col px-5 pt-20 pb-10">
       <header className="mb-10 flex justify-center">
         <h1 className="text-5xl font-bold tracking-tight">Devths</h1>
       </header>
