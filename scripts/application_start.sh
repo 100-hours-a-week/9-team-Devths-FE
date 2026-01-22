@@ -1,50 +1,42 @@
 #!/bin/bash
 set -e
 
-echo "===== ApplicationStart: nginx 재시작 ====="
+echo "===== ApplicationStart: 서비스 복구 및 Nginx 재시작 ====="
 
-# nginx 설정 파일 경로
-NGINX_CONF_DIR="/etc/nginx/conf.d"
-DEVTHS_CONF="${NGINX_CONF_DIR}/devths.conf"
-MAINTENANCE_CONF="${NGINX_CONF_DIR}/maintenance.conf"
+AVAILABLE_DIR="/etc/nginx/sites-available"
+ENABLED_DIR="/etc/nginx/sites-enabled"
 
-# Maintenance 모드 비활성화
+# 🔧 Maintenance 모드 비활성화
 echo "🔧 Maintenance 모드를 비활성화합니다..."
 
-# maintenance.conf 비활성화
-if [ -f "$MAINTENANCE_CONF" ]; then
-  sudo mv "$MAINTENANCE_CONF" "${MAINTENANCE_CONF}.disabled"
-  echo "✅ maintenance.conf를 비활성화했습니다"
-else
-  echo "⚠️ maintenance.conf를 찾을 수 없습니다"
+# 1. 유지보수 링크 제거
+if [ -L "${ENABLED_DIR}/maintenance" ]; then
+    sudo rm "${ENABLED_DIR}/maintenance"
+    echo "✅ maintenance 링크를 제거했습니다."
 fi
 
-# devths.conf 활성화
-if [ -f "${DEVTHS_CONF}.disabled" ]; then
-  sudo mv "${DEVTHS_CONF}.disabled" "$DEVTHS_CONF"
-  echo "✅ devths.conf를 활성화했습니다"
-elif [ -f "$DEVTHS_CONF" ]; then
-  echo "ℹ️ devths.conf가 이미 활성화되어 있습니다"
+# 2. 프런트엔드 사이트 링크 다시 연결
+if [ -f "${AVAILABLE_DIR}/dev-frontend" ]; then
+    sudo ln -sf "${AVAILABLE_DIR}/dev-frontend" "${ENABLED_DIR}/dev-frontend"
+    echo "✅ dev-frontend 링크를 복구했습니다."
 else
-  echo "⚠️ devths.conf를 찾을 수 없습니다"
+    echo "❌ 에러: ${AVAILABLE_DIR}/dev-frontend 원본 파일이 없습니다!"
+    exit 1
 fi
 
-echo "✅ Maintenance 모드가 비활성화되었습니다"
-
-# nginx 설정 테스트
-echo "nginx 설정 파일을 검증합니다..."
+# Nginx 검증 및 재시작
+echo "Nginx 설정을 검증합니다..."
 sudo nginx -t
 
-# nginx 재시작
-echo "nginx를 재시작합니다..."
+echo "Nginx를 다시 로드합니다..."
 sudo systemctl reload nginx || sudo systemctl restart nginx
 
-# nginx 상태 확인
+# 상태 확인
 if sudo systemctl is-active --quiet nginx; then
-  echo "✅ nginx가 정상적으로 실행 중입니다"
+    echo "✅ Nginx가 정상적으로 실행 중입니다."
 else
-  echo "❌ nginx 시작 실패"
-  exit 1
+    echo "❌ Nginx 시작 실패"
+    exit 1
 fi
 
-echo "✅ ApplicationStart 완료"
+echo "✅ ApplicationStart 완료 (배포 종료)"
