@@ -9,6 +9,8 @@ env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
   S3_PREFIX: FE/${{ github.ref_name }}
+  CODEDEPLOY_APP_NAME: ${{ secrets.CODEDEPLOY_APP_NAME }}
+  CODEDEPLOY_DEPLOYMENT_GROUP: ${{ secrets.CODEDEPLOY_DEPLOYMENT_GROUP }}
 
 jobs:
   # 1. 통합 품질 검사 (Lint + Prettier + TypeCheck)
@@ -87,6 +89,9 @@ jobs:
   build:
     needs: [lint, static-analysis]
     runs-on: ubuntu-22.04
+    outputs:
+      artifact_name: ${{ steps.upload.outputs.artifact_name }}
+      s3_key: ${{ steps.upload.outputs.s3_key }}
     steps:
       - name: 체크아웃
         uses: actions/checkout@v4
@@ -122,9 +127,10 @@ jobs:
           # 날짜와 SHORT_SHA를 결합하여 OUTPUT에 저장
           echo "value=$(date +'%Y%m%d_%H%M%S')-$SHORT_SHA" >> $GITHUB_OUTPUT
 
-      - name: S3에 빌드 결과물 업로드
+      - name: 배포 아티팩트 생성 및 S3 업로드
+        id: upload
         run: |
-          # 1. Next.js 정적 빌드 결과물 경로 확인 (Static Export용)
+          # 1. Next.js 정적 빌드 결과물 경로 확인
           if [ -d "./out" ]; then
             SOURCE_DIR="./out"
           elif [ -d "./.next" ]; then
@@ -135,24 +141,84 @@ jobs:
             exit 1
           fi
 
-          # 2. S3 최종 경로 설정
-          DEST_URL="s3://${S3_BUCKET}/${S3_PREFIX}/${{ steps.timestamp.outputs.value }}"
+          # 2. 아티팩트 파일명 생성
+          ARTIFACT_NAME="devths-fe-${{ steps.timestamp.outputs.value }}.zip"
+          echo "artifact_name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
 
-          echo "🚀 $SOURCE_DIR 폴더의 파일들을 $DEST_URL 경로로 전송합니다."
+          # 3. 배포 아티팩트 압축 (appspec.yml + scripts + 빌드 결과물)
+          echo "🗜️ 배포 아티팩트를 생성합니다: $ARTIFACT_NAME"
 
-          # 3. 폴더째로 업로드
-          # --delete: S3에 이미 파일이 있다면 로컬과 동일하게 동기화
-          aws s3 sync $SOURCE_DIR $DEST_URL \
-            --delete \
-            --only-show-errors
+          # 임시 디렉토리 생성 및 파일 준비
+          mkdir -p deploy-temp
+          cp appspec.yml deploy-temp/
+          cp -r scripts deploy-temp/
+          cp -r "$SOURCE_DIR"/* deploy-temp/
 
-          echo "✅ S3 업로드 완료: $DEST_URL"
+          # 압축 파일 생성
+          cd deploy-temp
+          zip -r "../$ARTIFACT_NAME" . -q
+          cd ..
+          rm -rf deploy-temp
+
+          # 4. S3 업로드 경로 설정
+          S3_KEY="${S3_PREFIX}/$ARTIFACT_NAME"
+          S3_URL="s3://${S3_BUCKET}/${S3_KEY}"
+          echo "s3_key=$S3_KEY" >> $GITHUB_OUTPUT
+
+          echo "🚀 $ARTIFACT_NAME을 $S3_URL로 업로드합니다."
+
+          # 5. S3에 압축 파일 업로드
+          aws s3 cp "$ARTIFACT_NAME" "$S3_URL" --only-show-errors
+
+          echo "✅ S3 업로드 완료: $S3_URL"
       # --------------------------------
 
-  # 4. 디스코드 통합 알림
+  # 4. CodeDeploy 배포
+  deploy:
+    needs: [build]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: AWS 자격 증명 설정
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: CodeDeploy 배포 시작
+        id: deploy
+        run: |
+          echo "🚀 CodeDeploy 배포를 시작합니다..."
+
+          # build job에서 생성된 S3 키 정보가 필요하므로,
+          # 여기서는 최신 아티팩트를 찾아 배포합니다
+          DEPLOYMENT_ID=$(aws deploy create-deployment \
+            --application-name "${{ env.CODEDEPLOY_APP_NAME }}" \
+            --deployment-group-name "${{ env.CODEDEPLOY_DEPLOYMENT_GROUP }}" \
+            --s3-location bucket="${{ env.S3_BUCKET }}",key="${{ env.S3_PREFIX }}/${{ needs.build.outputs.artifact_name }}",bundleType=zip \
+            --description "Deploy from GitHub Actions - ${{ github.ref_name }} - ${{ github.sha }}" \
+            --query 'deploymentId' \
+            --output text)
+
+          echo "deployment_id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+          echo "✅ 배포 ID: $DEPLOYMENT_ID"
+
+      - name: 배포 상태 확인
+        run: |
+          DEPLOYMENT_ID="${{ steps.deploy.outputs.deployment_id }}"
+          echo "⏳ 배포 상태를 확인합니다 (ID: $DEPLOYMENT_ID)..."
+
+          # 배포 완료까지 대기 (최대 10분)
+          aws deploy wait deployment-successful \
+            --deployment-id "$DEPLOYMENT_ID" \
+            --cli-read-timeout 600
+
+          echo "✅ CodeDeploy 배포가 성공적으로 완료되었습니다!"
+
+  # 5. 디스코드 통합 알림
   notify-discord:
     runs-on: ubuntu-22.04
-    needs: [lint, static-analysis, build]
+    needs: [lint, static-analysis, build, deploy]
     if: always()
     steps:
       - name: 데이터 준비
@@ -171,8 +237,8 @@ jobs:
         uses: sarisia/actions-status-discord@v1
         with:
           webhook: ${{ github.ref_name == 'main' && secrets.DISCORD_WEBHOOK_PROD_URL || secrets.DISCORD_WEBHOOK_NON_PROD_URL }}
-          status: ${{ (needs.lint.result == 'success' && needs.static-analysis.result == 'success' && needs.build.result == 'success') && 'success' || 'failure' }}
-          title: "${{ steps.prep.outputs.branch }} 결과 [${{ (needs.lint.result == 'success' && needs.static-analysis.result == 'success' && needs.build.result == 'success') && '✅성공' || '❌실패' }}]"
+          status: ${{ (needs.lint.result == 'success' && needs.static-analysis.result == 'success' && needs.build.result == 'success' && needs.deploy.result == 'success') && 'success' || 'failure' }}
+          title: "${{ steps.prep.outputs.branch }} 배포 결과 [${{ (needs.lint.result == 'success' && needs.static-analysis.result == 'success' && needs.build.result == 'success' && needs.deploy.result == 'success') && '✅성공' || '❌실패' }}]"
           description: |
             **커밋 메시지**: ${{ steps.prep.outputs.title }}
             **브랜치**: `${{ steps.prep.outputs.branch }}`
@@ -182,9 +248,10 @@ jobs:
             - Lint/Type: ${{ needs.lint.result == 'success' && ' ✅' || ' ❌' }}
             - Static Analysis: ${{ needs.static-analysis.result == 'success' && ' ✅' || ' ❌' }}
             - Build: ${{ needs.build.result == 'success' && ' ✅' || ' ❌' }}
+            - Deploy: ${{ needs.deploy.result == 'success' && ' ✅' || ' ❌' }}
 
             **🔗 링크**: [커밋 확인하기](${{ github.event.repository.html_url }}/commit/${{ github.sha }})
 
-          color: "${{ (needs.lint.result == 'success' && needs.static-analysis.result == 'success' && needs.build.result == 'success') && 65280 || 16711680 }}"
+          color: "${{ (needs.lint.result == 'success' && needs.static-analysis.result == 'success' && needs.build.result == 'success' && needs.deploy.result == 'success') && 65280 || 16711680 }}"
           username: GitHub FE Merge Bot
           avatar_url: https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png
