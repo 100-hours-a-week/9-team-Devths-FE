@@ -7,6 +7,7 @@ import NicknameField from '@/components/common/NicknameField';
 import PrimaryButton from '@/components/common/PrimaryButton';
 import ProfileImagePicker from '@/components/common/ProfileImagePicker';
 import FileTooLargeModal from '@/components/signup/FileTooLargeModal';
+import { toast } from '@/lib/toast/store';
 
 const INTEREST_OPTIONS = ['BE', 'FE', 'Cloud', 'AI'];
 
@@ -36,7 +37,7 @@ export default function SignupPage() {
       </section>
 
       <footer className="mt-auto pt-8">
-        <PrimaryButton disabled={false} onClick={() => setIsFileTooLargeOpen(true)}>
+        <PrimaryButton disabled={false} onClick={() => toast('회원가입이 완료되었습니다.')}>
           시작하기
         </PrimaryButton>
       </footer>
