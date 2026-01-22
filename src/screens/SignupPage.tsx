@@ -20,7 +20,7 @@ export default function SignupPage() {
           <div className="bg-muted mt-3 h-20 rounded-xl" />
         </div>
 
-        <div>
+        <div className="px-1">
           <NicknameField value={nickname} onChange={setNickname} errorMessage={null} />
         </div>
 
