@@ -11,6 +11,7 @@ import FileTooLargeModal from '@/components/signup/FileTooLargeModal';
 import { INTEREST_OPTIONS, type InterestValue } from '@/constants/interests';
 import { getTempToken } from '@/lib/auth/token';
 import { toast } from '@/lib/toast/store';
+import { getNicknameErrorMessage } from '@/lib/validators/nickname';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -27,6 +28,9 @@ export default function SignupPage() {
       router.replace('/');
     }
   }, [router, tempToken]);
+
+  const nicknameErrorMessage = useMemo(() => getNicknameErrorMessage(nickname), [nickname]);
+  const isNicknameValid = nicknameErrorMessage === null;
 
   const handleToggleInterest = (value: InterestValue) => {
     setInterests((prev) =>
@@ -52,7 +56,11 @@ export default function SignupPage() {
         <ProfileImagePicker onClickAdd={() => setIsFileTooLargeOpen(true)} />
 
         <div className="px-1">
-          <NicknameField value={nickname} onChange={setNickname} errorMessage={null} />
+          <NicknameField
+            value={nickname}
+            onChange={setNickname}
+            errorMessage={nicknameErrorMessage}
+          />
         </div>
 
         <div className="px-1">
@@ -68,7 +76,10 @@ export default function SignupPage() {
       </section>
 
       <footer className="mt-auto pt-8">
-        <PrimaryButton disabled={false} onClick={() => toast('회원가입이 완료되었습니다.')}>
+        <PrimaryButton
+          disabled={!isNicknameValid}
+          onClick={() => toast('회원가입이 완료되었습니다.')}
+        >
           시작하기
         </PrimaryButton>
       </footer>
