@@ -2,30 +2,23 @@
 
 import { useState } from 'react';
 
-import InterestChips, { type InterestOption } from '@/components/common/InterestChips';
+import InterestChips from '@/components/common/InterestChips';
 import NicknameField from '@/components/common/NicknameField';
 import PrimaryButton from '@/components/common/PrimaryButton';
 import ProfileImagePicker from '@/components/common/ProfileImagePicker';
 import FileTooLargeModal from '@/components/signup/FileTooLargeModal';
+import { INTEREST_OPTIONS, type InterestValue } from '@/constants/interests';
 import { toast } from '@/lib/toast/store';
-
-const INTEREST_OPTIONS: InterestOption[] = [
-  { value: 'BACKEND', label: 'BE' },
-  { value: 'FRONTEND', label: 'FE' },
-  { value: 'CLOUD', label: 'CLOUD' },
-  { value: 'AI', label: 'AI' },
-];
-
-type InterestValue = (typeof INTEREST_OPTIONS)[number]['value'];
 
 export default function SignupPage() {
   const [nickname, setNickname] = useState('');
   const [interests, setInterests] = useState<InterestValue[]>([]);
   const [isFileTooLargeOpen, setIsFileTooLargeOpen] = useState(false);
 
-  const handleToggleInterest = (value: string) => {
-    const v = value as InterestValue;
-    setInterests((prev) => (prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]));
+  const handleToggleInterest = (value: InterestValue) => {
+    setInterests((prev) =>
+      prev.includes(value) ? prev.filter((x) => x !== value) : [...prev, value],
+    );
   };
 
   return (

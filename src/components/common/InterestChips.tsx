@@ -2,18 +2,22 @@
 
 import { cn } from '@/lib/utils';
 
-export type InterestOption = {
-  value: string;
+export type InterestOption<T extends string = string> = {
+  value: T;
   label: string;
 };
 
-type InterestChipsProps = {
-  options: InterestOption[];
-  selected?: string[];
-  onToggle?: (value: string) => void;
+type InterestChipsProps<T extends string> = {
+  options: readonly InterestOption<T>[];
+  selected?: readonly T[];
+  onToggle?: (value: T) => void;
 };
 
-export default function InterestChips({ options, selected = [], onToggle }: InterestChipsProps) {
+export default function InterestChips<T extends string>({
+  options,
+  selected = [],
+  onToggle,
+}: InterestChipsProps<T>) {
   return (
     <div className="grid grid-cols-4 gap-2">
       {options.map(({ value, label }) => {
