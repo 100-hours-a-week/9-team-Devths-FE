@@ -29,7 +29,6 @@ export default function SignupPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 세션 값은 “초기 1회” 고정
   const tempToken = useMemo(() => getTempToken(), []);
   const email = useMemo(() => getSignupEmail(), []);
 
@@ -42,6 +41,7 @@ export default function SignupPage() {
 
   const nicknameErrorMessage = useMemo(() => getNicknameErrorMessage(nickname), [nickname]);
   const isNicknameValid = nicknameErrorMessage === null;
+  const hasInterests = interests.length > 0;
 
   const handleToggleInterest = (value: InterestValue) => {
     setInterests((prev) =>
@@ -94,6 +94,7 @@ export default function SignupPage() {
   const handleSubmit = async () => {
     if (!tempToken || !email) return;
     if (!isNicknameValid) return;
+    if (!hasInterests) return;
 
     setIsSubmitting(true);
     try {
@@ -113,7 +114,6 @@ export default function SignupPage() {
 
       toast('회원가입이 완료되었습니다.');
 
-      // 회원가입 컨텍스트 정리(선택이지만 권장)
       clearSignupContext();
 
       router.replace('/calendar');
@@ -175,7 +175,7 @@ export default function SignupPage() {
 
       <footer className="mt-auto pt-8">
         <PrimaryButton
-          disabled={!isNicknameValid || isUploadingProfile || isSubmitting}
+          disabled={!isNicknameValid || !hasInterests || isUploadingProfile || isSubmitting}
           onClick={handleSubmit}
         >
           시작하기
