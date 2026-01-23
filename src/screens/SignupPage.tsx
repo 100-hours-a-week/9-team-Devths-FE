@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 
 import InterestChips from '@/components/common/InterestChips';
 import NicknameField from '@/components/common/NicknameField';
@@ -8,18 +9,38 @@ import PrimaryButton from '@/components/common/PrimaryButton';
 import ProfileImagePicker from '@/components/common/ProfileImagePicker';
 import FileTooLargeModal from '@/components/signup/FileTooLargeModal';
 import { INTEREST_OPTIONS, type InterestValue } from '@/constants/interests';
+import { getTempToken } from '@/lib/auth/token';
 import { toast } from '@/lib/toast/store';
 
 export default function SignupPage() {
+  const router = useRouter();
+
   const [nickname, setNickname] = useState('');
   const [interests, setInterests] = useState<InterestValue[]>([]);
   const [isFileTooLargeOpen, setIsFileTooLargeOpen] = useState(false);
+
+  const tempToken = useMemo(() => getTempToken(), []);
+
+  useEffect(() => {
+    if (!tempToken) {
+      toast('회원가입을 진행하려면 로그인이 필요합니다.');
+      router.replace('/');
+    }
+  }, [router, tempToken]);
 
   const handleToggleInterest = (value: InterestValue) => {
     setInterests((prev) =>
       prev.includes(value) ? prev.filter((x) => x !== value) : [...prev, value],
     );
   };
+
+  if (!tempToken) {
+    return (
+      <main className="flex min-h-dvh items-center justify-center px-6">
+        <p className="text-sm text-neutral-600">회원가입 페이지 준비 중...</p>
+      </main>
+    );
+  }
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[420px] flex-col px-5 pt-20 pb-10">
