@@ -10,7 +10,8 @@ import ProfileImagePicker from '@/components/common/ProfileImagePicker';
 import FileTooLargeModal from '@/components/signup/FileTooLargeModal';
 import { INTEREST_OPTIONS, type InterestValue } from '@/constants/interests';
 import { postPresignedSignup } from '@/lib/api/files';
-import { getTempToken } from '@/lib/auth/token';
+import { postSignup } from '@/lib/api/users';
+import { clearSignupContext, getSignupEmail, getTempToken } from '@/lib/auth/token';
 import { toast } from '@/lib/toast/store';
 import { uploadToPresignedUrl } from '@/lib/upload/s3Presigned';
 import { getNicknameErrorMessage } from '@/lib/validators/nickname';
@@ -23,18 +24,21 @@ export default function SignupPage() {
   const [isFileTooLargeOpen, setIsFileTooLargeOpen] = useState(false);
 
   const [profilePreviewUrl, setProfilePreviewUrl] = useState<string | null>(null);
-
   const [isUploadingProfile, setIsUploadingProfile] = useState(false);
   const [profileImageS3Key, setProfileImageS3Key] = useState<string | null>(null);
 
-  const tempToken = getTempToken();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 세션 값은 “초기 1회” 고정
+  const tempToken = useMemo(() => getTempToken(), []);
+  const email = useMemo(() => getSignupEmail(), []);
 
   useEffect(() => {
-    if (!tempToken) {
+    if (!tempToken || !email) {
       toast('회원가입을 진행하려면 로그인이 필요합니다.');
       router.replace('/');
     }
-  }, [router, tempToken]);
+  }, [router, tempToken, email]);
 
   const nicknameErrorMessage = useMemo(() => getNicknameErrorMessage(nickname), [nickname]);
   const isNicknameValid = nicknameErrorMessage === null;
@@ -52,9 +56,11 @@ export default function SignupPage() {
   }, [profilePreviewUrl]);
 
   const handleSelectProfile = async (file: File) => {
+    // preview
     if (profilePreviewUrl) URL.revokeObjectURL(profilePreviewUrl);
     setProfilePreviewUrl(URL.createObjectURL(file));
 
+    // upload flow
     setIsUploadingProfile(true);
     setProfileImageS3Key(null);
 
@@ -85,7 +91,41 @@ export default function SignupPage() {
     }
   };
 
-  if (!tempToken) {
+  const handleSubmit = async () => {
+    if (!tempToken || !email) return;
+    if (!isNicknameValid) return;
+
+    setIsSubmitting(true);
+    try {
+      const { ok, status, json } = await postSignup({
+        email,
+        nickname: nickname.trim(),
+        interests,
+        tempToken,
+        ...(profileImageS3Key ? { profileImageS3Key } : {}),
+      });
+
+      if (!ok || !json || json.data === null) {
+        const msg = json?.message ?? `회원가입 실패 (HTTP ${status})`;
+        toast(msg);
+        return;
+      }
+
+      toast('회원가입이 완료되었습니다.');
+
+      // 회원가입 컨텍스트 정리(선택이지만 권장)
+      clearSignupContext();
+
+      router.replace('/calendar');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '회원가입 처리 중 오류가 발생했습니다.';
+      toast(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!tempToken || !email) {
     return (
       <main className="flex min-h-dvh items-center justify-center px-6">
         <p className="text-sm text-neutral-600">회원가입 페이지 준비 중...</p>
@@ -135,8 +175,8 @@ export default function SignupPage() {
 
       <footer className="mt-auto pt-8">
         <PrimaryButton
-          disabled={!isNicknameValid || isUploadingProfile}
-          onClick={() => toast('회원가입이 완료되었습니다.')}
+          disabled={!isNicknameValid || isUploadingProfile || isSubmitting}
+          onClick={handleSubmit}
         >
           시작하기
         </PrimaryButton>
