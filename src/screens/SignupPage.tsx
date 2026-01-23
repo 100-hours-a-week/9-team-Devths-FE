@@ -29,10 +29,16 @@ export default function SignupPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const tempToken = useMemo(() => getTempToken(), []);
-  const email = useMemo(() => getSignupEmail(), []);
+  const [tempToken, setTempTokenState] = useState<string | null>(null);
+  const [email, setEmailState] = useState<string | null>(null);
 
   useEffect(() => {
+    setTempTokenState(getTempToken());
+    setEmailState(getSignupEmail());
+  }, []);
+
+  useEffect(() => {
+    if (tempToken === null || email === null) return;
     if (!tempToken || !email) {
       toast('회원가입을 진행하려면 로그인이 필요합니다.');
       router.replace('/');
@@ -172,7 +178,7 @@ export default function SignupPage() {
     }
   };
 
-  if (!tempToken || !email) {
+  if (tempToken === null || email === null || !tempToken || !email) {
     return (
       <main className="flex min-h-dvh items-center justify-center px-6">
         <p className="text-sm text-neutral-600">회원가입 페이지 준비 중...</p>
