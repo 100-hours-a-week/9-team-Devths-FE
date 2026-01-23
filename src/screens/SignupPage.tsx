@@ -9,8 +9,10 @@ import PrimaryButton from '@/components/common/PrimaryButton';
 import ProfileImagePicker from '@/components/common/ProfileImagePicker';
 import FileTooLargeModal from '@/components/signup/FileTooLargeModal';
 import { INTEREST_OPTIONS, type InterestValue } from '@/constants/interests';
+import { postPresignedSignup } from '@/lib/api/files';
 import { getTempToken } from '@/lib/auth/token';
 import { toast } from '@/lib/toast/store';
+import { uploadToPresignedUrl } from '@/lib/upload/s3Presigned';
 import { getNicknameErrorMessage } from '@/lib/validators/nickname';
 
 export default function SignupPage() {
@@ -22,7 +24,10 @@ export default function SignupPage() {
 
   const [profilePreviewUrl, setProfilePreviewUrl] = useState<string | null>(null);
 
-  const tempToken = useMemo(() => getTempToken(), []);
+  const [isUploadingProfile, setIsUploadingProfile] = useState(false);
+  const [profileImageS3Key, setProfileImageS3Key] = useState<string | null>(null);
+
+  const tempToken = getTempToken();
 
   useEffect(() => {
     if (!tempToken) {
@@ -46,10 +51,38 @@ export default function SignupPage() {
     };
   }, [profilePreviewUrl]);
 
-  const handleSelectProfile = (file: File) => {
+  const handleSelectProfile = async (file: File) => {
     if (profilePreviewUrl) URL.revokeObjectURL(profilePreviewUrl);
-
     setProfilePreviewUrl(URL.createObjectURL(file));
+
+    setIsUploadingProfile(true);
+    setProfileImageS3Key(null);
+
+    try {
+      const presignedRes = await postPresignedSignup({
+        fileName: file.name,
+        mimeType: file.type,
+      });
+
+      if (!presignedRes.ok || !presignedRes.json || presignedRes.json.data === null) {
+        const msg =
+          presignedRes.json?.message ?? `presigned 요청 실패 (HTTP ${presignedRes.status})`;
+        toast(msg);
+        return;
+      }
+
+      const { presignedUrl, s3Key } = presignedRes.json.data;
+
+      await uploadToPresignedUrl({ presignedUrl, file });
+
+      setProfileImageS3Key(s3Key);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '프로필 이미지 업로드 중 오류가 발생했습니다.';
+      toast(msg);
+      setProfileImageS3Key(null);
+    } finally {
+      setIsUploadingProfile(false);
+    }
   };
 
   if (!tempToken) {
@@ -74,6 +107,12 @@ export default function SignupPage() {
           onInvalidType={() => toast('지원하지 않는 파일 형식입니다. (jpg/jpeg/png/webp만 가능)')}
         />
 
+        {isUploadingProfile ? (
+          <p className="text-center text-xs text-neutral-600">프로필 사진 업로드 중...</p>
+        ) : profileImageS3Key ? (
+          <p className="text-center text-xs text-neutral-600">프로필 사진 업로드 완료</p>
+        ) : null}
+
         <div className="px-1">
           <NicknameField
             value={nickname}
@@ -96,7 +135,7 @@ export default function SignupPage() {
 
       <footer className="mt-auto pt-8">
         <PrimaryButton
-          disabled={!isNicknameValid}
+          disabled={!isNicknameValid || isUploadingProfile}
           onClick={() => toast('회원가입이 완료되었습니다.')}
         >
           시작하기

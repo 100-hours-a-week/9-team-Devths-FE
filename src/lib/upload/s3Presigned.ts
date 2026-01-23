@@ -10,16 +10,15 @@ export async function uploadToPresignedUrl({
   const res = await fetch(presignedUrl, {
     method: 'PUT',
     headers: {
-      'Content-Type': file.type || 'application/octet-stream',
+      'Content-Type': file.type,
     },
     body: file,
   });
 
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    const message = text
-      ? `S3 업로드 실패: ${res.status} ${text}`
-      : `S3 업로드 실패: ${res.status}`;
-    throw new Error(message);
+    throw new Error(
+      text ? `S3 업로드 실패: ${res.status} ${text}` : `S3 업로드 실패: ${res.status}`,
+    );
   }
 }
