@@ -1,8 +1,10 @@
 'use client';
+
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
 import { postGoogleAuth } from '@/lib/api/auth';
+import { setSignupEmail } from '@/lib/auth/signupContext';
 import { setAccessToken, setTempToken } from '@/lib/auth/token';
 
 export default function AuthCallbackClient() {
@@ -62,6 +64,7 @@ export default function AuthCallbackClient() {
         }
 
         setTempToken(json.data.tempToken);
+        setSignupEmail(json.data.email);
         router.replace('/signup');
       } catch (err) {
         console.warn(err);
