@@ -2,18 +2,31 @@
 
 import { useState } from 'react';
 
-import InterestChips from '@/components/common/InterestChips';
+import InterestChips, { type InterestOption } from '@/components/common/InterestChips';
 import NicknameField from '@/components/common/NicknameField';
 import PrimaryButton from '@/components/common/PrimaryButton';
 import ProfileImagePicker from '@/components/common/ProfileImagePicker';
 import FileTooLargeModal from '@/components/signup/FileTooLargeModal';
 import { toast } from '@/lib/toast/store';
 
-const INTEREST_OPTIONS = ['BE', 'FE', 'Cloud', 'AI'];
+const INTEREST_OPTIONS: InterestOption[] = [
+  { value: 'BACKEND', label: 'BE' },
+  { value: 'FRONTEND', label: 'FE' },
+  { value: 'CLOUD', label: 'CLOUD' },
+  { value: 'AI', label: 'AI' },
+];
+
+type InterestValue = (typeof INTEREST_OPTIONS)[number]['value'];
 
 export default function SignupPage() {
   const [nickname, setNickname] = useState('');
+  const [interests, setInterests] = useState<InterestValue[]>([]);
   const [isFileTooLargeOpen, setIsFileTooLargeOpen] = useState(false);
+
+  const handleToggleInterest = (value: string) => {
+    const v = value as InterestValue;
+    setInterests((prev) => (prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]));
+  };
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[420px] flex-col px-5 pt-20 pb-10">
@@ -31,7 +44,11 @@ export default function SignupPage() {
         <div className="px-1">
           <div className="text-sm font-semibold">관심 분야</div>
           <div className="mt-3">
-            <InterestChips options={INTEREST_OPTIONS} selected={['FE']} />
+            <InterestChips
+              options={INTEREST_OPTIONS}
+              selected={interests}
+              onToggle={handleToggleInterest}
+            />
           </div>
         </div>
       </section>

@@ -2,25 +2,30 @@
 
 import { cn } from '@/lib/utils';
 
+export type InterestOption = {
+  value: string;
+  label: string;
+};
+
 type InterestChipsProps = {
-  options: string[];
+  options: InterestOption[];
   selected?: string[];
-  onToggle?: (label: string) => void;
+  onToggle?: (value: string) => void;
 };
 
 export default function InterestChips({ options, selected = [], onToggle }: InterestChipsProps) {
   return (
     <div className="grid grid-cols-4 gap-2">
-      {options.map((label: string) => {
-        const isActive = selected.includes(label);
+      {options.map(({ value, label }) => {
+        const isActive = selected.includes(value);
 
         return (
           <button
-            key={label}
+            key={value}
             type="button"
-            onClick={() => onToggle?.(label)}
+            onClick={() => onToggle?.(value)}
             className={cn(
-              'h-9 w-full rounded-full border text-sm font-medium transition',
+              'inline-flex h-9 w-full items-center justify-center rounded-full border text-sm leading-none font-medium transition',
               isActive
                 ? 'border-zinc-900 bg-zinc-900 text-white'
                 : 'border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50',
