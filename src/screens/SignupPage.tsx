@@ -59,12 +59,7 @@ export default function SignupPage() {
     };
   }, [profilePreviewUrl]);
 
-  const handleSelectProfile = async (file: File) => {
-    // preview
-    if (profilePreviewUrl) URL.revokeObjectURL(profilePreviewUrl);
-    setProfilePreviewUrl(URL.createObjectURL(file));
-
-    // upload flow
+  const uploadProfileImage = async (file: File) => {
     setIsUploadingProfile(true);
     setProfileImageS3Key(null);
 
@@ -78,7 +73,7 @@ export default function SignupPage() {
         const msg =
           presignedRes.json?.message ?? `presigned 요청 실패 (HTTP ${presignedRes.status})`;
         toast(msg);
-        return;
+        return null;
       }
 
       const { presignedUrl, s3Key } = presignedRes.json.data;
@@ -86,13 +81,53 @@ export default function SignupPage() {
       await uploadToPresignedUrl({ presignedUrl, file });
 
       setProfileImageS3Key(s3Key);
+      return s3Key;
     } catch (e) {
       const msg = e instanceof Error ? e.message : '프로필 이미지 업로드 중 오류가 발생했습니다.';
       toast(msg);
       setProfileImageS3Key(null);
+      return null;
     } finally {
       setIsUploadingProfile(false);
     }
+  };
+
+  const createDefaultProfileImageFile = async (label: string) => {
+    const size = 256;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('프로필 이미지 생성을 위한 컨텍스트를 생성할 수 없습니다.');
+
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, size, size);
+
+    const initial = Array.from(label)[0] ?? '';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = `600 120px 'Pretendard', 'Noto Sans KR', sans-serif`;
+    ctx.fillText(initial, size / 2, size / 2);
+
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((result) => {
+        if (!result) reject(new Error('기본 프로필 이미지 생성에 실패했습니다.'));
+        else resolve(result);
+      }, 'image/png');
+    });
+
+    return new File([blob], 'default-profile.png', { type: 'image/png' });
+  };
+
+  const handleSelectProfile = async (file: File) => {
+    // preview
+    if (profilePreviewUrl) URL.revokeObjectURL(profilePreviewUrl);
+    setProfilePreviewUrl(URL.createObjectURL(file));
+
+    // upload flow
+    await uploadProfileImage(file);
   };
 
   const handleSubmit = async () => {
@@ -102,12 +137,20 @@ export default function SignupPage() {
 
     setIsSubmitting(true);
     try {
+      let finalProfileImageS3Key = profileImageS3Key;
+
+      if (!finalProfileImageS3Key) {
+        const defaultFile = await createDefaultProfileImageFile(trimmedNickname);
+        finalProfileImageS3Key = await uploadProfileImage(defaultFile);
+        if (!finalProfileImageS3Key) return;
+      }
+
       const { ok, status, json } = await postSignup({
         email,
         nickname: nickname.trim(),
         interests,
         tempToken,
-        ...(profileImageS3Key ? { profileImageS3Key } : {}),
+        ...(finalProfileImageS3Key ? { profileImageS3Key: finalProfileImageS3Key } : {}),
       });
 
       if (!ok || !json || json.data === null) {
