@@ -20,6 +20,8 @@ export default function SignupPage() {
   const [interests, setInterests] = useState<InterestValue[]>([]);
   const [isFileTooLargeOpen, setIsFileTooLargeOpen] = useState(false);
 
+  const [profilePreviewUrl, setProfilePreviewUrl] = useState<string | null>(null);
+
   const tempToken = useMemo(() => getTempToken(), []);
 
   useEffect(() => {
@@ -38,6 +40,18 @@ export default function SignupPage() {
     );
   };
 
+  useEffect(() => {
+    return () => {
+      if (profilePreviewUrl) URL.revokeObjectURL(profilePreviewUrl);
+    };
+  }, [profilePreviewUrl]);
+
+  const handleSelectProfile = (file: File) => {
+    if (profilePreviewUrl) URL.revokeObjectURL(profilePreviewUrl);
+
+    setProfilePreviewUrl(URL.createObjectURL(file));
+  };
+
   if (!tempToken) {
     return (
       <main className="flex min-h-dvh items-center justify-center px-6">
@@ -53,7 +67,12 @@ export default function SignupPage() {
       </header>
 
       <section className="flex flex-1 flex-col gap-8">
-        <ProfileImagePicker onClickAdd={() => setIsFileTooLargeOpen(true)} />
+        <ProfileImagePicker
+          previewUrl={profilePreviewUrl}
+          onSelect={handleSelectProfile}
+          onFileTooLarge={() => setIsFileTooLargeOpen(true)}
+          onInvalidType={() => toast('지원하지 않는 파일 형식입니다. (jpg/jpeg/png/webp만 가능)')}
+        />
 
         <div className="px-1">
           <NicknameField
