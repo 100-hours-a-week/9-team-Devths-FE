@@ -1,9 +1,10 @@
 'use client';
+
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
 import { postGoogleAuth } from '@/lib/api/auth';
-import { setAccessToken, setTempToken } from '@/lib/auth/token';
+import { setAccessToken, setSignupEmail, setTempToken } from '@/lib/auth/token';
 
 export default function AuthCallbackClient() {
   const router = useRouter();
@@ -61,7 +62,9 @@ export default function AuthCallbackClient() {
           return;
         }
 
+        // 비회원: 회원가입 컨텍스트 저장
         setTempToken(json.data.tempToken);
+        setSignupEmail(json.data.email);
         router.replace('/signup');
       } catch (err) {
         console.warn(err);
