@@ -78,7 +78,7 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: javascript-typescript
-          config-file: './.github/codeql/code-ql-light.yml'
+          config-file: './.github/codeql/code-ql-heavy.yml'
 
       - name: 분석 수행
         uses: github/codeql-action/analyze@v4
