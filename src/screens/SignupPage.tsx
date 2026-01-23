@@ -39,8 +39,12 @@ export default function SignupPage() {
     }
   }, [router, tempToken, email]);
 
-  const nicknameErrorMessage = useMemo(() => getNicknameErrorMessage(nickname), [nickname]);
-  const isNicknameValid = nicknameErrorMessage === null;
+  const trimmedNickname = nickname.trim();
+  const nicknameErrorMessage = useMemo(() => {
+    if (trimmedNickname.length === 0) return null;
+    return getNicknameErrorMessage(trimmedNickname);
+  }, [trimmedNickname]);
+  const isNicknameValid = trimmedNickname.length > 0 && nicknameErrorMessage === null;
   const hasInterests = interests.length > 0;
 
   const handleToggleInterest = (value: InterestValue) => {
