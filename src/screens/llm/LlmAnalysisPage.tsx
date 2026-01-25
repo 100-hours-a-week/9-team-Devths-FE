@@ -1,20 +1,30 @@
 'use client';
 
-type Props = {
-  roomId: string;
-};
+import { useState } from 'react';
 
-export default function LlmAnalysisPage({ roomId }: Props) {
+import LlmTextAreaCard from '@/components/llm/analysis/LlmTextAreaCard';
+
+export default function LlmAnalysisPage() {
+  const [resumeText, setResumeText] = useState('');
+  const [jobText, setJobText] = useState('');
+
   return (
-    <main className="p-4">
-      <h1 className="text-lg font-semibold">LLM-002 입력/분석</h1>
-      <p className="text-muted-foreground mt-2 text-sm">roomId: {roomId}</p>
+    <main className="px-2 pt-4 pb-2">
+      <div className="space-y-4">
+        <LlmTextAreaCard
+          label="이력서 및 포트폴리오 입력"
+          placeholder="이력서/포트폴리오 내용을 붙여 넣거나 직접 입력하세요."
+          value={resumeText}
+          onChange={setResumeText}
+        />
 
-      <section className="mt-6 rounded-lg border p-4">
-        <p className="text-muted-foreground text-sm">
-          입력 카드 2개(이력서/공고) + 첨부 토글 + 모델 토글 + 로딩 모달을 붙일 예정
-        </p>
-      </section>
+        <LlmTextAreaCard
+          label="채용 공고 입력"
+          placeholder="채용 공고 내용을 붙여 넣거나 직접 입력하세요."
+          value={jobText}
+          onChange={setJobText}
+        />
+      </div>
     </main>
   );
 }

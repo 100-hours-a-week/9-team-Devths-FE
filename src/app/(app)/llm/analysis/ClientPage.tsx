@@ -22,5 +22,5 @@ export default function ClientPage() {
     return () => resetOptions();
   }, [resetOptions, router, setOptions]);
 
-  return <LlmAnalysisPage roomId={roomId} />;
+  return <LlmAnalysisPage />;
 }
