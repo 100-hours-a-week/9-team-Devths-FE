@@ -40,10 +40,10 @@ jobs:
           webhook: ${{ secrets.DISCORD_WEBHOOK_BUG_URL }}
           # 상태가 failure가 아니더라도 커스텀 컬러를 쓰기 위해 'comment' 모드 사용
           status: 'comment'
-          title: "🚨 BUG REPORT: ${{ github.event.issue.title }}"
+          title: '🚨 BUG REPORT: ${{ github.event.issue.title }}'
           url: ${{ github.event.issue.html_url }}
           # 특정 역할(@QA, @Dev)을 맨 위에 언급하여 즉시 알림 유도
-          content: "${{ secrets.DISCORD_ROLE_ID }} 버그가 접수되었습니다. 확인 부탁드립니다!"
+          content: '${{ secrets.DISCORD_ROLE_ID }} 버그가 접수되었습니다. 확인 부탁드립니다!'
           description: |
             **Reporter**
             ${{ steps.prep.outputs.author }}
@@ -59,6 +59,6 @@ jobs:
             ${{ github.event.issue.body }}
             ```
           color: 0xff4d4d # 선명한 빨간색
-          username: "Devths Bug Sentinel"
-          avatar_url: "https://cdn-icons-png.flaticon.com/512/1022/1022300.png" # 버그 아이콘
-          footer: "Issue #${{ github.event.issue.number }} • ${{ github.event.repository.full_name }}"
+          username: 'Devths Bug Sentinel'
+          avatar_url: 'https://cdn-icons-png.flaticon.com/512/1022/1022300.png' # 버그 아이콘
+          footer: 'Issue #${{ github.event.issue.number }} • ${{ github.event.repository.full_name }}'
