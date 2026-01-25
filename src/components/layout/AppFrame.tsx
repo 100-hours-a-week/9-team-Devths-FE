@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import BottomNav from '@/components/layout/BottomNav';
 import Header from '@/components/layout/Header';
 import { HeaderContext, type HeaderOptions } from '@/components/layout/HeaderContext';
+import { AppFrameContext, type AppFrameOptions } from '@/components/layout/AppFrameContext';
 
 import type { ReactNode } from 'react';
 
@@ -34,30 +35,53 @@ export default function AppFrame({
   );
 
   const [options, setOptions] = useState<HeaderOptions>(defaultOptions);
+  const defaultFrameOptions = useMemo<AppFrameOptions>(() => ({ showBottomNav: true }), []);
+  const [frameOptions, setFrameOptions] =
+    useState<AppFrameOptions>(defaultFrameOptions);
 
   useEffect(() => {
     setOptions(defaultOptions);
   }, [defaultOptions]);
+  useEffect(() => {
+    setFrameOptions(defaultFrameOptions);
+  }, [defaultFrameOptions]);
 
   const resetOptions = useCallback(() => {
     setOptions(defaultOptions);
   }, [defaultOptions]);
+  const resetFrameOptions = useCallback(() => {
+    setFrameOptions(defaultFrameOptions);
+  }, [defaultFrameOptions]);
 
   return (
-    <HeaderContext.Provider value={{ options, setOptions, resetOptions, defaultOptions }}>
-      <div className="min-h-dvh w-full bg-neutral-50">
-        <div className="mx-auto min-h-dvh w-full bg-white sm:max-w-[430px]">
-          <Header
-            title={options.title}
-            showBackButton={options.showBackButton}
-            onBackClick={options.onBackClick}
-            rightSlot={options.rightSlot}
-          />
-          <div className="px-4 pb-16 sm:px-6">{children}</div>
-        </div>
+    <AppFrameContext.Provider
+      value={{
+        options: frameOptions,
+        setOptions: setFrameOptions,
+        resetOptions: resetFrameOptions,
+        defaultOptions: defaultFrameOptions,
+      }}
+    >
+      <HeaderContext.Provider value={{ options, setOptions, resetOptions, defaultOptions }}>
+        <div
+          className="min-h-dvh w-full bg-neutral-50"
+          style={{
+            '--bottom-nav-h': frameOptions.showBottomNav ? '64px' : '0px',
+          } as React.CSSProperties}
+        >
+          <div className="mx-auto min-h-dvh w-full bg-white sm:max-w-[430px]">
+            <Header
+              title={options.title}
+              showBackButton={options.showBackButton}
+              onBackClick={options.onBackClick}
+              rightSlot={options.rightSlot}
+            />
+            <div className="px-4 pb-[var(--bottom-nav-h)] sm:px-6">{children}</div>
+          </div>
 
-        <BottomNav />
-      </div>
-    </HeaderContext.Provider>
+          {frameOptions.showBottomNav ? <BottomNav /> : null}
+        </div>
+      </HeaderContext.Provider>
+    </AppFrameContext.Provider>
   );
 }
