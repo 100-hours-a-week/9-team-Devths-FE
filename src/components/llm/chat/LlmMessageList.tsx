@@ -5,6 +5,7 @@ type Message = {
   role: 'USER' | 'AI' | 'SYSTEM';
   text: string;
   time?: string;
+  attachments?: Array<{ type: 'image' | 'file'; name: string }>;
 };
 
 type Props = {
@@ -43,6 +44,26 @@ export default function LlmMessageList({ messages }: Props) {
                     ].join(' ')}
                   >
                     <p>{m.text}</p>
+                    {m.attachments && m.attachments.length > 0 ? (
+                      <div className="mt-2 space-y-1">
+                        {m.attachments.map((att, index) => (
+                          <div
+                            key={`${m.id}-att-${index}`}
+                            className={[
+                              'flex items-center gap-2 rounded-lg border px-2 py-1 text-[11px]',
+                              isUser
+                                ? 'border-white/20 text-white/90'
+                                : 'border-neutral-200 text-neutral-700',
+                            ].join(' ')}
+                          >
+                            <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-neutral-200 text-[10px] text-neutral-600">
+                              {att.type === 'image' ? 'IMG' : 'PDF'}
+                            </span>
+                            <span className="truncate">{att.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                   {m.time ? (
                     <span className="mt-1 text-[10px] text-neutral-400">{m.time}</span>
