@@ -153,7 +153,7 @@ jobs:
           fi
 
           # 2. 아티팩트 파일명 생성
-          ARTIFACT_NAME="devths-fe-${{ steps.timestamp.outputs.value }}.zip"
+          ARTIFACT_NAME="${{ steps.timestamp.outputs.value }}.zip"
           echo "artifact_name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
 
           # 3. 배포 아티팩트 압축 (appspec.yml + scripts + 빌드 결과물)
