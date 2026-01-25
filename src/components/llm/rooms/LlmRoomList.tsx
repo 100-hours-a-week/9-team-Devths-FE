@@ -1,32 +1,28 @@
 'use client';
 
-import LlmRoomCard, { type StorageStatus } from '@/components/llm/rooms/LlmRoomCard';
+import LlmRoomListItem from '@/components/llm/rooms/LlmRoomListItem';
 
-export type LlmRoomData = {
-  id: string;
-  title: string;
-  status: StorageStatus;
-};
+import type { LlmRoom } from '@/components/llm/rooms/types';
 
 type Props = {
-  rooms: LlmRoomData[];
-  onToggleStatus?: (id: string, next: StorageStatus) => void;
-  onDelete?: (id: string) => void;
+  rooms: LlmRoom[];
+  onEnterRoom: (roomId: string) => void;
+  onDeleteRoom: (roomId: string) => void;
+  onArchiveRoom: (roomId: string) => void;
 };
 
-export default function LlmRoomList({ rooms, onToggleStatus, onDelete }: Props) {
+export default function LlmRoomList({ rooms, onEnterRoom, onDeleteRoom, onArchiveRoom }: Props) {
   return (
-    <section className="mt-4 flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
       {rooms.map((room) => (
-        <LlmRoomCard
+        <LlmRoomListItem
           key={room.id}
-          id={room.id}
-          title={room.title}
-          status={room.status}
-          onToggleStatus={(next) => onToggleStatus?.(room.id, next)}
-          onDelete={() => onDelete?.(room.id)}
+          room={room}
+          onEnter={onEnterRoom}
+          onDelete={onDeleteRoom}
+          onArchive={onArchiveRoom}
         />
       ))}
-    </section>
+    </div>
   );
 }
