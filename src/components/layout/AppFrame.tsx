@@ -1,3 +1,6 @@
+import BottomNav from '@/components/layout/BottomNav';
+import Header from '@/components/layout/Header';
+
 import type { ReactNode } from 'react';
 
 type AppFrameProps = {
@@ -7,9 +10,12 @@ type AppFrameProps = {
 export default function AppFrame({ children }: AppFrameProps) {
   return (
     <div className="min-h-dvh w-full bg-neutral-50">
-      <div className="mx-auto min-h-dvh w-full bg-white px-4 sm:max-w-[430px] sm:px-6">
-        {children}
+      <div className="mx-auto min-h-dvh w-full bg-white sm:max-w-[430px]">
+        <Header title="Devths" />
+        <div className="px-4 pb-16 sm:px-6">{children}</div>
       </div>
+
+      <BottomNav />
     </div>
   );
 }
