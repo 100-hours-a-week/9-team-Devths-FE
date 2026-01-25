@@ -1,0 +1,93 @@
+import { getAccessToken } from '@/lib/auth/token';
+
+import type { ApiErrorResponse, ApiResponse } from '@/types/api';
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+type RequestOptions = {
+  method: HttpMethod;
+  path: string;
+  body?: unknown;
+
+  withAuth?: boolean;
+
+  credentials?: RequestCredentials;
+
+  headers?: Record<string, string>;
+};
+
+export type ApiClientResult<T> = {
+  ok: boolean;
+  status: number;
+  json: (ApiResponse<T> | ApiErrorResponse) | null;
+  res: Response;
+};
+
+function buildUrl(path: string) {
+  if (!BASE_URL) {
+    throw new Error('NEXT_PUBLIC_API_BASE_URL is not set in .env.local');
+  }
+  return new URL(path, BASE_URL).toString();
+}
+
+export async function apiRequest<T>(options: RequestOptions): Promise<ApiClientResult<T>> {
+  const { method, path, body, withAuth = true, credentials = 'include', headers = {} } = options;
+
+  const url = buildUrl(path);
+
+  const finalHeaders: Record<string, string> = {
+    ...headers,
+  };
+
+  const hasBody = body !== undefined && body !== null;
+  let requestBody: BodyInit | undefined;
+
+  if (hasBody) {
+    finalHeaders['Content-Type'] = finalHeaders['Content-Type'] ?? 'application/json';
+    requestBody = JSON.stringify(body);
+  }
+
+  if (withAuth) {
+    const token = getAccessToken();
+    if (token) {
+      finalHeaders.Authorization = `Bearer ${token}`;
+    }
+  }
+
+  const res = await fetch(url, {
+    method,
+    headers: finalHeaders,
+    credentials,
+    body: requestBody,
+  });
+
+  const contentType = res.headers.get('content-type') ?? '';
+  const json =
+    res.status === 204 || !contentType.includes('application/json')
+      ? null
+      : ((await res.json().catch(() => null)) as (ApiResponse<T> | ApiErrorResponse) | null);
+
+  return {
+    ok: res.ok,
+    status: res.status,
+    json,
+    res,
+  };
+}
+
+export const api = {
+  get<T>(path: string, opts?: Omit<RequestOptions, 'method' | 'path'>) {
+    return apiRequest<T>({ method: 'GET', path, ...opts });
+  },
+  post<T>(path: string, body?: unknown, opts?: Omit<RequestOptions, 'method' | 'path' | 'body'>) {
+    return apiRequest<T>({ method: 'POST', path, body, ...opts });
+  },
+  put<T>(path: string, body?: unknown, opts?: Omit<RequestOptions, 'method' | 'path' | 'body'>) {
+    return apiRequest<T>({ method: 'PUT', path, body, ...opts });
+  },
+  delete<T>(path: string, opts?: Omit<RequestOptions, 'method' | 'path'>) {
+    return apiRequest<T>({ method: 'DELETE', path, ...opts });
+  },
+};
