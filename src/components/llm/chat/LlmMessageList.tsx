@@ -31,12 +31,23 @@ export default function LlmMessageList({ messages }: Props) {
 
           return (
             <div key={m.id} className={isUser ? 'flex justify-end' : 'flex justify-start'}>
-              <div className={isUser ? 'flex max-w-[85%] items-end gap-2' : 'flex max-w-[85%] items-end gap-2'}>
+              <div
+                className={
+                  isUser ? 'flex max-w-[85%] items-end gap-2' : 'flex max-w-[85%] items-end gap-2'
+                }
+              >
                 {!isUser ? (
-                  <div className="h-8 w-8 shrink-0 rounded-full bg-neutral-200" aria-hidden="true" />
+                  <div
+                    className="h-8 w-8 shrink-0 rounded-full bg-neutral-200"
+                    aria-hidden="true"
+                  />
                 ) : null}
 
-                <div className={isUser ? 'order-2 flex flex-col items-end' : 'order-1 flex flex-col items-start'}>
+                <div
+                  className={
+                    isUser ? 'order-2 flex flex-col items-end' : 'order-1 flex flex-col items-start'
+                  }
+                >
                   <div
                     className={[
                       'relative rounded-2xl px-3 py-2 text-sm leading-5',

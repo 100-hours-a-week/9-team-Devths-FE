@@ -1,12 +1,14 @@
 'use client';
 
+import type { ReactNode } from 'react';
+
 type Props = {
   label: string;
   placeholder: string;
   value: string;
   onChange: (v: string) => void;
   helperText?: string;
-  headerRight?: React.ReactNode;
+  headerRight?: ReactNode;
 };
 
 export default function LlmTextAreaCard({
@@ -31,9 +33,7 @@ export default function LlmTextAreaCard({
         onChange={(e) => onChange(e.target.value)}
       />
 
-      {helperText ? (
-        <p className="mt-2 text-xs text-neutral-500">{helperText}</p>
-      ) : null}
+      {helperText ? <p className="mt-2 text-xs text-neutral-500">{helperText}</p> : null}
     </section>
   );
 }

@@ -5,10 +5,10 @@ import Link from 'next/link';
 
 export default function LlmResultPage() {
   return (
-    <main className="min-h-[calc(100dvh-56px-64px)] bg-white px-4 pb-6 pt-6 text-black">
+    <main className="min-h-[calc(100dvh-56px-64px)] bg-white px-4 pt-6 pb-6 text-black">
       <section className="space-y-5">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-400">
+          <p className="text-xs font-semibold tracking-[0.2em] text-neutral-400 uppercase">
             Result
           </p>
           <h1 className="mt-2 text-2xl font-semibold">AI 답변 출력</h1>
@@ -25,8 +25,8 @@ export default function LlmResultPage() {
                 1
               </span>
               <p>
-                <span className="font-semibold text-neutral-900">핵심 강점</span> · 실무 프로젝트 경험이
-                풍부하며 협업 도구 활용 능력이 뛰어납니다.
+                <span className="font-semibold text-neutral-900">핵심 강점</span> · 실무 프로젝트
+                경험이 풍부하며 협업 도구 활용 능력이 뛰어납니다.
               </p>
             </div>
             <div className="flex gap-3">
@@ -43,8 +43,8 @@ export default function LlmResultPage() {
                 3
               </span>
               <p>
-                <span className="font-semibold text-neutral-900">추천 방향</span> · 지원 직무와 맞닿은
-                기술 스택을 상단에 배치하세요.
+                <span className="font-semibold text-neutral-900">추천 방향</span> · 지원 직무와
+                맞닿은 기술 스택을 상단에 배치하세요.
               </p>
             </div>
           </div>

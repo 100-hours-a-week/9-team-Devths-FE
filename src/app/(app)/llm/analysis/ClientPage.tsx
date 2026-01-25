@@ -1,15 +1,13 @@
 'use client';
 
-import { useSearchParams, useRouter } from 'next/navigation';
-import { useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 import { useHeader } from '@/components/layout/HeaderContext';
 import LlmAnalysisPage from '@/screens/llm/LlmAnalysisPage';
 
 export default function ClientPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const roomId = useMemo(() => searchParams.get('roomId') ?? 'demo-room', [searchParams]);
   const { setOptions, resetOptions } = useHeader();
 
   useEffect(() => {

@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { AppFrameContext, type AppFrameOptions } from '@/components/layout/AppFrameContext';
 import BottomNav from '@/components/layout/BottomNav';
 import Header from '@/components/layout/Header';
 import { HeaderContext, type HeaderOptions } from '@/components/layout/HeaderContext';
-import { AppFrameContext, type AppFrameOptions } from '@/components/layout/AppFrameContext';
 
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 
 type AppFrameProps = {
   children: ReactNode;
@@ -36,8 +36,7 @@ export default function AppFrame({
 
   const [options, setOptions] = useState<HeaderOptions>(defaultOptions);
   const defaultFrameOptions = useMemo<AppFrameOptions>(() => ({ showBottomNav: true }), []);
-  const [frameOptions, setFrameOptions] =
-    useState<AppFrameOptions>(defaultFrameOptions);
+  const [frameOptions, setFrameOptions] = useState<AppFrameOptions>(defaultFrameOptions);
 
   useEffect(() => {
     setOptions(defaultOptions);
@@ -65,9 +64,11 @@ export default function AppFrame({
       <HeaderContext.Provider value={{ options, setOptions, resetOptions, defaultOptions }}>
         <div
           className="min-h-dvh w-full bg-neutral-50"
-          style={{
-            '--bottom-nav-h': frameOptions.showBottomNav ? '64px' : '0px',
-          } as React.CSSProperties}
+          style={
+            {
+              '--bottom-nav-h': frameOptions.showBottomNav ? '64px' : '0px',
+            } as CSSProperties
+          }
         >
           <div className="mx-auto min-h-dvh w-full bg-white sm:max-w-[430px]">
             <Header

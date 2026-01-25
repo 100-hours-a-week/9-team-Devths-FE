@@ -70,7 +70,7 @@ export default function LlmChatPage({ roomId: _roomId }: Props) {
   const [interviewMode, setInterviewMode] = useState<InterviewMode | null>(null);
 
   return (
-    <main className="flex h-[calc(100dvh-56px-var(--bottom-nav-h))] flex-col -mx-4 sm:-mx-6">
+    <main className="-mx-4 flex h-[calc(100dvh-56px-var(--bottom-nav-h))] flex-col sm:-mx-6">
       <div className="flex min-h-0 flex-1 flex-col bg-neutral-50">
         <LlmMessageList messages={messages} />
 
@@ -184,7 +184,6 @@ export default function LlmChatPage({ roomId: _roomId }: Props) {
           // TODO: 실제 첨부 로직은 다음 커밋
         }}
       />
-
     </main>
   );
 }

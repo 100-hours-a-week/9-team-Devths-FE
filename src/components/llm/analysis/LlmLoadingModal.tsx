@@ -20,7 +20,7 @@ export default function LlmLoadingModal({
   return (
     <div className="fixed inset-0 z-[200]">
       <div className="absolute inset-0 bg-black/40" />
-      <div className="absolute left-1/2 top-1/2 w-[calc(100%-32px)] -translate-x-1/2 -translate-y-1/2 sm:max-w-[430px]">
+      <div className="absolute top-1/2 left-1/2 w-[calc(100%-32px)] -translate-x-1/2 -translate-y-1/2 sm:max-w-[430px]">
         <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-2xl">
           <div className="flex items-start justify-between gap-3">
             <div>
