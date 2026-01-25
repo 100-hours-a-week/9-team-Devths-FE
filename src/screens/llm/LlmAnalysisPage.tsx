@@ -4,6 +4,8 @@ import { Paperclip } from 'lucide-react';
 import { useState } from 'react';
 
 import LlmAttachmentSheet from '@/components/llm/analysis/LlmAttachmentSheet';
+import LlmModelNotice from '@/components/llm/analysis/LlmModelNotice';
+import LlmModelSwitch, { type LlmModel } from '@/components/llm/analysis/LlmModelSwitch';
 import LlmTextAreaCard from '@/components/llm/analysis/LlmTextAreaCard';
 
 type Target = 'RESUME' | 'JOB' | null;
@@ -11,6 +13,7 @@ type Target = 'RESUME' | 'JOB' | null;
 export default function LlmAnalysisPage() {
   const [resumeText, setResumeText] = useState('');
   const [jobText, setJobText] = useState('');
+  const [model, setModel] = useState<LlmModel>('GEMINI');
   const [sheetOpen, setSheetOpen] = useState(false);
   const [target, setTarget] = useState<Target>(null);
 
@@ -56,6 +59,9 @@ export default function LlmAnalysisPage() {
             </button>
           }
         />
+
+        <LlmModelSwitch value={model} onChange={setModel} />
+        <LlmModelNotice model={model} />
       </div>
 
       <LlmAttachmentSheet
