@@ -1,6 +1,7 @@
 'use client';
 
 import { Paperclip } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import LlmAttachmentSheet from '@/components/llm/analysis/LlmAttachmentSheet';
@@ -12,6 +13,7 @@ import LlmTextAreaCard from '@/components/llm/analysis/LlmTextAreaCard';
 type Target = 'RESUME' | 'JOB' | null;
 
 export default function LlmAnalysisPage() {
+  const router = useRouter();
   const [resumeText, setResumeText] = useState('');
   const [jobText, setJobText] = useState('');
   const [model, setModel] = useState<LlmModel>('GEMINI');
@@ -24,13 +26,14 @@ export default function LlmAnalysisPage() {
 
     const t = setTimeout(() => {
       setIsLoading(false);
+      router.push('/llm/result');
     }, 1500);
 
     return () => clearTimeout(t);
-  }, [isLoading]);
+  }, [isLoading, router]);
 
   return (
-    <main className="flex min-h-[calc(100dvh-56px-64px)] flex-col px-2 pt-4 pb-2">
+    <main className="flex min-h-[calc(100dvh-56px-64px)] flex-col bg-white px-4 pt-5 pb-4 text-black">
       <div className="space-y-4">
         <LlmTextAreaCard
           label="이력서 및 포트폴리오 입력"
@@ -44,7 +47,7 @@ export default function LlmAnalysisPage() {
                 setTarget('RESUME');
                 setSheetOpen(true);
               }}
-              className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+              className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-800 hover:bg-neutral-50"
             >
               <Paperclip className="h-4 w-4" />
               첨부
@@ -64,7 +67,7 @@ export default function LlmAnalysisPage() {
                 setTarget('JOB');
                 setSheetOpen(true);
               }}
-              className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+              className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-800 hover:bg-neutral-50"
             >
               <Paperclip className="h-4 w-4" />
               첨부

@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
+import { useAppFrame } from '@/components/layout/AppFrameContext';
 import LlmComposer from '@/components/llm/chat/LlmComposer';
 import LlmMessageList from '@/components/llm/chat/LlmMessageList';
-import { useAppFrame } from '@/components/layout/AppFrameContext';
 
 type Props = {
   roomId: string;
@@ -31,7 +31,7 @@ export default function LlmChatPage({ roomId }: Props) {
       {
         id: 'ai-1',
         role: 'AI',
-        text: '이력서와 공고를 기반으로 분석을 도와드릴게요.',
+        text: '요약 결과입니다.\n• 핵심 강점: 실무 프로젝트 경험이 풍부하며 협업 도구 활용 능력이 뛰어납니다.\n• 보완 포인트: 성과 지표를 수치화해 기여도를 명확히 보여주세요.\n• 추천 방향: 지원 직무와 맞닿은 기술 스택을 상단에 배치하세요.',
         time: '오후 8:10',
       },
       {

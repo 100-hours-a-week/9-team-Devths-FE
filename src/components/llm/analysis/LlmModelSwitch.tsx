@@ -11,7 +11,7 @@ type Props = {
 
 export default function LlmModelSwitch({ value, onChange }: Props) {
   return (
-    <section className="rounded-2xl border bg-white p-4 shadow-sm">
+    <section className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-sm">
       <h2 className="text-sm font-semibold text-neutral-900">모델 선택</h2>
 
       <div className="mt-3 grid grid-cols-2 gap-2 rounded-2xl bg-neutral-50 p-1">

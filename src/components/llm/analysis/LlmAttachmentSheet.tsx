@@ -30,7 +30,7 @@ export default function LlmAttachmentSheet({
       />
 
       <div className="absolute bottom-0 left-1/2 w-full -translate-x-1/2 sm:max-w-[430px]">
-        <div className="rounded-t-3xl bg-white p-4 shadow-2xl">
+        <div className="rounded-t-3xl bg-white p-5 shadow-2xl">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-neutral-900">{title}</p>
             <button
@@ -51,7 +51,7 @@ export default function LlmAttachmentSheet({
                 onClose();
               }}
               className={clsx(
-                'flex w-full items-center gap-3 rounded-2xl border bg-white px-4 py-3 text-left',
+                'flex w-full items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-left',
                 'hover:bg-neutral-50',
               )}
             >
@@ -71,7 +71,7 @@ export default function LlmAttachmentSheet({
                 onClose();
               }}
               className={clsx(
-                'flex w-full items-center gap-3 rounded-2xl border bg-white px-4 py-3 text-left',
+                'flex w-full items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-left',
                 'hover:bg-neutral-50',
               )}
             >
