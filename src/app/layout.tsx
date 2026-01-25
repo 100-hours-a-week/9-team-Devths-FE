@@ -1,7 +1,6 @@
 import { Geist, Geist_Mono } from 'next/font/google';
 
 import ToastHost from '@/components/common/ToastHost';
-import AppFrame from '@/components/layout/AppFrame';
 
 import type { Metadata } from 'next';
 import './globals.css';
@@ -29,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <AppFrame>{children}</AppFrame>
+        {children}
         <ToastHost />
       </body>
     </html>

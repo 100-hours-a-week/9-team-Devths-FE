@@ -1,0 +1,28 @@
+'use client';
+
+import LlmRoomListItem from '@/components/llm/rooms/LlmRoomListItem';
+
+import type { LlmRoom } from '@/components/llm/rooms/types';
+
+type Props = {
+  rooms: LlmRoom[];
+  onEnterRoom: (roomId: string) => void;
+  onDeleteRoom: (roomId: string) => void;
+  onArchiveRoom: (roomId: string) => void;
+};
+
+export default function LlmRoomList({ rooms, onEnterRoom, onDeleteRoom, onArchiveRoom }: Props) {
+  return (
+    <div className="flex flex-col gap-4">
+      {rooms.map((room) => (
+        <LlmRoomListItem
+          key={room.id}
+          room={room}
+          onEnter={onEnterRoom}
+          onDelete={onDeleteRoom}
+          onArchive={onArchiveRoom}
+        />
+      ))}
+    </div>
+  );
+}
