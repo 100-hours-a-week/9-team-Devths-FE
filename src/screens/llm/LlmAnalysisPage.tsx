@@ -169,6 +169,40 @@ export default function LlmAnalysisPage({ roomId }: Props) {
     toast('파일은 첨부 버튼을 이용해 주세요.');
   }, []);
 
+  const handleRemoveResumeImage = useCallback((index: number) => {
+    setForm((prev) => ({
+      ...prev,
+      resume: {
+        ...prev.resume,
+        images: prev.resume.images.filter((_, i) => i !== index),
+      },
+    }));
+  }, []);
+
+  const handleRemoveResumePdf = useCallback(() => {
+    setForm((prev) => ({
+      ...prev,
+      resume: { ...prev.resume, pdf: null },
+    }));
+  }, []);
+
+  const handleRemoveJobImage = useCallback((index: number) => {
+    setForm((prev) => ({
+      ...prev,
+      jobPosting: {
+        ...prev.jobPosting,
+        images: prev.jobPosting.images.filter((_, i) => i !== index),
+      },
+    }));
+  }, []);
+
+  const handleRemoveJobPdf = useCallback(() => {
+    setForm((prev) => ({
+      ...prev,
+      jobPosting: { ...prev.jobPosting, pdf: null },
+    }));
+  }, []);
+
   const handleSubmit = useCallback(async () => {
     setIsLoading(true);
 
@@ -282,6 +316,9 @@ export default function LlmAnalysisPage({ roomId }: Props) {
           value={form.resume.text}
           onChange={(text) => updateResume({ text })}
           onPasteBlocked={handlePasteBlocked}
+          attachments={{ images: form.resume.images, pdf: form.resume.pdf }}
+          onRemoveImage={handleRemoveResumeImage}
+          onRemovePdf={handleRemoveResumePdf}
           headerRight={
             <button
               type="button"
@@ -303,6 +340,9 @@ export default function LlmAnalysisPage({ roomId }: Props) {
           value={form.jobPosting.text}
           onChange={(text) => updateJobPosting({ text })}
           onPasteBlocked={handlePasteBlocked}
+          attachments={{ images: form.jobPosting.images, pdf: form.jobPosting.pdf }}
+          onRemoveImage={handleRemoveJobImage}
+          onRemovePdf={handleRemoveJobPdf}
           headerRight={
             <button
               type="button"
