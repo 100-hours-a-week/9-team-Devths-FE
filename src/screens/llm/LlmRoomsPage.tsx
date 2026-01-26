@@ -1,8 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef } from 'react';
 
+import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
 import LlmRoomCreateCard from '@/components/llm/rooms/LlmRoomCreateCard';
 import LlmRoomEmptyState from '@/components/llm/rooms/LlmRoomEmptyState';
 import LlmRoomList from '@/components/llm/rooms/LlmRoomList';
@@ -13,26 +13,6 @@ export default function LlmRoomsPage() {
   const router = useRouter();
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useRoomsInfiniteQuery();
-
-  const loadMoreRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const element = loadMoreRef.current;
-    if (!element) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
-          void fetchNextPage();
-        }
-      },
-      { threshold: 0.1 },
-    );
-
-    observer.observe(element);
-
-    return () => observer.disconnect();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   if (isLoading) {
     return (
@@ -81,21 +61,11 @@ export default function LlmRoomsPage() {
           onDeleteRoom={() => {}}
         />
 
-        <div ref={loadMoreRef} className="mt-4 text-center">
-          {isFetchingNextPage ? (
-            <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-3 py-3 text-[11px] text-neutral-500">
-              로딩 중...
-            </div>
-          ) : hasNextPage ? (
-            <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-3 py-3 text-[11px] text-neutral-500">
-              스크롤로 더 보기
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-3 py-3 text-[11px] text-neutral-500">
-              모든 대화를 불러왔습니다
-            </div>
-          )}
-        </div>
+        <ListLoadMoreSentinel
+          onLoadMore={() => void fetchNextPage()}
+          hasNextPage={hasNextPage ?? false}
+          isFetchingNextPage={isFetchingNextPage}
+        />
       </div>
     </main>
   );
