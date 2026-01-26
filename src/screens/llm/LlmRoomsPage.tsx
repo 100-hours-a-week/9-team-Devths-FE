@@ -6,11 +6,10 @@ import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
 import LlmRoomCreateCard from '@/components/llm/rooms/LlmRoomCreateCard';
 import LlmRoomEmptyState from '@/components/llm/rooms/LlmRoomEmptyState';
 import LlmRoomList from '@/components/llm/rooms/LlmRoomList';
+import { useArchiveRoomMutation } from '@/lib/hooks/llm/useArchiveRoomMutation';
 import { useRoomsInfiniteQuery } from '@/lib/hooks/llm/useRoomsInfiniteQuery';
-import {
-  archiveRoom as archiveRoomStorage,
-  removeRoomStorage,
-} from '@/lib/storage/aiChatroomStorage';
+import { removeRoomStorage } from '@/lib/storage/aiChatroomStorage';
+import { toast } from '@/lib/toast/store';
 import { mapAiChatRoomToLlmRoom } from '@/lib/utils/llm';
 
 export default function LlmRoomsPage() {
@@ -18,9 +17,14 @@ export default function LlmRoomsPage() {
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } =
     useRoomsInfiniteQuery();
 
+  const archiveMutation = useArchiveRoomMutation();
+
   const handleArchiveRoom = (roomId: string) => {
-    archiveRoomStorage(roomId);
-    void refetch();
+    archiveMutation.mutate(roomId, {
+      onError: () => {
+        toast('대화 보관에 실패했습니다. 다시 시도해주세요.');
+      },
+    });
   };
 
   const handleDeleteRoom = async (roomId: string) => {
