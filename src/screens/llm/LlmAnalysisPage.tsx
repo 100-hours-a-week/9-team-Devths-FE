@@ -14,7 +14,7 @@ import {
   FILE_MIME_TYPES,
   LLM_ATTACHMENT_CONSTRAINTS,
 } from '@/constants/attachment';
-import { startAnalysis } from '@/lib/api/llmRooms';
+import { createRoom, startAnalysis } from '@/lib/api/llmRooms';
 import { useTaskPolling } from '@/lib/hooks/llm/useTaskPolling';
 import { toast } from '@/lib/toast/store';
 import { uploadFile } from '@/lib/upload/uploadFile';
@@ -24,6 +24,7 @@ import { validateFiles } from '@/lib/validators/attachment';
 import type { ApiResponse } from '@/types/api';
 import type {
   AnalysisFormState,
+  CreateRoomResponse,
   DocumentInput,
   LlmModel,
   StartAnalysisResponse,
@@ -51,6 +52,7 @@ export default function LlmAnalysisPage({ roomId }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [target, setTarget] = useState<Target>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [actualRoomId, setActualRoomId] = useState<string | null>(null);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -63,12 +65,13 @@ export default function LlmAnalysisPage({ roomId }: Props) {
   useEffect(() => {
     if (status === 'COMPLETED') {
       setIsLoading(false);
-      router.push(`/llm/${roomId}/result`);
+      const targetRoomId = actualRoomId || roomId;
+      router.push(`/llm/${targetRoomId}/result`);
     } else if (status === 'FAILED') {
       setIsLoading(false);
       toast(error || '분석에 실패했습니다.');
     }
-  }, [status, error, router, roomId]);
+  }, [status, error, router, roomId, actualRoomId]);
 
   const updateResume = useCallback((updates: Partial<DocumentInput>) => {
     setForm((prev) => ({
@@ -168,13 +171,26 @@ export default function LlmAnalysisPage({ roomId }: Props) {
     setIsLoading(true);
 
     try {
+      let targetRoomId = roomId;
+      if (roomId === 'new') {
+        const createResult = await createRoom();
+        if (!createResult.ok || !createResult.json) {
+          throw new Error('채팅방 생성에 실패했습니다.');
+        }
+        const createJson = createResult.json as ApiResponse<CreateRoomResponse>;
+        targetRoomId = String(createJson.data.roomId);
+        setActualRoomId(targetRoomId);
+      }
+
+      const numericRoomId = Number(targetRoomId);
+
       let resumeId: number | null = null;
       if (form.resume.pdf) {
         const result = await uploadFile({
           file: form.resume.pdf,
           category: 'RESUME',
           refType: 'CHATROOM',
-          refId: Number(roomId),
+          refId: numericRoomId,
         });
         resumeId = result.fileId;
       }
@@ -185,12 +201,13 @@ export default function LlmAnalysisPage({ roomId }: Props) {
           file: form.jobPosting.pdf,
           category: 'JOB_POSTING',
           refType: 'CHATROOM',
-          refId: Number(roomId),
+          refId: numericRoomId,
         });
         jobPostingId = result.fileId;
       }
 
-      const analysisResult = await startAnalysis(Number(roomId), {
+      // 분석 요청
+      const analysisResult = await startAnalysis(numericRoomId, {
         resumeId,
         portfolioId: null,
         jobPostingId,
