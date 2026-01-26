@@ -167,7 +167,8 @@ jobs:
           cp -r scripts deploy-temp/
 
           # Standalone 서버 코드 (Node.js 서버 + 필요한 의존성)
-          cp -r "$STANDALONE_DIR"/* deploy-temp/
+          # .next 폴더 등 숨겨진 파일도 포함하여 복사
+          cp -r "$STANDALONE_DIR"/. deploy-temp/
 
           # 정적 에셋 (.next/static 폴더를 .next/static으로 복사)
           # standalone에는 .next/server만 있고 static은 없으므로 복사 필요
