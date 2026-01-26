@@ -7,12 +7,26 @@ import LlmRoomCreateCard from '@/components/llm/rooms/LlmRoomCreateCard';
 import LlmRoomEmptyState from '@/components/llm/rooms/LlmRoomEmptyState';
 import LlmRoomList from '@/components/llm/rooms/LlmRoomList';
 import { useRoomsInfiniteQuery } from '@/lib/hooks/llm/useRoomsInfiniteQuery';
+import {
+  archiveRoom as archiveRoomStorage,
+  removeRoomStorage,
+} from '@/lib/storage/aiChatroomStorage';
 import { mapAiChatRoomToLlmRoom } from '@/lib/utils/llm';
 
 export default function LlmRoomsPage() {
   const router = useRouter();
-  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
+  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } =
     useRoomsInfiniteQuery();
+
+  const handleArchiveRoom = (roomId: string) => {
+    archiveRoomStorage(roomId);
+    void refetch();
+  };
+
+  const handleDeleteRoom = async (roomId: string) => {
+    removeRoomStorage(roomId);
+    void refetch();
+  };
 
   if (isLoading) {
     return (
@@ -57,8 +71,8 @@ export default function LlmRoomsPage() {
         <LlmRoomList
           rooms={rooms}
           onEnterRoom={(id) => router.push(`/llm/chat?roomId=${encodeURIComponent(id)}`)}
-          onArchiveRoom={() => {}}
-          onDeleteRoom={() => {}}
+          onArchiveRoom={handleArchiveRoom}
+          onDeleteRoom={handleDeleteRoom}
         />
 
         <ListLoadMoreSentinel

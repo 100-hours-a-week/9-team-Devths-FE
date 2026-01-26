@@ -1,3 +1,5 @@
+import { getRoomStorageMode } from '@/lib/storage/aiChatroomStorage';
+
 import type { LlmRoom } from '@/components/llm/rooms/types';
 import type { AiChatRoom } from '@/types/llm';
 
@@ -6,7 +8,7 @@ export function mapAiChatRoomToLlmRoom(room: AiChatRoom): LlmRoom {
     id: room.roomUuid,
     title: room.title,
     updatedAt: formatUpdatedAt(room.updatedAt),
-    storage: 'TEMP',
+    storage: getRoomStorageMode(room.roomUuid),
   };
 }
 
