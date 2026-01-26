@@ -76,8 +76,15 @@ export default function LlmRoomsPage() {
     );
   }
 
+  // 서버에서 받아온 rooms를 최신순(updatedAt 기준 내림차순)으로 정렬
   const rooms =
-    data?.pages.flatMap((page) => (page ? page.rooms.map(mapAiChatRoomToLlmRoom) : [])) ?? [];
+    data?.pages
+      .flatMap((page) => (page ? page.rooms : []))
+      .sort((a, b) => {
+        // ISO 문자열 비교 (최신순 = 내림차순)
+        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      })
+      .map(mapAiChatRoomToLlmRoom) ?? [];
   const hasRooms = rooms.length > 0;
 
   if (!hasRooms) {
