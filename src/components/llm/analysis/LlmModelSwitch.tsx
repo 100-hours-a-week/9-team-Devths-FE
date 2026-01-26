@@ -2,7 +2,7 @@
 
 import clsx from 'clsx';
 
-export type LlmModel = 'GEMINI' | 'VLLM';
+import type { LlmModel } from '@/types/llm';
 
 type Props = {
   value: LlmModel;

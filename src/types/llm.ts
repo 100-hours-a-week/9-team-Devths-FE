@@ -60,3 +60,17 @@ export type FetchMessagesParams = {
 export type SendMessageRequest = {
   content: string;
 };
+
+export type LlmModel = 'GEMINI' | 'VLLM';
+
+export type DocumentInput = {
+  text: string;
+  images: File[];
+  pdf: File | null;
+};
+
+export type AnalysisFormState = {
+  resume: DocumentInput;
+  jobPosting: DocumentInput;
+  model: LlmModel;
+};
