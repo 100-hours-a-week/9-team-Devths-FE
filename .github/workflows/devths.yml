@@ -141,14 +141,9 @@ jobs:
       - name: 배포 아티팩트 생성 및 S3 업로드
         id: upload
         run: |
-          # 1. Next.js Standalone 빌드 결과물 경로 확인
-          STANDALONE_DIR="./.next/standalone"
-          STATIC_DIR="./.next/static"
-          PUBLIC_DIR="./public"
-
-          if [ ! -d "$STANDALONE_DIR" ]; then
-            echo "❌ Standalone 빌드 폴더를 찾을 수 없습니다: $STANDALONE_DIR"
-            echo "⚠️ next.config.ts에 output: 'standalone' 설정이 있는지 확인하세요."
+          # 1. Next.js 일반 빌드 결과물 경로 확인
+          if [ ! -d "./.next" ]; then
+            echo "❌ .next 빌드 폴더를 찾을 수 없습니다."
             exit 1
           fi
 
@@ -156,7 +151,7 @@ jobs:
           ARTIFACT_NAME="${{ steps.timestamp.outputs.value }}.zip"
           echo "artifact_name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
 
-          # 3. 배포 아티팩트 압축 (appspec.yml + scripts + standalone + static + public + ecosystem)
+          # 3. 배포 아티팩트 압축
           echo "🗜️ SSR 배포 아티팩트를 생성합니다: $ARTIFACT_NAME"
 
           # 임시 디렉토리 생성 및 파일 준비
@@ -166,25 +161,24 @@ jobs:
           cp appspec.yml deploy-temp/
           cp -r scripts deploy-temp/
 
-          # Standalone 서버 코드 (Node.js 서버 + 필요한 의존성)
-          # .next 폴더 등 숨겨진 파일도 포함하여 복사
-          cp -r "$STANDALONE_DIR"/. deploy-temp/
+          # Next.js 빌드 결과물 (.next 폴더 전체)
+          cp -r .next deploy-temp/
 
-          # 정적 에셋 (.next/static 폴더를 .next/static으로 복사)
-          # standalone에는 .next/server만 있고 static은 없으므로 복사 필요
-          cp -r "$STATIC_DIR" deploy-temp/.next/
-
-          # Public 폴더 (존재하는 경우)
-          if [ -d "$PUBLIC_DIR" ]; then
-            cp -r "$PUBLIC_DIR" deploy-temp/public
+          # Public 폴더
+          if [ -d "./public" ]; then
+            cp -r public deploy-temp/
           fi
+
+          # package.json과 pnpm-lock.yaml (서버에서 의존성 설치용)
+          cp package.json deploy-temp/
+          cp pnpm-lock.yaml deploy-temp/
 
           # 환경 변수 파일
           if [ -f ".env" ]; then
             cp .env deploy-temp/
           fi
 
-          # 압축 파일 생성
+          # 압축 파일 생성 (node_modules는 제외, 서버에서 설치)
           cd deploy-temp
           zip -r "../$ARTIFACT_NAME" . -q
           cd ..

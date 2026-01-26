@@ -57,13 +57,18 @@ fi
 # 5. 배포 디렉토리 파일 확인 (SSR 구조)
 echo "🔍 배포 파일 구조를 확인합니다..."
 DEPLOY_DIR="/var/www/devths-fe"
-if [ ! -f "$DEPLOY_DIR/server.js" ]; then
-  echo "❌ server.js 파일이 존재하지 않습니다"
+if [ ! -f "$DEPLOY_DIR/package.json" ]; then
+  echo "❌ package.json 파일이 존재하지 않습니다"
   exit 1
 fi
 
 if [ ! -d "$DEPLOY_DIR/.next" ]; then
   echo "❌ .next 디렉토리가 존재하지 않습니다"
+  exit 1
+fi
+
+if [ ! -d "$DEPLOY_DIR/node_modules" ]; then
+  echo "❌ node_modules 디렉토리가 존재하지 않습니다"
   exit 1
 fi
 
