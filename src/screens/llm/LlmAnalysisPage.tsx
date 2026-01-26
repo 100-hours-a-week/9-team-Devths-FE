@@ -2,14 +2,21 @@
 
 import { Paperclip } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import LlmAttachmentSheet from '@/components/llm/analysis/LlmAttachmentSheet';
 import LlmLoadingModal from '@/components/llm/analysis/LlmLoadingModal';
 import LlmModelNotice from '@/components/llm/analysis/LlmModelNotice';
 import LlmModelSwitch from '@/components/llm/analysis/LlmModelSwitch';
 import LlmTextAreaCard from '@/components/llm/analysis/LlmTextAreaCard';
+import {
+  IMAGE_MIME_TYPES,
+  FILE_MIME_TYPES,
+  LLM_ATTACHMENT_CONSTRAINTS,
+} from '@/constants/attachment';
+import { toast } from '@/lib/toast/store';
 import { getAnalysisDisabledReason } from '@/lib/validators/analysisForm';
+import { validateFiles } from '@/lib/validators/attachment';
 
 import type { AnalysisFormState, DocumentInput, LlmModel } from '@/types/llm';
 
@@ -36,6 +43,9 @@ export default function LlmAnalysisPage({ roomId }: Props) {
   const [target, setTarget] = useState<Target>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const disabledReason = getAnalysisDisabledReason(form.resume, form.jobPosting);
   const isSubmitDisabled = isLoading || disabledReason !== null;
 
@@ -57,6 +67,82 @@ export default function LlmAnalysisPage({ roomId }: Props) {
     setForm((prev) => ({ ...prev, model }));
   }, []);
 
+  const getCurrentDoc = useCallback(() => {
+    return target === 'RESUME' ? form.resume : form.jobPosting;
+  }, [target, form.resume, form.jobPosting]);
+
+  const getUpdateFn = useCallback(() => {
+    return target === 'RESUME' ? updateResume : updateJobPosting;
+  }, [target, updateResume, updateJobPosting]);
+
+  const handlePickImages = useCallback(() => {
+    imageInputRef.current?.click();
+  }, []);
+
+  const handlePickFile = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleImageChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files || []);
+      if (files.length === 0) return;
+
+      const doc = getCurrentDoc();
+      const updateFn = getUpdateFn();
+
+      const { okFiles, errors } = validateFiles(
+        files,
+        LLM_ATTACHMENT_CONSTRAINTS,
+        doc.images.length,
+        0
+      );
+
+      if (errors.length > 0) {
+        toast(errors[0].message);
+      }
+
+      if (okFiles.length > 0) {
+        updateFn({ images: [...doc.images, ...okFiles] });
+      }
+
+      e.target.value = '';
+    },
+    [getCurrentDoc, getUpdateFn]
+  );
+
+  const handleFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files || []);
+      if (files.length === 0) return;
+
+      const doc = getCurrentDoc();
+      const updateFn = getUpdateFn();
+
+      const { okFiles, errors } = validateFiles(
+        files,
+        LLM_ATTACHMENT_CONSTRAINTS,
+        0,
+        doc.pdf ? 1 : 0
+      );
+
+      if (errors.length > 0) {
+        toast(errors[0].message);
+      }
+
+      if (okFiles.length > 0) {
+        updateFn({ pdf: okFiles[0] });
+      }
+
+      e.target.value = '';
+    },
+    [getCurrentDoc, getUpdateFn]
+  );
+
+  const handlePasteBlocked = useCallback(() => {
+    toast('파일은 첨부 버튼을 이용해 주세요.');
+  }, []);
+
   useEffect(() => {
     if (!isLoading) return;
 
@@ -70,12 +156,29 @@ export default function LlmAnalysisPage({ roomId }: Props) {
 
   return (
     <main className="flex min-h-[calc(100dvh-56px-64px)] flex-col bg-white px-4 pt-5 pb-4 text-black">
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept={IMAGE_MIME_TYPES.join(',')}
+        multiple
+        className="hidden"
+        onChange={handleImageChange}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={FILE_MIME_TYPES.join(',')}
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
       <div className="space-y-4">
         <LlmTextAreaCard
           label="이력서 및 포트폴리오 입력"
           placeholder="이력서/포트폴리오 내용을 붙여 넣거나 직접 입력하세요."
           value={form.resume.text}
           onChange={(text) => updateResume({ text })}
+          onPasteBlocked={handlePasteBlocked}
           headerRight={
             <button
               type="button"
@@ -96,6 +199,7 @@ export default function LlmAnalysisPage({ roomId }: Props) {
           placeholder="채용 공고 내용을 붙여 넣거나 직접 입력하세요."
           value={form.jobPosting.text}
           onChange={(text) => updateJobPosting({ text })}
+          onPasteBlocked={handlePasteBlocked}
           headerRight={
             <button
               type="button"
@@ -138,8 +242,8 @@ export default function LlmAnalysisPage({ roomId }: Props) {
         open={sheetOpen}
         title={target === 'RESUME' ? '이력서/포트폴리오 첨부' : '채용 공고 첨부'}
         onClose={() => setSheetOpen(false)}
-        onPickImages={() => {}}
-        onPickFile={() => {}}
+        onPickImages={handlePickImages}
+        onPickFile={handlePickFile}
       />
 
       <LlmLoadingModal open={isLoading} onClose={() => setIsLoading(false)} />

@@ -1,12 +1,13 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import type { ClipboardEvent, ReactNode } from 'react';
 
 type Props = {
   label: string;
   placeholder: string;
   value: string;
   onChange: (v: string) => void;
+  onPasteBlocked?: () => void;
   helperText?: string;
   headerRight?: ReactNode;
 };
@@ -16,9 +17,18 @@ export default function LlmTextAreaCard({
   placeholder,
   value,
   onChange,
+  onPasteBlocked,
   helperText,
   headerRight,
 }: Props) {
+  const handlePaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
+    const files = e.clipboardData?.files;
+    if (files && files.length > 0) {
+      e.preventDefault();
+      onPasteBlocked?.();
+    }
+  };
+
   return (
     <section className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between gap-3">
@@ -31,6 +41,7 @@ export default function LlmTextAreaCard({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onPaste={handlePaste}
       />
 
       {helperText ? <p className="mt-2 text-xs text-neutral-500">{helperText}</p> : null}
