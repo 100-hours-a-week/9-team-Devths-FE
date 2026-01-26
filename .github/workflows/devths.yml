@@ -141,14 +141,9 @@ jobs:
       - name: 배포 아티팩트 생성 및 S3 업로드
         id: upload
         run: |
-          # 1. Next.js 정적 빌드 결과물 경로 확인
-          if [ -d "./out" ]; then
-            SOURCE_DIR="./out"
-          elif [ -d "./.next" ]; then
-            SOURCE_DIR="./.next"
-            echo "⚠️ 경고: .next 폴더는 서버 실행용입니다. 정적 호스팅에는 ./out 폴더가 필요합니다."
-          else
-            echo "❌ 빌드 폴더를 찾을 수 없습니다."
+          # 1. Next.js 일반 빌드 결과물 경로 확인
+          if [ ! -d "./.next" ]; then
+            echo "❌ .next 빌드 폴더를 찾을 수 없습니다."
             exit 1
           fi
 
@@ -156,16 +151,34 @@ jobs:
           ARTIFACT_NAME="${{ steps.timestamp.outputs.value }}.zip"
           echo "artifact_name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
 
-          # 3. 배포 아티팩트 압축 (appspec.yml + scripts + 빌드 결과물)
-          echo "🗜️ 배포 아티팩트를 생성합니다: $ARTIFACT_NAME"
+          # 3. 배포 아티팩트 압축
+          echo "🗜️ SSR 배포 아티팩트를 생성합니다: $ARTIFACT_NAME"
 
           # 임시 디렉토리 생성 및 파일 준비
           mkdir -p deploy-temp
+
+          # CodeDeploy 설정 및 스크립트
           cp appspec.yml deploy-temp/
           cp -r scripts deploy-temp/
-          cp -r "$SOURCE_DIR"/* deploy-temp/
 
-          # 압축 파일 생성
+          # Next.js 빌드 결과물 (.next 폴더 전체)
+          cp -r .next deploy-temp/
+
+          # Public 폴더
+          if [ -d "./public" ]; then
+            cp -r public deploy-temp/
+          fi
+
+          # package.json과 pnpm-lock.yaml (서버에서 의존성 설치용)
+          cp package.json deploy-temp/
+          cp pnpm-lock.yaml deploy-temp/
+
+          # 환경 변수 파일
+          if [ -f ".env" ]; then
+            cp .env deploy-temp/
+          fi
+
+          # 압축 파일 생성 (node_modules는 제외, 서버에서 설치)
           cd deploy-temp
           zip -r "../$ARTIFACT_NAME" . -q
           cd ..
