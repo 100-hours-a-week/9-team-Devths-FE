@@ -2,7 +2,7 @@
 
 import { Paperclip } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import LlmAttachmentSheet from '@/components/llm/analysis/LlmAttachmentSheet';
 import LlmLoadingModal from '@/components/llm/analysis/LlmLoadingModal';
@@ -15,6 +15,7 @@ import {
   LLM_ATTACHMENT_CONSTRAINTS,
 } from '@/constants/attachment';
 import { startAnalysis } from '@/lib/api/llmRooms';
+import { useTaskPolling } from '@/lib/hooks/llm/useTaskPolling';
 import { toast } from '@/lib/toast/store';
 import { uploadFile } from '@/lib/upload/uploadFile';
 import { getAnalysisDisabledReason } from '@/lib/validators/analysisForm';
@@ -54,8 +55,20 @@ export default function LlmAnalysisPage({ roomId }: Props) {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const { status, error, isPolling, startPolling } = useTaskPolling();
+
   const disabledReason = getAnalysisDisabledReason(form.resume, form.jobPosting);
-  const isSubmitDisabled = isLoading || disabledReason !== null;
+  const isSubmitDisabled = isLoading || isPolling || disabledReason !== null;
+
+  useEffect(() => {
+    if (status === 'COMPLETED') {
+      setIsLoading(false);
+      router.push(`/llm/${roomId}/result`);
+    } else if (status === 'FAILED') {
+      setIsLoading(false);
+      toast(error || '분석에 실패했습니다.');
+    }
+  }, [status, error, router, roomId]);
 
   const updateResume = useCallback((updates: Partial<DocumentInput>) => {
     setForm((prev) => ({
@@ -190,12 +203,12 @@ export default function LlmAnalysisPage({ roomId }: Props) {
       const analysisJson = analysisResult.json as ApiResponse<StartAnalysisResponse>;
       const { taskId } = analysisJson.data;
 
-      router.push(`/llm/${roomId}/result?taskId=${taskId}`);
-    } catch (error) {
+      startPolling(taskId);
+    } catch (err) {
       setIsLoading(false);
-      toast(error instanceof Error ? error.message : '분석 요청 중 오류가 발생했습니다.');
+      toast(err instanceof Error ? err.message : '분석 요청 중 오류가 발생했습니다.');
     }
-  }, [form.resume.pdf, form.jobPosting.pdf, roomId, router]);
+  }, [form.resume.pdf, form.jobPosting.pdf, roomId, startPolling]);
 
   return (
     <main className="flex min-h-[calc(100dvh-56px-64px)] flex-col bg-white px-4 pt-5 pb-4 text-black">

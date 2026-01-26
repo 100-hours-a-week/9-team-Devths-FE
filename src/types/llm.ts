@@ -81,7 +81,37 @@ export type StartAnalysisRequest = {
   jobPostingId: number | null;
 };
 
+export type TaskStatus = 'PENDING' | 'PROGRESSING' | 'COMPLETED' | 'FAILED';
+
 export type StartAnalysisResponse = {
   taskId: number;
-  status: 'PENDING' | 'PROGRESSING' | 'COMPLETED' | 'FAILED';
+  status: TaskStatus;
+};
+
+export type AnalysisResultMessage = {
+  roomId: number;
+  messageId: number;
+  interviewId: number | null;
+  role: 'ASSISTANT';
+  type: 'REPORT';
+  content: string;
+  metadata: {
+    score?: number;
+    summary?: string;
+    strengths?: string[];
+  } | null;
+  createdAt: string;
+};
+
+export type TaskResultData = {
+  taskId: number;
+  taskType: 'RESUME' | 'INTERVIEW' | 'SCHEDULE';
+  referenceId: number;
+  status: TaskStatus;
+  result: AnalysisResultMessage | null;
+  failReason?: string;
+  failMessage?: string;
+  createdAt: string;
+  updatedAt: string;
+  isNotified: boolean;
 };

@@ -10,6 +10,7 @@ import type {
   SendMessageResponse,
   StartAnalysisRequest,
   StartAnalysisResponse,
+  TaskResultData,
 } from '@/types/llm';
 
 export async function fetchRooms(
@@ -77,4 +78,10 @@ export async function startAnalysis(
   const path = `/api/ai/chatrooms/${roomId}/analysis`;
 
   return api.post<StartAnalysisResponse>(path, body);
+}
+
+export async function getTaskStatus(taskId: number): Promise<ApiClientResult<TaskResultData>> {
+  const path = `/api/ai/tasks/${taskId}`;
+
+  return api.get<TaskResultData>(path);
 }
