@@ -11,10 +11,10 @@ DEPLOY_DIR="/var/www/devths-fe"
 echo "🛑 기존 PM2 프로세스를 중지합니다..."
 sudo -u ubuntu pm2 delete devths-fe 2>/dev/null || echo "기존 프로세스가 없습니다."
 
-# 2. PM2로 Next.js 서버 시작 (간단한 방법)
+# 2. PM2로 Next.js 서버 시작 (pnpm start 사용)
 echo "🚀 PM2로 Next.js 서버를 시작합니다..."
 cd "$DEPLOY_DIR"
-sudo -u ubuntu pm2 start server.js --name devths-fe --time
+sudo -u ubuntu pm2 start npm --name devths-fe --time -- start
 
 # 3. PM2 프로세스 상태 확인
 echo "⏳ PM2 프로세스 상태를 확인합니다..."
