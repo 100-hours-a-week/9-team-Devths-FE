@@ -12,7 +12,11 @@ import LlmTextAreaCard from '@/components/llm/analysis/LlmTextAreaCard';
 
 type Target = 'RESUME' | 'JOB' | null;
 
-export default function LlmAnalysisPage() {
+type Props = {
+  roomId: string;
+};
+
+export default function LlmAnalysisPage({ roomId }: Props) {
   const router = useRouter();
   const [resumeText, setResumeText] = useState('');
   const [jobText, setJobText] = useState('');
@@ -26,11 +30,11 @@ export default function LlmAnalysisPage() {
 
     const t = setTimeout(() => {
       setIsLoading(false);
-      router.push('/llm/result');
+      router.push(`/llm/${roomId}/result`);
     }, 1500);
 
     return () => clearTimeout(t);
-  }, [isLoading, router]);
+  }, [isLoading, router, roomId]);
 
   return (
     <main className="flex min-h-[calc(100dvh-56px-64px)] flex-col bg-white px-4 pt-5 pb-4 text-black">
@@ -99,12 +103,8 @@ export default function LlmAnalysisPage() {
         open={sheetOpen}
         title={target === 'RESUME' ? '이력서/포트폴리오 첨부' : '채용 공고 첨부'}
         onClose={() => setSheetOpen(false)}
-        onPickImages={() => {
-          // TODO: Commit 9에서 input[file] 연결
-        }}
-        onPickFile={() => {
-          // TODO: Commit 9에서 input[file] 연결
-        }}
+        onPickImages={() => {}}
+        onPickFile={() => {}}
       />
 
       <LlmLoadingModal open={isLoading} onClose={() => setIsLoading(false)} />

@@ -3,7 +3,11 @@
 import { MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 
-export default function LlmResultPage() {
+type Props = {
+  roomId: string;
+};
+
+export default function LlmResultPage({ roomId }: Props) {
   return (
     <main className="min-h-[calc(100dvh-56px-64px)] bg-white px-4 pt-6 pb-6 text-black">
       <section className="space-y-5">
@@ -51,7 +55,7 @@ export default function LlmResultPage() {
         </div>
 
         <Link
-          href="/llm/chat?roomId=demo-room"
+          href={`/llm/${roomId}`}
           className="flex items-center justify-between rounded-2xl border border-neutral-200 bg-black px-4 py-4 text-sm font-semibold text-white hover:bg-neutral-900"
         >
           대화 시작하기
