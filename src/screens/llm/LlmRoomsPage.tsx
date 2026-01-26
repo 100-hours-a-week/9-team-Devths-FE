@@ -81,13 +81,13 @@ export default function LlmRoomsPage() {
   const hasRooms = rooms.length > 0;
 
   if (!hasRooms) {
-    return <LlmRoomEmptyState href="/llm/analysis?roomId=demo-room" />;
+    return <LlmRoomEmptyState href="/llm/analysis" />;
   }
 
   return (
     <>
       <main className="px-3 pt-4 pb-3">
-        <LlmRoomCreateCard href="/llm/analysis?roomId=demo-room" />
+        <LlmRoomCreateCard href="/llm/analysis" />
 
         <div className="mt-4">
           <div className="mb-3 flex items-center justify-between px-1">
@@ -98,7 +98,7 @@ export default function LlmRoomsPage() {
           </div>
           <LlmRoomList
             rooms={rooms}
-            onEnterRoom={(id) => router.push(`/llm/chat?roomId=${encodeURIComponent(id)}`)}
+            onEnterRoom={(id) => router.push(`/llm/${encodeURIComponent(id)}`)}
             onArchiveRoom={handleArchiveRoom}
             onDeleteRoom={handleDeleteRoom}
           />
