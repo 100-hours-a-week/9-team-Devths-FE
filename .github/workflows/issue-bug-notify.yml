@@ -40,11 +40,11 @@ jobs:
           webhook: ${{ secrets.DISCORD_WEBHOOK_BUG_URL }}
           status: 'failure'
 
-          title: "🚨 BUG REPORT: ${{ github.event.issue.title }}"
+          title: '🚨 BUG REPORT: ${{ github.event.issue.title }}'
           url: ${{ github.event.issue.html_url }}
 
           # 2. 역할 멘션은 content에 그대로 두어 최상단에 노출되게 합니다.
-          content: "${{ secrets.DISCORD_ROLE }} 버그가 접수되었습니다. 확인 부탁드립니다!"
+          content: '${{ secrets.DISCORD_ROLE }} 버그가 접수되었습니다. 확인 부탁드립니다!'
 
           description: |
             **레포지토리**
