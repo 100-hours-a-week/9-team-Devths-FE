@@ -1,23 +1,28 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
+import ConfirmModal from '@/components/common/ConfirmModal';
 import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
 import LlmRoomCreateCard from '@/components/llm/rooms/LlmRoomCreateCard';
 import LlmRoomEmptyState from '@/components/llm/rooms/LlmRoomEmptyState';
 import LlmRoomList from '@/components/llm/rooms/LlmRoomList';
 import { useArchiveRoomMutation } from '@/lib/hooks/llm/useArchiveRoomMutation';
+import { useDeleteRoomMutation } from '@/lib/hooks/llm/useDeleteRoomMutation';
 import { useRoomsInfiniteQuery } from '@/lib/hooks/llm/useRoomsInfiniteQuery';
-import { removeRoomStorage } from '@/lib/storage/aiChatroomStorage';
 import { toast } from '@/lib/toast/store';
 import { mapAiChatRoomToLlmRoom } from '@/lib/utils/llm';
 
 export default function LlmRoomsPage() {
   const router = useRouter();
-  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } =
+  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useRoomsInfiniteQuery();
 
   const archiveMutation = useArchiveRoomMutation();
+  const deleteMutation = useDeleteRoomMutation();
+
+  const [deleteTarget, setDeleteTarget] = useState<{ uuid: string; id: number } | null>(null);
 
   const handleArchiveRoom = (roomId: string) => {
     archiveMutation.mutate(roomId, {
@@ -27,9 +32,27 @@ export default function LlmRoomsPage() {
     });
   };
 
-  const handleDeleteRoom = async (roomId: string) => {
-    removeRoomStorage(roomId);
-    void refetch();
+  const handleDeleteRoom = (roomUuid: string) => {
+    const targetRoom = data?.pages
+      .flatMap((page) => (page ? page.rooms : []))
+      .find((room) => room.roomUuid === roomUuid);
+
+    if (!targetRoom) return;
+
+    setDeleteTarget({ uuid: roomUuid, id: targetRoom.roomId });
+  };
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+
+    deleteMutation.mutate(deleteTarget.id, {
+      onError: () => {
+        toast('대화 삭제에 실패했습니다. 다시 시도해주세요.');
+      },
+      onSuccess: () => {
+        setDeleteTarget(null);
+      },
+    });
   };
 
   if (isLoading) {
@@ -62,29 +85,41 @@ export default function LlmRoomsPage() {
   }
 
   return (
-    <main className="px-3 pt-4 pb-3">
-      <LlmRoomCreateCard href="/llm/analysis?roomId=demo-room" />
+    <>
+      <main className="px-3 pt-4 pb-3">
+        <LlmRoomCreateCard href="/llm/analysis?roomId=demo-room" />
 
-      <div className="mt-4">
-        <div className="mb-3 flex items-center justify-between px-1">
-          <p className="text-sm font-semibold text-neutral-900">대화 목록</p>
-          <span className="rounded-full border border-neutral-200 bg-white px-3 py-1 text-[11px] font-semibold text-neutral-600">
-            최신순
-          </span>
+        <div className="mt-4">
+          <div className="mb-3 flex items-center justify-between px-1">
+            <p className="text-sm font-semibold text-neutral-900">대화 목록</p>
+            <span className="rounded-full border border-neutral-200 bg-white px-3 py-1 text-[11px] font-semibold text-neutral-600">
+              최신순
+            </span>
+          </div>
+          <LlmRoomList
+            rooms={rooms}
+            onEnterRoom={(id) => router.push(`/llm/chat?roomId=${encodeURIComponent(id)}`)}
+            onArchiveRoom={handleArchiveRoom}
+            onDeleteRoom={handleDeleteRoom}
+          />
+
+          <ListLoadMoreSentinel
+            onLoadMore={() => void fetchNextPage()}
+            hasNextPage={hasNextPage ?? false}
+            isFetchingNextPage={isFetchingNextPage}
+          />
         </div>
-        <LlmRoomList
-          rooms={rooms}
-          onEnterRoom={(id) => router.push(`/llm/chat?roomId=${encodeURIComponent(id)}`)}
-          onArchiveRoom={handleArchiveRoom}
-          onDeleteRoom={handleDeleteRoom}
-        />
+      </main>
 
-        <ListLoadMoreSentinel
-          onLoadMore={() => void fetchNextPage()}
-          hasNextPage={hasNextPage ?? false}
-          isFetchingNextPage={isFetchingNextPage}
-        />
-      </div>
-    </main>
+      <ConfirmModal
+        isOpen={deleteTarget !== null}
+        title="대화를 삭제하시겠어요?"
+        message="삭제된 대화는 복구할 수 없습니다."
+        confirmText="삭제"
+        cancelText="취소"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
+    </>
   );
 }
