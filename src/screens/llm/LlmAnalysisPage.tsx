@@ -62,16 +62,18 @@ export default function LlmAnalysisPage({ roomId }: Props) {
   const disabledReason = getAnalysisDisabledReason(form.resume, form.jobPosting);
   const isSubmitDisabled = isLoading || isPolling || disabledReason !== null;
 
+  const [currentTaskId, setCurrentTaskId] = useState<number | null>(null);
+
   useEffect(() => {
     if (status === 'COMPLETED') {
       setIsLoading(false);
       const targetRoomId = actualRoomId || roomId;
-      router.push(`/llm/${targetRoomId}/result`);
+      router.push(`/llm/${targetRoomId}/result?taskId=${currentTaskId}`);
     } else if (status === 'FAILED') {
       setIsLoading(false);
       toast(error || '분석에 실패했습니다.');
     }
-  }, [status, error, router, roomId, actualRoomId]);
+  }, [status, error, router, roomId, actualRoomId, currentTaskId]);
 
   const updateResume = useCallback((updates: Partial<DocumentInput>) => {
     setForm((prev) => ({
@@ -195,6 +197,17 @@ export default function LlmAnalysisPage({ roomId }: Props) {
         resumeId = result.fileId;
       }
 
+      let portfolioId: number | null = null;
+      if (form.resume.images.length > 0) {
+        const result = await uploadFile({
+          file: form.resume.images[0],
+          category: 'PORTFOLIO',
+          refType: 'CHATROOM',
+          refId: numericRoomId,
+        });
+        portfolioId = result.fileId;
+      }
+
       let jobPostingId: number | null = null;
       if (form.jobPosting.pdf) {
         const result = await uploadFile({
@@ -206,10 +219,19 @@ export default function LlmAnalysisPage({ roomId }: Props) {
         jobPostingId = result.fileId;
       }
 
-      // 분석 요청
+      if (!jobPostingId && form.jobPosting.images.length > 0) {
+        const result = await uploadFile({
+          file: form.jobPosting.images[0],
+          category: 'JOB_POSTING',
+          refType: 'CHATROOM',
+          refId: numericRoomId,
+        });
+        jobPostingId = result.fileId;
+      }
+
       const analysisResult = await startAnalysis(numericRoomId, {
         resumeId,
-        portfolioId: null,
+        portfolioId,
         jobPostingId,
       });
 
@@ -220,12 +242,20 @@ export default function LlmAnalysisPage({ roomId }: Props) {
       const analysisJson = analysisResult.json as ApiResponse<StartAnalysisResponse>;
       const { taskId } = analysisJson.data;
 
+      setCurrentTaskId(taskId);
       startPolling(taskId);
     } catch (err) {
       setIsLoading(false);
       toast(err instanceof Error ? err.message : '분석 요청 중 오류가 발생했습니다.');
     }
-  }, [form.resume.pdf, form.jobPosting.pdf, roomId, startPolling]);
+  }, [
+    form.resume.pdf,
+    form.resume.images,
+    form.jobPosting.pdf,
+    form.jobPosting.images,
+    roomId,
+    startPolling,
+  ]);
 
   return (
     <main className="flex min-h-[calc(100dvh-56px-64px)] flex-col bg-white px-4 pt-5 pb-4 text-black">
