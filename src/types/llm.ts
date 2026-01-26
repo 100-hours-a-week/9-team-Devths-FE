@@ -74,3 +74,14 @@ export type AnalysisFormState = {
   jobPosting: DocumentInput;
   model: LlmModel;
 };
+
+export type StartAnalysisRequest = {
+  resumeId: number | null;
+  portfolioId: number | null;
+  jobPostingId: number | null;
+};
+
+export type StartAnalysisResponse = {
+  taskId: number;
+  status: 'PENDING' | 'PROGRESSING' | 'COMPLETED' | 'FAILED';
+};

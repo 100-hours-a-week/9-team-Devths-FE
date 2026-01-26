@@ -2,7 +2,7 @@
 
 import { Paperclip } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import LlmAttachmentSheet from '@/components/llm/analysis/LlmAttachmentSheet';
 import LlmLoadingModal from '@/components/llm/analysis/LlmLoadingModal';
@@ -14,11 +14,19 @@ import {
   FILE_MIME_TYPES,
   LLM_ATTACHMENT_CONSTRAINTS,
 } from '@/constants/attachment';
+import { startAnalysis } from '@/lib/api/llmRooms';
 import { toast } from '@/lib/toast/store';
+import { uploadFile } from '@/lib/upload/uploadFile';
 import { getAnalysisDisabledReason } from '@/lib/validators/analysisForm';
 import { validateFiles } from '@/lib/validators/attachment';
 
-import type { AnalysisFormState, DocumentInput, LlmModel } from '@/types/llm';
+import type { ApiResponse } from '@/types/api';
+import type {
+  AnalysisFormState,
+  DocumentInput,
+  LlmModel,
+  StartAnalysisResponse,
+} from '@/types/llm';
 
 type Target = 'RESUME' | 'JOB' | null;
 
@@ -95,7 +103,7 @@ export default function LlmAnalysisPage({ roomId }: Props) {
         files,
         LLM_ATTACHMENT_CONSTRAINTS,
         doc.images.length,
-        0
+        0,
       );
 
       if (errors.length > 0) {
@@ -108,7 +116,7 @@ export default function LlmAnalysisPage({ roomId }: Props) {
 
       e.target.value = '';
     },
-    [getCurrentDoc, getUpdateFn]
+    [getCurrentDoc, getUpdateFn],
   );
 
   const handleFileChange = useCallback(
@@ -123,7 +131,7 @@ export default function LlmAnalysisPage({ roomId }: Props) {
         files,
         LLM_ATTACHMENT_CONSTRAINTS,
         0,
-        doc.pdf ? 1 : 0
+        doc.pdf ? 1 : 0,
       );
 
       if (errors.length > 0) {
@@ -136,23 +144,58 @@ export default function LlmAnalysisPage({ roomId }: Props) {
 
       e.target.value = '';
     },
-    [getCurrentDoc, getUpdateFn]
+    [getCurrentDoc, getUpdateFn],
   );
 
   const handlePasteBlocked = useCallback(() => {
     toast('파일은 첨부 버튼을 이용해 주세요.');
   }, []);
 
-  useEffect(() => {
-    if (!isLoading) return;
+  const handleSubmit = useCallback(async () => {
+    setIsLoading(true);
 
-    const t = setTimeout(() => {
+    try {
+      let resumeId: number | null = null;
+      if (form.resume.pdf) {
+        const result = await uploadFile({
+          file: form.resume.pdf,
+          category: 'RESUME',
+          refType: 'CHATROOM',
+          refId: Number(roomId),
+        });
+        resumeId = result.fileId;
+      }
+
+      let jobPostingId: number | null = null;
+      if (form.jobPosting.pdf) {
+        const result = await uploadFile({
+          file: form.jobPosting.pdf,
+          category: 'JOB_POSTING',
+          refType: 'CHATROOM',
+          refId: Number(roomId),
+        });
+        jobPostingId = result.fileId;
+      }
+
+      const analysisResult = await startAnalysis(Number(roomId), {
+        resumeId,
+        portfolioId: null,
+        jobPostingId,
+      });
+
+      if (!analysisResult.ok || !analysisResult.json) {
+        throw new Error('분석 요청에 실패했습니다.');
+      }
+
+      const analysisJson = analysisResult.json as ApiResponse<StartAnalysisResponse>;
+      const { taskId } = analysisJson.data;
+
+      router.push(`/llm/${roomId}/result?taskId=${taskId}`);
+    } catch (error) {
       setIsLoading(false);
-      router.push(`/llm/${roomId}/result`);
-    }, 1500);
-
-    return () => clearTimeout(t);
-  }, [isLoading, router, roomId]);
+      toast(error instanceof Error ? error.message : '분석 요청 중 오류가 발생했습니다.');
+    }
+  }, [form.resume.pdf, form.jobPosting.pdf, roomId, router]);
 
   return (
     <main className="flex min-h-[calc(100dvh-56px-64px)] flex-col bg-white px-4 pt-5 pb-4 text-black">
@@ -226,7 +269,7 @@ export default function LlmAnalysisPage({ roomId }: Props) {
         <button
           type="button"
           disabled={isSubmitDisabled}
-          onClick={() => setIsLoading(true)}
+          onClick={handleSubmit}
           className={[
             'w-full rounded-2xl py-4 text-sm font-semibold transition',
             isSubmitDisabled

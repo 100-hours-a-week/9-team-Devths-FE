@@ -8,9 +8,10 @@ import type {
   FetchRoomsResponse,
   SendMessageRequest,
   SendMessageResponse,
+  StartAnalysisRequest,
+  StartAnalysisResponse,
 } from '@/types/llm';
 
-// GET /api/ai-chatrooms?size=n&lastId=k
 export async function fetchRooms(
   params?: FetchRoomsParams,
 ): Promise<ApiClientResult<FetchRoomsResponse>> {
@@ -27,27 +28,22 @@ export async function fetchRooms(
   return api.get<FetchRoomsResponse>(path);
 }
 
-// POST /api/ai-chatrooms
 export async function createRoom(): Promise<ApiClientResult<CreateRoomResponse>> {
   return api.post<CreateRoomResponse>('/api/ai-chatrooms');
 }
 
-// DELETE /api/ai-chatrooms/{roomId}
 export async function deleteRoom(roomId: number): Promise<ApiClientResult<void>> {
   const path = `/api/ai-chatrooms/${roomId}`;
 
   return api.delete<void>(path);
 }
 
-// AI 채팅방 보관 (임시→보관 전환)
-// 아직 서버 API 미구현
 export async function archiveRoom(roomId: number): Promise<ApiClientResult<void>> {
   const path = `/api/ai-chatrooms/${roomId}/archive`;
 
   return api.post<void>(path);
 }
 
-// GET /api/ai-chatrooms/{roomId}/messages?size=n&lastId=k
 export async function fetchMessages(
   roomId: number,
   params?: FetchMessagesParams,
@@ -65,7 +61,6 @@ export async function fetchMessages(
   return api.get<FetchMessagesResponse>(path);
 }
 
-// POST /api/ai-chatrooms/{roomId}/messages
 export async function sendMessage(
   roomId: number,
   body: SendMessageRequest,
@@ -73,4 +68,13 @@ export async function sendMessage(
   const path = `/api/ai-chatrooms/${roomId}/messages`;
 
   return api.post<SendMessageResponse>(path, body);
+}
+
+export async function startAnalysis(
+  roomId: number,
+  body: StartAnalysisRequest,
+): Promise<ApiClientResult<StartAnalysisResponse>> {
+  const path = `/api/ai/chatrooms/${roomId}/analysis`;
+
+  return api.post<StartAnalysisResponse>(path, body);
 }
