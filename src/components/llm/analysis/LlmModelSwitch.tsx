@@ -41,10 +41,6 @@ export default function LlmModelSwitch({ value, onChange }: Props) {
           vLLM
         </button>
       </div>
-
-      <p className="mt-2 text-xs text-neutral-500">
-        Gemini는 성능이 높지만 비용이 높을 수 있고, vLLM은 비용 및 보안 측면에서 유리합니다.
-      </p>
     </section>
   );
 }
