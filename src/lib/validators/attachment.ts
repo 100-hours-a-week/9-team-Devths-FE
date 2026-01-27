@@ -17,10 +17,7 @@ export type ValidateFilesResult = {
   errors: AttachmentError[];
 };
 
-function isImageMime(
-  mimeType: string,
-  allowedMimes: readonly string[]
-): boolean {
+function isImageMime(mimeType: string, allowedMimes: readonly string[]): boolean {
   return allowedMimes.includes(mimeType);
 }
 
@@ -32,7 +29,7 @@ export function validateFiles(
   files: File[],
   constraints: AttachmentConstraints,
   existingImages: number = 0,
-  existingFiles: number = 0
+  existingFiles: number = 0,
 ): ValidateFilesResult {
   const okFiles: File[] = [];
   const errors: AttachmentError[] = [];

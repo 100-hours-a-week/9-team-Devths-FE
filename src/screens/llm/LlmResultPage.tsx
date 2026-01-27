@@ -77,9 +77,7 @@ export default function LlmResultPage({ roomId, taskId }: Props) {
             Result
           </p>
           <h1 className="mt-2 text-2xl font-semibold">AI 분석 결과</h1>
-          {metadata?.summary && (
-            <p className="mt-2 text-sm text-neutral-600">{metadata.summary}</p>
-          )}
+          {metadata?.summary && <p className="mt-2 text-sm text-neutral-600">{metadata.summary}</p>}
         </div>
 
         {metadata?.score !== undefined && (
@@ -113,7 +111,7 @@ export default function LlmResultPage({ roomId, taskId }: Props) {
         {content && (
           <div className="rounded-3xl border border-neutral-200 bg-neutral-50 p-5">
             <p className="text-xs font-semibold text-neutral-500">상세 분석</p>
-            <div className="mt-3 whitespace-pre-wrap text-sm leading-6 text-neutral-800">
+            <div className="mt-3 text-sm leading-6 whitespace-pre-wrap text-neutral-800">
               {content}
             </div>
           </div>

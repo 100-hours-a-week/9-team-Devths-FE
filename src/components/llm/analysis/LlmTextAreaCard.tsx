@@ -42,8 +42,7 @@ export default function LlmTextAreaCard({
     }
   };
 
-  const hasAttachments =
-    attachments && (attachments.images.length > 0 || attachments.pdf !== null);
+  const hasAttachments = attachments && (attachments.images.length > 0 || attachments.pdf !== null);
 
   return (
     <section className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-sm">
@@ -68,9 +67,7 @@ export default function LlmTextAreaCard({
               className="flex items-center gap-2 rounded-lg bg-neutral-100 px-3 py-2"
             >
               <ImageIcon className="h-4 w-4 text-neutral-500" />
-              <span className="max-w-[120px] truncate text-xs text-neutral-700">
-                {file.name}
-              </span>
+              <span className="max-w-[120px] truncate text-xs text-neutral-700">{file.name}</span>
               {onRemoveImage && (
                 <button
                   type="button"

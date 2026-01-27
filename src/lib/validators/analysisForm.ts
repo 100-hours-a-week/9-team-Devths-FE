@@ -1,14 +1,12 @@
 import type { DocumentInput } from '@/types/llm';
 
 function hasContent(doc: DocumentInput): boolean {
-  return (
-    doc.text.trim().length > 0 || doc.images.length > 0 || doc.pdf !== null
-  );
+  return doc.text.trim().length > 0 || doc.images.length > 0 || doc.pdf !== null;
 }
 
 export function getAnalysisDisabledReason(
   resume: DocumentInput,
-  jobPosting: DocumentInput
+  jobPosting: DocumentInput,
 ): string | null {
   const hasResume = hasContent(resume);
   const hasJobPosting = hasContent(jobPosting);
