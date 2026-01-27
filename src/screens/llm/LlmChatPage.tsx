@@ -1,14 +1,17 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useAppFrame } from '@/components/layout/AppFrameContext';
 import LlmAttachmentSheet from '@/components/llm/chat/LlmAttachmentSheet';
 import LlmComposer from '@/components/llm/chat/LlmComposer';
 import LlmMessageList from '@/components/llm/chat/LlmMessageList';
+import { CHAT_ATTACHMENT_CONSTRAINTS, IMAGE_MIME_TYPES } from '@/constants/attachment';
 import { useMessagesInfiniteQuery } from '@/lib/hooks/llm/useMessagesInfiniteQuery';
 import { useSendMessageMutation } from '@/lib/hooks/llm/useSendMessageMutation';
+import { toast } from '@/lib/toast/store';
 import { toUIMessage } from '@/lib/utils/llm';
+import { validateFiles } from '@/lib/validators/attachment';
 
 import type { UIMessage } from '@/lib/utils/llm';
 
@@ -95,7 +98,80 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
   const handleDeleteFailed = useCallback((messageId: string) => {
     setLocalMessages((prev) => prev.filter((m) => m.id !== messageId));
   }, []);
+
+  const [attachedImages, setAttachedImages] = useState<File[]>([]);
+  const [attachedPdf, setAttachedPdf] = useState<File | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  const handlePickImages = useCallback(() => {
+    imageInputRef.current?.click();
+  }, []);
+
+  const handlePickFile = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleImageChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files ?? []);
+      if (files.length === 0) return;
+
+      const result = validateFiles(
+        files,
+        CHAT_ATTACHMENT_CONSTRAINTS,
+        attachedImages.length,
+        attachedPdf ? 1 : 0,
+      );
+
+      if (result.errors.length > 0) {
+        toast(result.errors[0].message);
+      }
+
+      if (result.okFiles.length > 0) {
+        setAttachedImages((prev) => [...prev, ...result.okFiles]);
+      }
+
+      e.target.value = '';
+    },
+    [attachedImages.length, attachedPdf],
+  );
+
+  const handleFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files ?? []);
+      if (files.length === 0) return;
+
+      const result = validateFiles(
+        files,
+        CHAT_ATTACHMENT_CONSTRAINTS,
+        attachedImages.length,
+        attachedPdf ? 1 : 0,
+      );
+
+      if (result.errors.length > 0) {
+        toast(result.errors[0].message);
+      }
+
+      const pdfFile = result.okFiles.find((f) => f.type === 'application/pdf');
+      if (pdfFile) {
+        setAttachedPdf(pdfFile);
+      }
+
+      e.target.value = '';
+    },
+    [attachedImages.length, attachedPdf],
+  );
+
+  const handleRemoveImage = useCallback((index: number) => {
+    setAttachedImages((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const handleRemovePdf = useCallback(() => {
+    setAttachedPdf(null);
+  }, []);
   const [interviewState, setInterviewState] = useState<InterviewState>('idle');
   const [interviewMode, setInterviewMode] = useState<InterviewMode | null>(null);
 
@@ -224,6 +300,10 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
           onAttach={() => setSheetOpen(true)}
           onSend={handleSendMessage}
           disabled={sendMessageMutation.isPending}
+          attachedImages={attachedImages}
+          attachedPdf={attachedPdf}
+          onRemoveImage={handleRemoveImage}
+          onRemovePdf={handleRemovePdf}
         />
       </div>
 
@@ -231,12 +311,24 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
         open={sheetOpen}
         title="채팅 첨부"
         onClose={() => setSheetOpen(false)}
-        onPickImages={() => {
-          // TODO: 실제 첨부 로직은 다음 커밋
-        }}
-        onPickFile={() => {
-          // TODO: 실제 첨부 로직은 다음 커밋
-        }}
+        onPickImages={handlePickImages}
+        onPickFile={handlePickFile}
+      />
+
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept={IMAGE_MIME_TYPES.join(',')}
+        multiple
+        className="hidden"
+        onChange={handleImageChange}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/pdf"
+        className="hidden"
+        onChange={handleFileChange}
       />
     </main>
   );
