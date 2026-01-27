@@ -20,6 +20,7 @@ type Props = {
   attachments?: AttachmentFile;
   onRemoveImage?: (index: number) => void;
   onRemovePdf?: () => void;
+  textDisabled?: boolean;
 };
 
 export default function LlmTextAreaCard({
@@ -33,6 +34,7 @@ export default function LlmTextAreaCard({
   attachments,
   onRemoveImage,
   onRemovePdf,
+  textDisabled,
 }: Props) {
   const handlePaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
     const files = e.clipboardData?.files;
@@ -52,11 +54,17 @@ export default function LlmTextAreaCard({
       </div>
 
       <textarea
-        className="mt-3 min-h-[140px] w-full resize-none rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-sm outline-none focus:border-neutral-400"
-        placeholder={placeholder}
+        className={[
+          'mt-3 min-h-[140px] w-full resize-none rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-sm outline-none focus:border-neutral-400',
+          textDisabled ? 'cursor-not-allowed opacity-50' : '',
+        ].join(' ')}
+        placeholder={
+          textDisabled ? '파일이 첨부되어 텍스트 입력이 비활성화되었습니다.' : placeholder
+        }
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onPaste={handlePaste}
+        disabled={textDisabled}
       />
 
       {hasAttachments && (

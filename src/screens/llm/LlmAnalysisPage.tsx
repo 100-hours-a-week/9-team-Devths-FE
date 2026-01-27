@@ -23,6 +23,7 @@ import { validateFiles } from '@/lib/validators/attachment';
 
 import type { ApiResponse } from '@/types/api';
 import type {
+  AnalysisDocumentInput,
   AnalysisFormState,
   CreateRoomResponse,
   DocumentInput,
@@ -220,7 +221,14 @@ export default function LlmAnalysisPage({ roomId }: Props) {
 
       const numericRoomId = Number(targetRoomId);
 
-      let resumeId: number | null = null;
+      // 이력서 파일 업로드 (PDF 또는 이미지)
+      const resumeInput: AnalysisDocumentInput = {
+        fileId: null,
+        s3Key: null,
+        fileType: null,
+        text: form.resume.text || null,
+      };
+
       if (form.resume.pdf) {
         const result = await uploadFile({
           file: form.resume.pdf,
@@ -228,21 +236,28 @@ export default function LlmAnalysisPage({ roomId }: Props) {
           refType: 'CHATROOM',
           refId: numericRoomId,
         });
-        resumeId = result.fileId;
-      }
-
-      let portfolioId: number | null = null;
-      if (form.resume.images.length > 0) {
+        resumeInput.fileId = result.fileId;
+        resumeInput.s3Key = result.s3Key;
+        resumeInput.fileType = form.resume.pdf.type;
+      } else if (form.resume.images.length > 0) {
         const result = await uploadFile({
           file: form.resume.images[0],
           category: 'PORTFOLIO',
           refType: 'CHATROOM',
           refId: numericRoomId,
         });
-        portfolioId = result.fileId;
+        resumeInput.fileId = result.fileId;
+        resumeInput.s3Key = result.s3Key;
+        resumeInput.fileType = form.resume.images[0].type;
       }
 
-      let jobPostingId: number | null = null;
+      const jobPostInput: AnalysisDocumentInput = {
+        fileId: null,
+        s3Key: null,
+        fileType: null,
+        text: form.jobPosting.text || null,
+      };
+
       if (form.jobPosting.pdf) {
         const result = await uploadFile({
           file: form.jobPosting.pdf,
@@ -250,23 +265,25 @@ export default function LlmAnalysisPage({ roomId }: Props) {
           refType: 'CHATROOM',
           refId: numericRoomId,
         });
-        jobPostingId = result.fileId;
-      }
-
-      if (!jobPostingId && form.jobPosting.images.length > 0) {
+        jobPostInput.fileId = result.fileId;
+        jobPostInput.s3Key = result.s3Key;
+        jobPostInput.fileType = form.jobPosting.pdf.type;
+      } else if (form.jobPosting.images.length > 0) {
         const result = await uploadFile({
           file: form.jobPosting.images[0],
           category: 'JOB_POSTING',
           refType: 'CHATROOM',
           refId: numericRoomId,
         });
-        jobPostingId = result.fileId;
+        jobPostInput.fileId = result.fileId;
+        jobPostInput.s3Key = result.s3Key;
+        jobPostInput.fileType = form.jobPosting.images[0].type;
       }
 
       const analysisResult = await startAnalysis(numericRoomId, {
-        resumeId,
-        portfolioId,
-        jobPostingId,
+        model: form.model,
+        resume: resumeInput,
+        jobPost: jobPostInput,
       });
 
       if (!analysisResult.ok || !analysisResult.json) {
@@ -285,8 +302,11 @@ export default function LlmAnalysisPage({ roomId }: Props) {
   }, [
     form.resume.pdf,
     form.resume.images,
+    form.resume.text,
     form.jobPosting.pdf,
     form.jobPosting.images,
+    form.jobPosting.text,
+    form.model,
     roomId,
     startPolling,
   ]);
@@ -319,6 +339,7 @@ export default function LlmAnalysisPage({ roomId }: Props) {
           attachments={{ images: form.resume.images, pdf: form.resume.pdf }}
           onRemoveImage={handleRemoveResumeImage}
           onRemovePdf={handleRemoveResumePdf}
+          textDisabled={form.resume.images.length > 0 || form.resume.pdf !== null}
           headerRight={
             <button
               type="button"
@@ -326,7 +347,13 @@ export default function LlmAnalysisPage({ roomId }: Props) {
                 setTarget('RESUME');
                 setSheetOpen(true);
               }}
-              className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-800 hover:bg-neutral-50"
+              disabled={form.resume.text.trim().length > 0}
+              className={[
+                'inline-flex items-center gap-1.5 rounded-full border border-neutral-200 px-3 py-1.5 text-xs font-semibold',
+                form.resume.text.trim().length > 0
+                  ? 'cursor-not-allowed bg-neutral-100 text-neutral-400'
+                  : 'bg-white text-neutral-800 hover:bg-neutral-50',
+              ].join(' ')}
             >
               <Paperclip className="h-4 w-4" />
               첨부
@@ -343,6 +370,7 @@ export default function LlmAnalysisPage({ roomId }: Props) {
           attachments={{ images: form.jobPosting.images, pdf: form.jobPosting.pdf }}
           onRemoveImage={handleRemoveJobImage}
           onRemovePdf={handleRemoveJobPdf}
+          textDisabled={form.jobPosting.images.length > 0 || form.jobPosting.pdf !== null}
           headerRight={
             <button
               type="button"
@@ -350,7 +378,13 @@ export default function LlmAnalysisPage({ roomId }: Props) {
                 setTarget('JOB');
                 setSheetOpen(true);
               }}
-              className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-800 hover:bg-neutral-50"
+              disabled={form.jobPosting.text.trim().length > 0}
+              className={[
+                'inline-flex items-center gap-1.5 rounded-full border border-neutral-200 px-3 py-1.5 text-xs font-semibold',
+                form.jobPosting.text.trim().length > 0
+                  ? 'cursor-not-allowed bg-neutral-100 text-neutral-400'
+                  : 'bg-white text-neutral-800 hover:bg-neutral-50',
+              ].join(' ')}
             >
               <Paperclip className="h-4 w-4" />
               첨부

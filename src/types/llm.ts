@@ -75,10 +75,17 @@ export type AnalysisFormState = {
   model: LlmModel;
 };
 
+export type AnalysisDocumentInput = {
+  fileId: number | null;
+  s3Key: string | null;
+  fileType: string | null;
+  text: string | null;
+};
+
 export type StartAnalysisRequest = {
-  resumeId: number | null;
-  portfolioId: number | null;
-  jobPostingId: number | null;
+  model: LlmModel;
+  resume: AnalysisDocumentInput;
+  jobPost: AnalysisDocumentInput;
 };
 
 export type TaskStatus = 'PENDING' | 'PROGRESSING' | 'COMPLETED' | 'FAILED';
