@@ -2,7 +2,9 @@
 
 import { FileText, Paperclip, SendHorizonal, X } from 'lucide-react';
 import Image from 'next/image';
-import { useMemo, useState } from 'react';
+import { type ClipboardEvent, useMemo, useState } from 'react';
+
+import { toast } from '@/lib/toast/store';
 
 type Props = {
   onSend?: (text: string) => void;
@@ -32,6 +34,14 @@ export default function LlmComposer({
     () => attachedImages.map((file) => URL.createObjectURL(file)),
     [attachedImages],
   );
+
+  const handlePaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
+    const files = e.clipboardData?.files;
+    if (files && files.length > 0) {
+      e.preventDefault();
+      toast('이미지/파일은 첨부 버튼으로만 업로드할 수 있어요.');
+    }
+  };
 
   return (
     <div className="border-t bg-white px-3 py-2">
@@ -89,6 +99,7 @@ export default function LlmComposer({
           placeholder="메시지를 입력하세요"
           value={text}
           onChange={(e) => setText(e.target.value)}
+          onPaste={handlePaste}
         />
 
         <button
