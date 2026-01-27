@@ -87,12 +87,7 @@ export default function LlmRoomsPage() {
         <LlmRoomCreateCard href="/llm/analysis" />
 
         <div className="mt-4">
-          <div className="mb-3 flex items-center justify-between px-1">
-            <p className="text-sm font-semibold text-neutral-900">대화 목록</p>
-            <span className="rounded-full border border-neutral-200 bg-white px-3 py-1 text-[11px] font-semibold text-neutral-600">
-              최신순
-            </span>
-          </div>
+          <p className="mb-3 px-1 text-sm font-semibold text-neutral-900">대화 목록</p>
           <LlmRoomList
             rooms={rooms}
             onEnterRoom={(id) => router.push(`/llm/${encodeURIComponent(id)}`)}
