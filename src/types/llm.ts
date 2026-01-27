@@ -12,6 +12,14 @@ export type AiChatRoom = {
   updatedAt: string;
 };
 
+export type ChatMessageAttachment = {
+  fileId: number;
+  s3Key: string;
+  originalName: string;
+  mimeType: string;
+  fileSize: number;
+};
+
 export type ChatMessage = {
   roomId: number;
   messageId: number;
@@ -20,6 +28,7 @@ export type ChatMessage = {
   content: string;
   type: 'NORMAL';
   metadata: Record<string, unknown> | null;
+  attachments?: ChatMessageAttachment[];
   createdAt: string;
 };
 
@@ -59,6 +68,7 @@ export type FetchMessagesParams = {
 
 export type SendMessageRequest = {
   content: string;
+  fileIds?: number[];
 };
 
 export type LlmModel = 'GEMINI' | 'VLLM';

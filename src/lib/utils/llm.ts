@@ -5,12 +5,18 @@ import type { AiChatRoom, ChatMessage } from '@/types/llm';
 
 export type MessageStatus = 'sending' | 'sent' | 'failed';
 
+export type UIAttachment = {
+  type: 'image' | 'file';
+  name: string;
+  url?: string;
+};
+
 export type UIMessage = {
   id: string;
   role: 'USER' | 'AI' | 'SYSTEM';
   text: string;
   time?: string;
-  attachments?: Array<{ type: 'image' | 'file'; name: string }>;
+  attachments?: UIAttachment[];
   status?: MessageStatus;
 };
 
@@ -53,12 +59,21 @@ function formatUpdatedAt(isoString: string): string {
   return `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}`;
 }
 
+const S3_BASE_URL = process.env.NEXT_PUBLIC_S3_URL ?? '';
+
 export function toUIMessage(msg: ChatMessage): UIMessage {
+  const attachments: UIAttachment[] | undefined = msg.attachments?.map((att) => ({
+    type: att.mimeType.startsWith('image/') ? 'image' : 'file',
+    name: att.originalName,
+    url: `${S3_BASE_URL}/${att.s3Key}`,
+  }));
+
   return {
     id: String(msg.messageId),
     role: msg.role === 'ASSISTANT' ? 'AI' : 'USER',
     text: msg.content,
     time: formatMessageTime(msg.createdAt),
+    attachments: attachments?.length ? attachments : undefined,
   };
 }
 

@@ -10,6 +10,7 @@ import { CHAT_ATTACHMENT_CONSTRAINTS, IMAGE_MIME_TYPES } from '@/constants/attac
 import { useMessagesInfiniteQuery } from '@/lib/hooks/llm/useMessagesInfiniteQuery';
 import { useSendMessageMutation } from '@/lib/hooks/llm/useSendMessageMutation';
 import { toast } from '@/lib/toast/store';
+import { uploadFile } from '@/lib/upload/uploadFile';
 import { toUIMessage } from '@/lib/utils/llm';
 import { validateFiles } from '@/lib/validators/attachment';
 
@@ -44,44 +45,74 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
 
   const [localMessages, setLocalMessages] = useState<UIMessage[]>([]);
 
+  const [attachedImages, setAttachedImages] = useState<File[]>([]);
+  const [attachedPdf, setAttachedPdf] = useState<File | null>(null);
+
   const handleSendMessage = useCallback(
-    (text: string) => {
+    async (text: string) => {
       const trimmed = text.trim();
-      if (!trimmed) return;
+      const hasFiles = attachedImages.length > 0 || attachedPdf !== null;
+
+      if (!trimmed && !hasFiles) return;
 
       const tempId = `temp-${Date.now()}`;
+      const filesToUpload = [...attachedImages, ...(attachedPdf ? [attachedPdf] : [])];
 
       setLocalMessages((prev) => [
         ...prev,
         {
           id: tempId,
           role: 'USER',
-          text: trimmed,
+          text: trimmed || '(첨부 파일)',
           time: '전송 중...',
           status: 'sending',
         },
       ]);
 
-      sendMessageMutation.mutate(trimmed, {
-        onSuccess: (response) => {
-          if (!response) return;
-          setLocalMessages((prev) => {
-            const filtered = prev.filter((m) => m.id !== tempId);
-            return [
-              ...filtered,
-              toUIMessage(response.userMessage),
-              toUIMessage(response.aiResponse),
-            ];
+      setAttachedImages([]);
+      setAttachedPdf(null);
+
+      try {
+        const fileIds: number[] = [];
+        for (const file of filesToUpload) {
+          const result = await uploadFile({
+            file,
+            category: 'ATTACHMENT',
+            refType: 'MESSAGE',
           });
-        },
-        onError: () => {
-          setLocalMessages((prev) =>
-            prev.map((m) => (m.id === tempId ? { ...m, status: 'failed', time: '전송 실패' } : m)),
-          );
-        },
-      });
+          fileIds.push(result.fileId);
+        }
+
+        sendMessageMutation.mutate(
+          { content: trimmed, fileIds: fileIds.length > 0 ? fileIds : undefined },
+          {
+            onSuccess: (response) => {
+              if (!response) return;
+              setLocalMessages((prev) => {
+                const filtered = prev.filter((m) => m.id !== tempId);
+                return [
+                  ...filtered,
+                  toUIMessage(response.userMessage),
+                  toUIMessage(response.aiResponse),
+                ];
+              });
+            },
+            onError: () => {
+              setLocalMessages((prev) =>
+                prev.map((m) =>
+                  m.id === tempId ? { ...m, status: 'failed', time: '전송 실패' } : m,
+                ),
+              );
+            },
+          },
+        );
+      } catch {
+        setLocalMessages((prev) =>
+          prev.map((m) => (m.id === tempId ? { ...m, status: 'failed', time: '업로드 실패' } : m)),
+        );
+      }
     },
-    [sendMessageMutation],
+    [sendMessageMutation, attachedImages, attachedPdf],
   );
 
   const handleRetry = useCallback(
@@ -99,8 +130,6 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
     setLocalMessages((prev) => prev.filter((m) => m.id !== messageId));
   }, []);
 
-  const [attachedImages, setAttachedImages] = useState<File[]>([]);
-  const [attachedPdf, setAttachedPdf] = useState<File | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

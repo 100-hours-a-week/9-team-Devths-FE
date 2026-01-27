@@ -106,9 +106,8 @@ export default function LlmComposer({
           type="button"
           disabled={!canSend}
           onClick={() => {
-            const v = text.trim();
-            if (!v) return;
-            onSend?.(v);
+            if (!canSend) return;
+            onSend?.(text.trim());
             setText('');
           }}
           className={[

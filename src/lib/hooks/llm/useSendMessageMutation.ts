@@ -3,12 +3,14 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { sendMessage } from '@/lib/api/llmRooms';
 import { llmKeys } from '@/lib/hooks/llm/queryKeys';
 
+import type { SendMessageRequest } from '@/types/llm';
+
 export function useSendMessageMutation(roomId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (content: string) => {
-      const result = await sendMessage(roomId, { content });
+    mutationFn: async (request: SendMessageRequest) => {
+      const result = await sendMessage(roomId, request);
 
       if (!result.ok || !result.json) {
         throw new Error('Failed to send message');
