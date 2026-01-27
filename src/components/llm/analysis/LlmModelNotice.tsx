@@ -1,6 +1,6 @@
 'use client';
 
-import type { LlmModel } from '@/components/llm/analysis/LlmModelSwitch';
+import type { LlmModel } from '@/types/llm';
 
 type Props = {
   model: LlmModel;

@@ -30,3 +30,55 @@ export async function postPresignedSignup(
 
   return { ok, status, json };
 }
+
+export type PresignedRequest = {
+  fileName: string;
+  mimeType: string;
+};
+
+export type PresignedData = {
+  presignedUrl: string;
+  s3Key: string;
+};
+
+export async function postPresigned(body: PresignedRequest) {
+  const { ok, status, json } = await apiRequest<PresignedData>({
+    method: 'POST',
+    path: '/api/files/presigned',
+    body,
+    withAuth: true,
+  });
+
+  return { ok, status, json };
+}
+
+export type FileCategory = 'RESUME' | 'PORTFOLIO' | 'JOB_POSTING' | 'ATTACHMENT';
+export type FileRefType = 'CHATROOM' | 'POST' | 'MESSAGE';
+
+export type PostFileMetaRequest = {
+  originalName: string;
+  s3Key: string;
+  mimeType: string;
+  category: FileCategory;
+  fileSize: number;
+  refType: FileRefType;
+  refId?: number | null;
+  sortOrder?: number;
+};
+
+export type PostFileMetaData = {
+  fileId: number;
+  s3Key: string;
+  createdAt: string;
+};
+
+export async function postFileMeta(body: PostFileMetaRequest) {
+  const { ok, status, json } = await apiRequest<PostFileMetaData>({
+    method: 'POST',
+    path: '/api/files',
+    body,
+    withAuth: true,
+  });
+
+  return { ok, status, json };
+}

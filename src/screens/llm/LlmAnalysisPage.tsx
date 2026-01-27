@@ -2,13 +2,33 @@
 
 import { Paperclip } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import LlmAttachmentSheet from '@/components/llm/analysis/LlmAttachmentSheet';
 import LlmLoadingModal from '@/components/llm/analysis/LlmLoadingModal';
 import LlmModelNotice from '@/components/llm/analysis/LlmModelNotice';
-import LlmModelSwitch, { type LlmModel } from '@/components/llm/analysis/LlmModelSwitch';
+import LlmModelSwitch from '@/components/llm/analysis/LlmModelSwitch';
 import LlmTextAreaCard from '@/components/llm/analysis/LlmTextAreaCard';
+import {
+  IMAGE_MIME_TYPES,
+  FILE_MIME_TYPES,
+  LLM_ATTACHMENT_CONSTRAINTS,
+} from '@/constants/attachment';
+import { createRoom, startAnalysis } from '@/lib/api/llmRooms';
+import { useTaskPolling } from '@/lib/hooks/llm/useTaskPolling';
+import { toast } from '@/lib/toast/store';
+import { uploadFile } from '@/lib/upload/uploadFile';
+import { getAnalysisDisabledReason } from '@/lib/validators/analysisForm';
+import { validateFiles } from '@/lib/validators/attachment';
+
+import type { ApiResponse } from '@/types/api';
+import type {
+  AnalysisFormState,
+  CreateRoomResponse,
+  DocumentInput,
+  LlmModel,
+  StartAnalysisResponse,
+} from '@/types/llm';
 
 type Target = 'RESUME' | 'JOB' | null;
 
@@ -16,34 +36,289 @@ type Props = {
   roomId: string;
 };
 
+const EMPTY_DOCUMENT: DocumentInput = {
+  text: '',
+  images: [],
+  pdf: null,
+};
+
 export default function LlmAnalysisPage({ roomId }: Props) {
   const router = useRouter();
-  const [resumeText, setResumeText] = useState('');
-  const [jobText, setJobText] = useState('');
-  const [model, setModel] = useState<LlmModel>('GEMINI');
+  const [form, setForm] = useState<AnalysisFormState>({
+    resume: { ...EMPTY_DOCUMENT },
+    jobPosting: { ...EMPTY_DOCUMENT },
+    model: 'GEMINI',
+  });
   const [sheetOpen, setSheetOpen] = useState(false);
   const [target, setTarget] = useState<Target>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [actualRoomId, setActualRoomId] = useState<string | null>(null);
+
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { status, error, isPolling, startPolling } = useTaskPolling();
+
+  const disabledReason = getAnalysisDisabledReason(form.resume, form.jobPosting);
+  const isSubmitDisabled = isLoading || isPolling || disabledReason !== null;
+
+  const [currentTaskId, setCurrentTaskId] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!isLoading) return;
-
-    const t = setTimeout(() => {
+    if (status === 'COMPLETED') {
       setIsLoading(false);
-      router.push(`/llm/${roomId}/result`);
-    }, 1500);
+      const targetRoomId = actualRoomId || roomId;
+      router.push(`/llm/${targetRoomId}/result?taskId=${currentTaskId}`);
+    } else if (status === 'FAILED') {
+      setIsLoading(false);
+      toast(error || '분석에 실패했습니다.');
+    }
+  }, [status, error, router, roomId, actualRoomId, currentTaskId]);
 
-    return () => clearTimeout(t);
-  }, [isLoading, router, roomId]);
+  const updateResume = useCallback((updates: Partial<DocumentInput>) => {
+    setForm((prev) => ({
+      ...prev,
+      resume: { ...prev.resume, ...updates },
+    }));
+  }, []);
+
+  const updateJobPosting = useCallback((updates: Partial<DocumentInput>) => {
+    setForm((prev) => ({
+      ...prev,
+      jobPosting: { ...prev.jobPosting, ...updates },
+    }));
+  }, []);
+
+  const updateModel = useCallback((model: LlmModel) => {
+    setForm((prev) => ({ ...prev, model }));
+  }, []);
+
+  const getCurrentDoc = useCallback(() => {
+    return target === 'RESUME' ? form.resume : form.jobPosting;
+  }, [target, form.resume, form.jobPosting]);
+
+  const getUpdateFn = useCallback(() => {
+    return target === 'RESUME' ? updateResume : updateJobPosting;
+  }, [target, updateResume, updateJobPosting]);
+
+  const handlePickImages = useCallback(() => {
+    imageInputRef.current?.click();
+  }, []);
+
+  const handlePickFile = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleImageChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files || []);
+      if (files.length === 0) return;
+
+      const doc = getCurrentDoc();
+      const updateFn = getUpdateFn();
+
+      const { okFiles, errors } = validateFiles(
+        files,
+        LLM_ATTACHMENT_CONSTRAINTS,
+        doc.images.length,
+        0,
+      );
+
+      if (errors.length > 0) {
+        toast(errors[0].message);
+      }
+
+      if (okFiles.length > 0) {
+        updateFn({ images: [...doc.images, ...okFiles] });
+      }
+
+      e.target.value = '';
+    },
+    [getCurrentDoc, getUpdateFn],
+  );
+
+  const handleFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files || []);
+      if (files.length === 0) return;
+
+      const doc = getCurrentDoc();
+      const updateFn = getUpdateFn();
+
+      const { okFiles, errors } = validateFiles(
+        files,
+        LLM_ATTACHMENT_CONSTRAINTS,
+        0,
+        doc.pdf ? 1 : 0,
+      );
+
+      if (errors.length > 0) {
+        toast(errors[0].message);
+      }
+
+      if (okFiles.length > 0) {
+        updateFn({ pdf: okFiles[0] });
+      }
+
+      e.target.value = '';
+    },
+    [getCurrentDoc, getUpdateFn],
+  );
+
+  const handlePasteBlocked = useCallback(() => {
+    toast('파일은 첨부 버튼을 이용해 주세요.');
+  }, []);
+
+  const handleRemoveResumeImage = useCallback((index: number) => {
+    setForm((prev) => ({
+      ...prev,
+      resume: {
+        ...prev.resume,
+        images: prev.resume.images.filter((_, i) => i !== index),
+      },
+    }));
+  }, []);
+
+  const handleRemoveResumePdf = useCallback(() => {
+    setForm((prev) => ({
+      ...prev,
+      resume: { ...prev.resume, pdf: null },
+    }));
+  }, []);
+
+  const handleRemoveJobImage = useCallback((index: number) => {
+    setForm((prev) => ({
+      ...prev,
+      jobPosting: {
+        ...prev.jobPosting,
+        images: prev.jobPosting.images.filter((_, i) => i !== index),
+      },
+    }));
+  }, []);
+
+  const handleRemoveJobPdf = useCallback(() => {
+    setForm((prev) => ({
+      ...prev,
+      jobPosting: { ...prev.jobPosting, pdf: null },
+    }));
+  }, []);
+
+  const handleSubmit = useCallback(async () => {
+    setIsLoading(true);
+
+    try {
+      let targetRoomId = roomId;
+      if (roomId === 'new') {
+        const createResult = await createRoom();
+        if (!createResult.ok || !createResult.json) {
+          throw new Error('채팅방 생성에 실패했습니다.');
+        }
+        const createJson = createResult.json as ApiResponse<CreateRoomResponse>;
+        targetRoomId = String(createJson.data.roomId);
+        setActualRoomId(targetRoomId);
+      }
+
+      const numericRoomId = Number(targetRoomId);
+
+      let resumeId: number | null = null;
+      if (form.resume.pdf) {
+        const result = await uploadFile({
+          file: form.resume.pdf,
+          category: 'RESUME',
+          refType: 'CHATROOM',
+          refId: numericRoomId,
+        });
+        resumeId = result.fileId;
+      }
+
+      let portfolioId: number | null = null;
+      if (form.resume.images.length > 0) {
+        const result = await uploadFile({
+          file: form.resume.images[0],
+          category: 'PORTFOLIO',
+          refType: 'CHATROOM',
+          refId: numericRoomId,
+        });
+        portfolioId = result.fileId;
+      }
+
+      let jobPostingId: number | null = null;
+      if (form.jobPosting.pdf) {
+        const result = await uploadFile({
+          file: form.jobPosting.pdf,
+          category: 'JOB_POSTING',
+          refType: 'CHATROOM',
+          refId: numericRoomId,
+        });
+        jobPostingId = result.fileId;
+      }
+
+      if (!jobPostingId && form.jobPosting.images.length > 0) {
+        const result = await uploadFile({
+          file: form.jobPosting.images[0],
+          category: 'JOB_POSTING',
+          refType: 'CHATROOM',
+          refId: numericRoomId,
+        });
+        jobPostingId = result.fileId;
+      }
+
+      const analysisResult = await startAnalysis(numericRoomId, {
+        resumeId,
+        portfolioId,
+        jobPostingId,
+      });
+
+      if (!analysisResult.ok || !analysisResult.json) {
+        throw new Error('분석 요청에 실패했습니다.');
+      }
+
+      const analysisJson = analysisResult.json as ApiResponse<StartAnalysisResponse>;
+      const { taskId } = analysisJson.data;
+
+      setCurrentTaskId(taskId);
+      startPolling(taskId);
+    } catch (err) {
+      setIsLoading(false);
+      toast(err instanceof Error ? err.message : '분석 요청 중 오류가 발생했습니다.');
+    }
+  }, [
+    form.resume.pdf,
+    form.resume.images,
+    form.jobPosting.pdf,
+    form.jobPosting.images,
+    roomId,
+    startPolling,
+  ]);
 
   return (
     <main className="flex min-h-[calc(100dvh-56px-64px)] flex-col bg-white px-4 pt-5 pb-4 text-black">
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept={IMAGE_MIME_TYPES.join(',')}
+        multiple
+        className="hidden"
+        onChange={handleImageChange}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={FILE_MIME_TYPES.join(',')}
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
       <div className="space-y-4">
         <LlmTextAreaCard
           label="이력서 및 포트폴리오 입력"
           placeholder="이력서/포트폴리오 내용을 붙여 넣거나 직접 입력하세요."
-          value={resumeText}
-          onChange={setResumeText}
+          value={form.resume.text}
+          onChange={(text) => updateResume({ text })}
+          onPasteBlocked={handlePasteBlocked}
+          attachments={{ images: form.resume.images, pdf: form.resume.pdf }}
+          onRemoveImage={handleRemoveResumeImage}
+          onRemovePdf={handleRemoveResumePdf}
           headerRight={
             <button
               type="button"
@@ -62,8 +337,12 @@ export default function LlmAnalysisPage({ roomId }: Props) {
         <LlmTextAreaCard
           label="채용 공고 입력"
           placeholder="채용 공고 내용을 붙여 넣거나 직접 입력하세요."
-          value={jobText}
-          onChange={setJobText}
+          value={form.jobPosting.text}
+          onChange={(text) => updateJobPosting({ text })}
+          onPasteBlocked={handlePasteBlocked}
+          attachments={{ images: form.jobPosting.images, pdf: form.jobPosting.pdf }}
+          onRemoveImage={handleRemoveJobImage}
+          onRemovePdf={handleRemoveJobPdf}
           headerRight={
             <button
               type="button"
@@ -79,18 +358,21 @@ export default function LlmAnalysisPage({ roomId }: Props) {
           }
         />
 
-        <LlmModelSwitch value={model} onChange={setModel} />
-        <LlmModelNotice model={model} />
+        <LlmModelSwitch value={form.model} onChange={updateModel} />
+        <LlmModelNotice model={form.model} />
       </div>
 
       <div className="mt-auto pt-6 pb-2">
+        {disabledReason && (
+          <p className="mb-2 text-center text-xs text-neutral-500">{disabledReason}</p>
+        )}
         <button
           type="button"
-          disabled={isLoading}
-          onClick={() => setIsLoading(true)}
+          disabled={isSubmitDisabled}
+          onClick={handleSubmit}
           className={[
             'w-full rounded-2xl py-4 text-sm font-semibold transition',
-            isLoading
+            isSubmitDisabled
               ? 'cursor-not-allowed bg-neutral-200 text-neutral-500'
               : 'bg-neutral-900 text-white hover:bg-neutral-800',
           ].join(' ')}
@@ -103,8 +385,8 @@ export default function LlmAnalysisPage({ roomId }: Props) {
         open={sheetOpen}
         title={target === 'RESUME' ? '이력서/포트폴리오 첨부' : '채용 공고 첨부'}
         onClose={() => setSheetOpen(false)}
-        onPickImages={() => {}}
-        onPickFile={() => {}}
+        onPickImages={handlePickImages}
+        onPickFile={handlePickFile}
       />
 
       <LlmLoadingModal open={isLoading} onClose={() => setIsLoading(false)} />
