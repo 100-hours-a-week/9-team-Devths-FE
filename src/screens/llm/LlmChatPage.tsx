@@ -6,22 +6,20 @@ import { useAppFrame } from '@/components/layout/AppFrameContext';
 import LlmAttachmentSheet from '@/components/llm/chat/LlmAttachmentSheet';
 import LlmComposer from '@/components/llm/chat/LlmComposer';
 import LlmMessageList from '@/components/llm/chat/LlmMessageList';
+import { useMessagesInfiniteQuery } from '@/lib/hooks/llm/useMessagesInfiniteQuery';
+import { toUIMessage } from '@/lib/utils/llm';
+
+import type { UIMessage } from '@/lib/utils/llm';
 
 type Props = {
   roomId: string;
-};
-
-type Message = {
-  id: string;
-  role: 'USER' | 'AI' | 'SYSTEM';
-  text: string;
-  time?: string;
+  numericRoomId: number;
 };
 
 type InterviewMode = 'PERSONAL' | 'TECH';
 type InterviewState = 'idle' | 'select' | 'active';
 
-export default function LlmChatPage({ roomId: _roomId }: Props) {
+export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
   const { setOptions, resetOptions } = useAppFrame();
 
   useEffect(() => {
@@ -29,45 +27,42 @@ export default function LlmChatPage({ roomId: _roomId }: Props) {
     return () => resetOptions();
   }, [resetOptions, setOptions]);
 
-  const initialMessages = useMemo<Message[]>(
-    () => [
-      { id: 'sys-1', role: 'SYSTEM', text: '대화를 시작할 준비가 되었어요.' },
-      {
-        id: 'ai-1',
-        role: 'AI',
-        text: '요약 결과입니다.\n• 핵심 강점: 실무 프로젝트 경험이 풍부하며 협업 도구 활용 능력이 뛰어납니다.\n• 보완 포인트: 성과 지표를 수치화해 기여도를 명확히 보여주세요.\n• 추천 방향: 지원 직무와 맞닿은 기술 스택을 상단에 배치하세요.',
-        time: '오후 8:10',
-      },
-      {
-        id: 'u-1',
-        role: 'USER',
-        text: '백엔드 포지션 지원하려고 해. 어떤 점을 보완하면 좋을까?',
-        time: '오후 8:11',
-      },
-      {
-        id: 'u-attach-1',
-        role: 'USER',
-        text: '이력서와 포트폴리오 첨부했어요.',
-        time: '오후 8:12',
-        attachments: [
-          { type: 'image', name: 'resume-01.png' },
-          { type: 'file', name: 'portfolio.pdf' },
-        ],
-      },
-      {
-        id: 'ai-2',
-        role: 'AI',
-        text: '좋아요. 먼저 프로젝트 경험을 STAR 구조로 정리해볼까요?',
-        time: '오후 8:12',
-      },
-    ],
-    [],
-  );
+  const { data, isLoading, isError } = useMessagesInfiniteQuery(numericRoomId);
 
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  // 서버 메시지를 UI 메시지로 변환 (API가 ASC 정렬 = 과거→최신)
+  const serverMessages = useMemo<UIMessage[]>(() => {
+    if (!data?.pages) return [];
+
+    const allMessages = data.pages.flatMap((page) => page?.messages ?? []);
+    return allMessages.map(toUIMessage);
+  }, [data]);
+
+  const [localMessages, setLocalMessages] = useState<UIMessage[]>([]);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [interviewState, setInterviewState] = useState<InterviewState>('idle');
   const [interviewMode, setInterviewMode] = useState<InterviewMode | null>(null);
+
+  // 서버 메시지 + 로컬 메시지 합치기
+  const messages = useMemo<UIMessage[]>(
+    () => [...serverMessages, ...localMessages],
+    [serverMessages, localMessages],
+  );
+
+  if (isLoading) {
+    return (
+      <main className="-mx-4 flex h-[calc(100dvh-56px-var(--bottom-nav-h))] items-center justify-center sm:-mx-6">
+        <p className="text-sm text-neutral-500">메시지를 불러오는 중...</p>
+      </main>
+    );
+  }
+
+  if (isError) {
+    return (
+      <main className="-mx-4 flex h-[calc(100dvh-56px-var(--bottom-nav-h))] items-center justify-center sm:-mx-6">
+        <p className="text-sm text-red-500">메시지를 불러오지 못했습니다.</p>
+      </main>
+    );
+  }
 
   return (
     <main className="-mx-4 flex h-[calc(100dvh-56px-var(--bottom-nav-h))] flex-col sm:-mx-6">
@@ -95,7 +90,7 @@ export default function LlmChatPage({ roomId: _roomId }: Props) {
                 onClick={() => {
                   setInterviewMode('PERSONAL');
                   setInterviewState('active');
-                  setMessages((prev) => [
+                  setLocalMessages((prev) => [
                     ...prev,
                     {
                       id: `sys-${Date.now()}`,
@@ -113,7 +108,7 @@ export default function LlmChatPage({ roomId: _roomId }: Props) {
                 onClick={() => {
                   setInterviewMode('TECH');
                   setInterviewState('active');
-                  setMessages((prev) => [
+                  setLocalMessages((prev) => [
                     ...prev,
                     {
                       id: `sys-${Date.now()}`,
@@ -145,7 +140,7 @@ export default function LlmChatPage({ roomId: _roomId }: Props) {
                 onClick={() => {
                   setInterviewState('idle');
                   setInterviewMode(null);
-                  setMessages((prev) => [
+                  setLocalMessages((prev) => [
                     ...prev,
                     {
                       id: `sys-${Date.now()}`,
@@ -165,7 +160,7 @@ export default function LlmChatPage({ roomId: _roomId }: Props) {
         <LlmComposer
           onAttach={() => setSheetOpen(true)}
           onSend={(text) => {
-            setMessages((prev) => [
+            setLocalMessages((prev) => [
               ...prev,
               { id: `u-${Date.now()}`, role: 'USER', text, time: '방금' },
             ]);

@@ -1,7 +1,15 @@
 import { getRoomStorageMode } from '@/lib/storage/aiChatroomStorage';
 
 import type { LlmRoom } from '@/components/llm/rooms/types';
-import type { AiChatRoom } from '@/types/llm';
+import type { AiChatRoom, ChatMessage } from '@/types/llm';
+
+export type UIMessage = {
+  id: string;
+  role: 'USER' | 'AI' | 'SYSTEM';
+  text: string;
+  time?: string;
+  attachments?: Array<{ type: 'image' | 'file'; name: string }>;
+};
 
 export function mapAiChatRoomToLlmRoom(room: AiChatRoom): LlmRoom {
   return {
@@ -40,4 +48,22 @@ function formatUpdatedAt(isoString: string): string {
   }
 
   return `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}`;
+}
+
+export function toUIMessage(msg: ChatMessage): UIMessage {
+  return {
+    id: String(msg.messageId),
+    role: msg.role === 'ASSISTANT' ? 'AI' : 'USER',
+    text: msg.content,
+    time: formatMessageTime(msg.createdAt),
+  };
+}
+
+function formatMessageTime(isoString: string): string {
+  const date = new Date(isoString);
+  return date.toLocaleTimeString('ko-KR', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
 }

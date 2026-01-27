@@ -1,15 +1,9 @@
 'use client';
 
-type Message = {
-  id: string;
-  role: 'USER' | 'AI' | 'SYSTEM';
-  text: string;
-  time?: string;
-  attachments?: Array<{ type: 'image' | 'file'; name: string }>;
-};
+import type { UIMessage } from '@/lib/utils/llm';
 
 type Props = {
-  messages: Message[];
+  messages: UIMessage[];
 };
 
 export default function LlmMessageList({ messages }: Props) {
