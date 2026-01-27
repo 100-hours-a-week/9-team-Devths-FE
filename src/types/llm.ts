@@ -71,6 +71,35 @@ export type SendMessageRequest = {
   fileIds?: number[];
 };
 
+export type InterviewType = 'TECH' | 'PERSONAL';
+
+export type StartInterviewRequest = {
+  interviewType: InterviewType;
+};
+
+export type InterviewMessage = {
+  messageId: number;
+  role: 'ASSISTANT';
+  content: string;
+  type: 'INTERVIEW';
+  createdAt: string;
+};
+
+export type StartInterviewResponse = {
+  interviewId: number;
+  status: 'IN_PROGRESS';
+  content: InterviewMessage;
+};
+
+export type EndInterviewRequest = {
+  interviewId: number;
+};
+
+export type EndInterviewResponse = {
+  taskId: number;
+  status: TaskStatus;
+};
+
 export type LlmModel = 'GEMINI' | 'VLLM';
 
 export type DocumentInput = {
