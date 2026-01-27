@@ -30,7 +30,7 @@ jobs:
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK_PROD_URL }}
           status: ${{ github.event_name }}
-          title: "🔔 운영 배포 승인 요청"
+          title: '🔔 운영 배포 승인 요청'
           description: |
             **배포 요청자**: ${{ github.actor }}
             **요청 시각**: ${{ github.event.created_at }}
