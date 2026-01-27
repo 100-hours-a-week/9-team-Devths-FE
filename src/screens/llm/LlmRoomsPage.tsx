@@ -8,7 +8,6 @@ import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
 import LlmRoomCreateCard from '@/components/llm/rooms/LlmRoomCreateCard';
 import LlmRoomEmptyState from '@/components/llm/rooms/LlmRoomEmptyState';
 import LlmRoomList from '@/components/llm/rooms/LlmRoomList';
-import { useArchiveRoomMutation } from '@/lib/hooks/llm/useArchiveRoomMutation';
 import { useDeleteRoomMutation } from '@/lib/hooks/llm/useDeleteRoomMutation';
 import { useRoomsInfiniteQuery } from '@/lib/hooks/llm/useRoomsInfiniteQuery';
 import { toast } from '@/lib/toast/store';
@@ -19,18 +18,9 @@ export default function LlmRoomsPage() {
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useRoomsInfiniteQuery();
 
-  const archiveMutation = useArchiveRoomMutation();
   const deleteMutation = useDeleteRoomMutation();
 
   const [deleteTarget, setDeleteTarget] = useState<{ uuid: string; id: number } | null>(null);
-
-  const handleArchiveRoom = (roomId: string) => {
-    archiveMutation.mutate(roomId, {
-      onError: () => {
-        toast('대화 보관에 실패했습니다. 다시 시도해주세요.');
-      },
-    });
-  };
 
   const handleDeleteRoom = (roomUuid: string) => {
     const targetRoom = data?.pages
@@ -106,7 +96,6 @@ export default function LlmRoomsPage() {
           <LlmRoomList
             rooms={rooms}
             onEnterRoom={(id) => router.push(`/llm/${encodeURIComponent(id)}`)}
-            onArchiveRoom={handleArchiveRoom}
             onDeleteRoom={handleDeleteRoom}
           />
 

@@ -52,7 +52,7 @@ function setStorageMap(map: StorageMap): void {
 
 export function getRoomStorageMode(roomId: string): RoomStorage {
   const map = getStorageMap();
-  return map[roomId]?.mode ?? 'TEMP';
+  return map[roomId]?.mode ?? 'ARCHIVED';
 }
 
 export function archiveRoom(roomId: string): boolean {
