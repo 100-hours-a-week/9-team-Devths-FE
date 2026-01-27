@@ -1,14 +1,70 @@
 'use client';
 
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+
 import type { UIMessage } from '@/lib/utils/llm';
 
 type Props = {
   messages: UIMessage[];
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
 };
 
-export default function LlmMessageList({ messages }: Props) {
+export default function LlmMessageList({ messages, onLoadMore, hasMore, isLoadingMore }: Props) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const prevScrollHeightRef = useRef<number>(0);
+  const isLoadingRef = useRef(false);
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    if (!container || !isLoadingRef.current) return;
+
+    const newScrollHeight = container.scrollHeight;
+    const scrollDiff = newScrollHeight - prevScrollHeightRef.current;
+
+    if (scrollDiff > 0) {
+      container.scrollTop += scrollDiff;
+    }
+
+    isLoadingRef.current = false;
+  }, [messages]);
+
+  const handleScroll = useCallback(() => {
+    const container = containerRef.current;
+    if (!container || !onLoadMore || !hasMore || isLoadingMore) return;
+
+    const threshold = 100; // 상단에서 100px 이내
+    if (container.scrollTop < threshold) {
+      prevScrollHeightRef.current = container.scrollHeight;
+      isLoadingRef.current = true;
+      onLoadMore();
+    }
+  }, [onLoadMore, hasMore, isLoadingMore]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (container && messages.length > 0) {
+      container.scrollTop = container.scrollHeight;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
-    <div className="flex-1 overflow-y-auto px-3 py-4">
+    <div ref={containerRef} className="flex-1 overflow-y-auto px-3 py-4">
+      {isLoadingMore && (
+        <div className="mb-3 flex justify-center">
+          <span className="text-xs text-neutral-400">이전 메시지 불러오는 중...</span>
+        </div>
+      )}
       <div className="space-y-3">
         {messages.map((m) => {
           if (m.role === 'SYSTEM') {

@@ -27,14 +27,14 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
     return () => resetOptions();
   }, [resetOptions, setOptions]);
 
-  const { data, isLoading, isError } = useMessagesInfiniteQuery(numericRoomId);
+  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useMessagesInfiniteQuery(numericRoomId);
 
-  // 서버 메시지를 UI 메시지로 변환 (API가 ASC 정렬 = 과거→최신)
   const serverMessages = useMemo<UIMessage[]>(() => {
     if (!data?.pages) return [];
 
     const allMessages = data.pages.flatMap((page) => page?.messages ?? []);
-    return allMessages.map(toUIMessage);
+    return allMessages.map(toUIMessage).reverse();
   }, [data]);
 
   const [localMessages, setLocalMessages] = useState<UIMessage[]>([]);
@@ -42,7 +42,6 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
   const [interviewState, setInterviewState] = useState<InterviewState>('idle');
   const [interviewMode, setInterviewMode] = useState<InterviewMode | null>(null);
 
-  // 서버 메시지 + 로컬 메시지 합치기
   const messages = useMemo<UIMessage[]>(
     () => [...serverMessages, ...localMessages],
     [serverMessages, localMessages],
@@ -67,7 +66,12 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
   return (
     <main className="-mx-4 flex h-[calc(100dvh-56px-var(--bottom-nav-h))] flex-col sm:-mx-6">
       <div className="flex min-h-0 flex-1 flex-col bg-neutral-50">
-        <LlmMessageList messages={messages} />
+        <LlmMessageList
+          messages={messages}
+          onLoadMore={() => fetchNextPage()}
+          hasMore={hasNextPage}
+          isLoadingMore={isFetchingNextPage}
+        />
 
         <div className="border-t bg-white px-3 py-2">
           {interviewState === 'idle' ? (
