@@ -3,12 +3,15 @@ import { getRoomStorageMode } from '@/lib/storage/aiChatroomStorage';
 import type { LlmRoom } from '@/components/llm/rooms/types';
 import type { AiChatRoom, ChatMessage } from '@/types/llm';
 
+export type MessageStatus = 'sending' | 'sent' | 'failed';
+
 export type UIMessage = {
   id: string;
   role: 'USER' | 'AI' | 'SYSTEM';
   text: string;
   time?: string;
   attachments?: Array<{ type: 'image' | 'file'; name: string }>;
+  status?: MessageStatus;
 };
 
 export function mapAiChatRoomToLlmRoom(room: AiChatRoom): LlmRoom {

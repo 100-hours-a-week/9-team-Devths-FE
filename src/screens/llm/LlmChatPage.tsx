@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useAppFrame } from '@/components/layout/AppFrameContext';
 import LlmAttachmentSheet from '@/components/llm/chat/LlmAttachmentSheet';
 import LlmComposer from '@/components/llm/chat/LlmComposer';
 import LlmMessageList from '@/components/llm/chat/LlmMessageList';
 import { useMessagesInfiniteQuery } from '@/lib/hooks/llm/useMessagesInfiniteQuery';
+import { useSendMessageMutation } from '@/lib/hooks/llm/useSendMessageMutation';
 import { toUIMessage } from '@/lib/utils/llm';
 
 import type { UIMessage } from '@/lib/utils/llm';
@@ -30,14 +31,70 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useMessagesInfiniteQuery(numericRoomId);
 
+  const sendMessageMutation = useSendMessageMutation(numericRoomId);
   const serverMessages = useMemo<UIMessage[]>(() => {
     if (!data?.pages) return [];
 
     const allMessages = data.pages.flatMap((page) => page?.messages ?? []);
-    return allMessages.map(toUIMessage).reverse();
+    return allMessages.map(toUIMessage);
   }, [data]);
 
   const [localMessages, setLocalMessages] = useState<UIMessage[]>([]);
+
+  const handleSendMessage = useCallback(
+    (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed) return;
+
+      const tempId = `temp-${Date.now()}`;
+
+      setLocalMessages((prev) => [
+        ...prev,
+        {
+          id: tempId,
+          role: 'USER',
+          text: trimmed,
+          time: '전송 중...',
+          status: 'sending',
+        },
+      ]);
+
+      sendMessageMutation.mutate(trimmed, {
+        onSuccess: (response) => {
+          if (!response) return;
+          setLocalMessages((prev) => {
+            const filtered = prev.filter((m) => m.id !== tempId);
+            return [
+              ...filtered,
+              toUIMessage(response.userMessage),
+              toUIMessage(response.aiResponse),
+            ];
+          });
+        },
+        onError: () => {
+          setLocalMessages((prev) =>
+            prev.map((m) => (m.id === tempId ? { ...m, status: 'failed', time: '전송 실패' } : m)),
+          );
+        },
+      });
+    },
+    [sendMessageMutation],
+  );
+
+  const handleRetry = useCallback(
+    (messageId: string) => {
+      const failedMessage = localMessages.find((m) => m.id === messageId);
+      if (!failedMessage) return;
+
+      setLocalMessages((prev) => prev.filter((m) => m.id !== messageId));
+      handleSendMessage(failedMessage.text);
+    },
+    [localMessages, handleSendMessage],
+  );
+
+  const handleDeleteFailed = useCallback((messageId: string) => {
+    setLocalMessages((prev) => prev.filter((m) => m.id !== messageId));
+  }, []);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [interviewState, setInterviewState] = useState<InterviewState>('idle');
   const [interviewMode, setInterviewMode] = useState<InterviewMode | null>(null);
@@ -71,6 +128,8 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
           onLoadMore={() => fetchNextPage()}
           hasMore={hasNextPage}
           isLoadingMore={isFetchingNextPage}
+          onRetry={handleRetry}
+          onDeleteFailed={handleDeleteFailed}
         />
 
         <div className="border-t bg-white px-3 py-2">
@@ -163,12 +222,8 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
 
         <LlmComposer
           onAttach={() => setSheetOpen(true)}
-          onSend={(text) => {
-            setLocalMessages((prev) => [
-              ...prev,
-              { id: `u-${Date.now()}`, role: 'USER', text, time: '방금' },
-            ]);
-          }}
+          onSend={handleSendMessage}
+          disabled={sendMessageMutation.isPending}
         />
       </div>
 

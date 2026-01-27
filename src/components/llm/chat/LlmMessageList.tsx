@@ -9,9 +9,18 @@ type Props = {
   onLoadMore?: () => void;
   hasMore?: boolean;
   isLoadingMore?: boolean;
+  onRetry?: (messageId: string) => void;
+  onDeleteFailed?: (messageId: string) => void;
 };
 
-export default function LlmMessageList({ messages, onLoadMore, hasMore, isLoadingMore }: Props) {
+export default function LlmMessageList({
+  messages,
+  onLoadMore,
+  hasMore,
+  isLoadingMore,
+  onRetry,
+  onDeleteFailed,
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const prevScrollHeightRef = useRef<number>(0);
   const isLoadingRef = useRef(false);
@@ -102,6 +111,8 @@ export default function LlmMessageList({ messages, onLoadMore, hasMore, isLoadin
                     className={[
                       'relative rounded-2xl px-3 py-2 text-sm leading-5',
                       isUser ? 'bg-neutral-900 text-white' : 'border bg-white text-neutral-900',
+                      m.status === 'sending' ? 'opacity-60' : '',
+                      m.status === 'failed' ? 'border-red-300 bg-red-50' : '',
                     ].join(' ')}
                   >
                     <p>{m.text}</p>
@@ -126,7 +137,25 @@ export default function LlmMessageList({ messages, onLoadMore, hasMore, isLoadin
                       </div>
                     ) : null}
                   </div>
-                  {m.time ? (
+                  {m.status === 'failed' ? (
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="text-[10px] text-red-500">전송 실패</span>
+                      <button
+                        type="button"
+                        onClick={() => onRetry?.(m.id)}
+                        className="text-[10px] text-neutral-500 underline hover:text-neutral-700"
+                      >
+                        재전송
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDeleteFailed?.(m.id)}
+                        className="text-[10px] text-neutral-500 underline hover:text-neutral-700"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  ) : m.time ? (
                     <span className="mt-1 text-[10px] text-neutral-400">{m.time}</span>
                   ) : null}
                 </div>
