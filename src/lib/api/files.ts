@@ -82,3 +82,13 @@ export async function postFileMeta(body: PostFileMetaRequest) {
 
   return { ok, status, json };
 }
+
+export async function deleteFile(fileId: number) {
+  const { ok, status, json } = await apiRequest<void>({
+    method: 'DELETE',
+    path: `/api/files/${fileId}`,
+    withAuth: true,
+  });
+
+  return { ok, status, json };
+}
