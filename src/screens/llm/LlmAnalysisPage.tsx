@@ -339,6 +339,7 @@ export default function LlmAnalysisPage({ roomId }: Props) {
           attachments={{ images: form.resume.images, pdf: form.resume.pdf }}
           onRemoveImage={handleRemoveResumeImage}
           onRemovePdf={handleRemoveResumePdf}
+          textDisabled={form.resume.images.length > 0 || form.resume.pdf !== null}
           headerRight={
             <button
               type="button"
@@ -346,7 +347,13 @@ export default function LlmAnalysisPage({ roomId }: Props) {
                 setTarget('RESUME');
                 setSheetOpen(true);
               }}
-              className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-800 hover:bg-neutral-50"
+              disabled={form.resume.text.trim().length > 0}
+              className={[
+                'inline-flex items-center gap-1.5 rounded-full border border-neutral-200 px-3 py-1.5 text-xs font-semibold',
+                form.resume.text.trim().length > 0
+                  ? 'cursor-not-allowed bg-neutral-100 text-neutral-400'
+                  : 'bg-white text-neutral-800 hover:bg-neutral-50',
+              ].join(' ')}
             >
               <Paperclip className="h-4 w-4" />
               첨부
@@ -363,6 +370,7 @@ export default function LlmAnalysisPage({ roomId }: Props) {
           attachments={{ images: form.jobPosting.images, pdf: form.jobPosting.pdf }}
           onRemoveImage={handleRemoveJobImage}
           onRemovePdf={handleRemoveJobPdf}
+          textDisabled={form.jobPosting.images.length > 0 || form.jobPosting.pdf !== null}
           headerRight={
             <button
               type="button"
@@ -370,7 +378,13 @@ export default function LlmAnalysisPage({ roomId }: Props) {
                 setTarget('JOB');
                 setSheetOpen(true);
               }}
-              className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-800 hover:bg-neutral-50"
+              disabled={form.jobPosting.text.trim().length > 0}
+              className={[
+                'inline-flex items-center gap-1.5 rounded-full border border-neutral-200 px-3 py-1.5 text-xs font-semibold',
+                form.jobPosting.text.trim().length > 0
+                  ? 'cursor-not-allowed bg-neutral-100 text-neutral-400'
+                  : 'bg-white text-neutral-800 hover:bg-neutral-50',
+              ].join(' ')}
             >
               <Paperclip className="h-4 w-4" />
               첨부
