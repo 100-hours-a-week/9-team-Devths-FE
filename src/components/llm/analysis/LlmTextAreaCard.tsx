@@ -58,7 +58,9 @@ export default function LlmTextAreaCard({
           'mt-3 min-h-[140px] w-full resize-none rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-sm outline-none focus:border-neutral-400',
           textDisabled ? 'cursor-not-allowed opacity-50' : '',
         ].join(' ')}
-        placeholder={textDisabled ? '파일이 첨부되어 텍스트 입력이 비활성화되었습니다.' : placeholder}
+        placeholder={
+          textDisabled ? '파일이 첨부되어 텍스트 입력이 비활성화되었습니다.' : placeholder
+        }
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onPaste={handlePaste}
