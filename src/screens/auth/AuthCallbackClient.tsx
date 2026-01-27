@@ -58,7 +58,7 @@ export default function AuthCallbackClient() {
           }
 
           setAccessToken(accessToken);
-          router.replace('/calendar');
+          router.replace('/llm');
           return;
         }
 
