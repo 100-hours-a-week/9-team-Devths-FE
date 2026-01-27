@@ -42,7 +42,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
     return () => resetOptions();
   }, [resetOptions, setOptions]);
 
-  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
+  const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useMessagesInfiniteQuery(numericRoomId);
 
   const sendMessageMutation = useSendMessageMutation(numericRoomId);
@@ -139,6 +139,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
         setLocalMessages((prev) =>
           prev.map((m) => (m.id === tempId ? { ...m, status: 'failed', time: '업로드 실패' } : m)),
         );
+        toast('파일 업로드에 실패했습니다.');
       }
     },
     [sendMessageMutation, attachedImages, attachedPdf, interviewSession],
@@ -322,8 +323,15 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
 
   if (isError) {
     return (
-      <main className="-mx-4 flex h-[calc(100dvh-56px-var(--bottom-nav-h))] items-center justify-center sm:-mx-6">
+      <main className="-mx-4 flex h-[calc(100dvh-56px-var(--bottom-nav-h))] flex-col items-center justify-center gap-3 sm:-mx-6">
         <p className="text-sm text-red-500">메시지를 불러오지 못했습니다.</p>
+        <button
+          type="button"
+          onClick={() => refetch()}
+          className="rounded-lg border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 shadow-sm hover:bg-neutral-50"
+        >
+          다시 시도
+        </button>
       </main>
     );
   }
