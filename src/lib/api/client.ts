@@ -1,8 +1,40 @@
-import { getAccessToken } from '@/lib/auth/token';
+import { clearAccessToken, getAccessToken, setAccessToken } from '@/lib/auth/token';
 
 import type { ApiErrorResponse, ApiResponse } from '@/types/api';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+let isRefreshing = false;
+let refreshPromise: Promise<boolean> | null = null;
+
+async function refreshAccessToken(): Promise<boolean> {
+  if (!BASE_URL) return false;
+
+  try {
+    const res = await fetch(new URL('/api/auth/tokens', BASE_URL).toString(), {
+      method: 'POST',
+      credentials: 'include',
+    });
+
+    if (!res.ok) {
+      clearAccessToken();
+      return false;
+    }
+
+    const authHeader = res.headers.get('authorization');
+    const newToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+    if (newToken) {
+      setAccessToken(newToken);
+      return true;
+    }
+
+    return false;
+  } catch {
+    clearAccessToken();
+    return false;
+  }
+}
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -32,7 +64,10 @@ function buildUrl(path: string) {
   return new URL(path, BASE_URL).toString();
 }
 
-export async function apiRequest<T>(options: RequestOptions): Promise<ApiClientResult<T>> {
+export async function apiRequest<T>(
+  options: RequestOptions,
+  isRetry = false,
+): Promise<ApiClientResult<T>> {
   const { method, path, body, withAuth = true, credentials = 'include', headers = {} } = options;
 
   const url = buildUrl(path);
@@ -62,6 +97,23 @@ export async function apiRequest<T>(options: RequestOptions): Promise<ApiClientR
     credentials,
     body: requestBody,
   });
+
+  // 401 에러 시 토큰 갱신 후 재시도
+  if (res.status === 401 && withAuth && !isRetry) {
+    if (!isRefreshing) {
+      isRefreshing = true;
+      refreshPromise = refreshAccessToken().finally(() => {
+        isRefreshing = false;
+        refreshPromise = null;
+      });
+    }
+
+    const refreshed = await (refreshPromise ?? Promise.resolve(false));
+
+    if (refreshed) {
+      return apiRequest<T>(options, true);
+    }
+  }
 
   const contentType = res.headers.get('content-type') ?? '';
   const json =
