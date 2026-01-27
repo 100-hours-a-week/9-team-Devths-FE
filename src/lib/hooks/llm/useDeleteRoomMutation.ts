@@ -1,12 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { deleteRoom as deleteRoomApi } from '@/lib/api/llmRooms';
+import { llmKeys } from '@/lib/hooks/llm/queryKeys';
 import { removeRoomStorage } from '@/lib/storage/aiChatroomStorage';
 
 import type { FetchRoomsResponse } from '@/types/llm';
 import type { InfiniteData } from '@tanstack/react-query';
-
-const ROOMS_QUERY_KEY = ['llm', 'rooms'] as const;
 
 export function useDeleteRoomMutation() {
   const queryClient = useQueryClient();
@@ -17,12 +16,13 @@ export function useDeleteRoomMutation() {
       return result;
     },
     onMutate: async (roomId) => {
-      await queryClient.cancelQueries({ queryKey: ROOMS_QUERY_KEY });
+      await queryClient.cancelQueries({ queryKey: llmKeys.rooms() });
 
-      const previousData =
-        queryClient.getQueryData<InfiniteData<FetchRoomsResponse>>(ROOMS_QUERY_KEY);
+      const previousData = queryClient.getQueryData<InfiniteData<FetchRoomsResponse>>(
+        llmKeys.rooms(),
+      );
 
-      queryClient.setQueryData<InfiniteData<FetchRoomsResponse>>(ROOMS_QUERY_KEY, (old) => {
+      queryClient.setQueryData<InfiniteData<FetchRoomsResponse>>(llmKeys.rooms(), (old) => {
         if (!old) return old;
 
         return {
@@ -48,7 +48,7 @@ export function useDeleteRoomMutation() {
     },
     onError: (_error, _roomId, context) => {
       if (context?.previousData) {
-        queryClient.setQueryData(ROOMS_QUERY_KEY, context.previousData);
+        queryClient.setQueryData(llmKeys.rooms(), context.previousData);
       }
     },
     onSuccess: (result, roomId, context) => {
@@ -63,7 +63,7 @@ export function useDeleteRoomMutation() {
       }
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ROOMS_QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: llmKeys.rooms() });
     },
   });
 }
