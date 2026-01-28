@@ -9,8 +9,8 @@ import LlmMessageList from '@/components/llm/chat/LlmMessageList';
 import { CHAT_ATTACHMENT_CONSTRAINTS, IMAGE_MIME_TYPES } from '@/constants/attachment';
 import { useEndInterviewMutation } from '@/lib/hooks/llm/useEndInterviewMutation';
 import { useMessagesInfiniteQuery } from '@/lib/hooks/llm/useMessagesInfiniteQuery';
-import { useSendMessageMutation } from '@/lib/hooks/llm/useSendMessageMutation';
 import { useStartInterviewMutation } from '@/lib/hooks/llm/useStartInterviewMutation';
+import { useStreamMessage } from '@/lib/hooks/llm/useStreamMessage';
 import { toast } from '@/lib/toast/store';
 import { uploadFile } from '@/lib/upload/uploadFile';
 import { toUIMessage } from '@/lib/utils/llm';
@@ -45,7 +45,12 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useMessagesInfiniteQuery(numericRoomId);
 
-  const sendMessageMutation = useSendMessageMutation(numericRoomId);
+  const {
+    streamingText,
+    streamState,
+    send: sendStreamMessage,
+    reset: resetStream,
+  } = useStreamMessage(numericRoomId);
   const startInterviewMutation = useStartInterviewMutation(numericRoomId);
   const endInterviewMutation = useEndInterviewMutation(numericRoomId);
 
@@ -80,7 +85,11 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
           id: tempId,
           role: 'USER',
           text: trimmed || '(첨부 파일)',
-          time: '전송 중...',
+          time: new Date().toLocaleTimeString('ko-KR', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+          }),
           status: 'sending',
         },
       ]);
@@ -99,50 +108,27 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
           fileIds.push(result.fileId);
         }
 
-        sendMessageMutation.mutate(
-          { content: trimmed, fileIds: fileIds.length > 0 ? fileIds : undefined },
-          {
-            onSuccess: (response) => {
-              if (!response) return;
-              setLocalMessages((prev) => {
-                const filtered = prev.filter((m) => m.id !== tempId);
-                return [
-                  ...filtered,
-                  toUIMessage(response.userMessage),
-                  toUIMessage(response.aiResponse),
-                ];
-              });
-
-              if (interviewSession) {
-                const newCount = interviewSession.questionCount + 1;
-                if (newCount >= MAX_QUESTIONS) {
-                  setInterviewSession((prev) =>
-                    prev ? { ...prev, questionCount: newCount } : null,
-                  );
-                } else {
-                  setInterviewSession((prev) =>
-                    prev ? { ...prev, questionCount: newCount } : null,
-                  );
-                }
-              }
-            },
-            onError: () => {
-              setLocalMessages((prev) =>
-                prev.map((m) =>
-                  m.id === tempId ? { ...m, status: 'failed', time: '전송 실패' } : m,
-                ),
-              );
-            },
-          },
+        setLocalMessages((prev) =>
+          prev.map((m) => (m.id === tempId ? { ...m, status: 'sent' } : m)),
         );
+
+        await sendStreamMessage(trimmed);
+
+        if (interviewSession) {
+          const newCount = interviewSession.questionCount + 1;
+          setInterviewSession((prev) => (prev ? { ...prev, questionCount: newCount } : null));
+        }
+
+        setLocalMessages((prev) => prev.filter((m) => m.id !== tempId));
+        resetStream();
       } catch {
         setLocalMessages((prev) =>
-          prev.map((m) => (m.id === tempId ? { ...m, status: 'failed', time: '업로드 실패' } : m)),
+          prev.map((m) => (m.id === tempId ? { ...m, status: 'failed', time: '전송 실패' } : m)),
         );
-        toast('파일 업로드에 실패했습니다.');
+        toast('메시지 전송에 실패했습니다.');
       }
     },
-    [sendMessageMutation, attachedImages, attachedPdf, interviewSession],
+    [sendStreamMessage, resetStream, attachedImages, attachedPdf, interviewSession],
   );
 
   const handleRetry = useCallback(
@@ -308,10 +294,24 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
     }
   }, [interviewSession, handleEndInterview]);
 
-  const messages = useMemo<UIMessage[]>(
-    () => [...serverMessages, ...localMessages],
-    [serverMessages, localMessages],
-  );
+  const streamingMessage: UIMessage | null = useMemo(() => {
+    if (streamState !== 'streaming' || !streamingText) return null;
+    return {
+      id: 'streaming',
+      role: 'AI',
+      text: streamingText,
+      time: '',
+      status: 'streaming',
+    };
+  }, [streamState, streamingText]);
+
+  const messages = useMemo<UIMessage[]>(() => {
+    const base = [...serverMessages, ...localMessages];
+    if (streamingMessage) {
+      base.push(streamingMessage);
+    }
+    return base;
+  }, [serverMessages, localMessages, streamingMessage]);
 
   if (isLoading) {
     return (
@@ -425,7 +425,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
         <LlmComposer
           onAttach={() => setSheetOpen(true)}
           onSend={handleSendMessage}
-          disabled={sendMessageMutation.isPending}
+          disabled={streamState === 'streaming'}
           attachedImages={attachedImages}
           attachedPdf={attachedPdf}
           onRemoveImage={handleRemoveImage}

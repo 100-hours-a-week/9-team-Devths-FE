@@ -68,7 +68,11 @@ export type FetchMessagesParams = {
 
 export type SendMessageRequest = {
   content: string;
-  fileIds?: number[];
+  model: LlmModel;
+};
+
+export type SSEErrorEvent = {
+  message: string;
 };
 
 export type InterviewType = 'TECH' | 'PERSONAL';

@@ -3,7 +3,7 @@ import { getRoomStorageMode } from '@/lib/storage/aiChatroomStorage';
 import type { LlmRoom } from '@/components/llm/rooms/types';
 import type { AiChatRoom, ChatMessage } from '@/types/llm';
 
-export type MessageStatus = 'sending' | 'sent' | 'failed';
+export type MessageStatus = 'sending' | 'sent' | 'failed' | 'streaming';
 
 export type UIAttachment = {
   type: 'image' | 'file';

@@ -1,4 +1,5 @@
 import { api, type ApiClientResult } from '@/lib/api/client';
+import { getAccessToken } from '@/lib/auth/token';
 
 import type {
   CreateRoomResponse,
@@ -10,12 +11,116 @@ import type {
   FetchRoomsResponse,
   SendMessageRequest,
   SendMessageResponse,
+  SSEErrorEvent,
   StartAnalysisRequest,
   StartAnalysisResponse,
   StartInterviewRequest,
   StartInterviewResponse,
   TaskResultData,
 } from '@/types/llm';
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+export type StreamMessageCallbacks = {
+  onChunk?: (chunk: string, accumulated: string) => void;
+  onDone?: (fullText: string) => void;
+  onError?: (error: SSEErrorEvent | Error) => void;
+};
+
+export async function streamMessage(
+  roomId: number,
+  body: SendMessageRequest,
+  callbacks: StreamMessageCallbacks,
+): Promise<void> {
+  const path = `/api/ai-chatrooms/${roomId}/messages`;
+  const url = new URL(path, BASE_URL).toString();
+
+  const token = getAccessToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Accept: 'text/event-stream',
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    credentials: 'include',
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    callbacks.onError?.(new Error(`HTTP ${response.status}: ${errorText}`));
+    return;
+  }
+
+  const reader = response.body?.getReader();
+  if (!reader) {
+    callbacks.onError?.(new Error('No response body'));
+    return;
+  }
+
+  const decoder = new TextDecoder();
+  let accumulated = '';
+  let buffer = '';
+  let currentEvent = '';
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) {
+        callbacks.onDone?.(accumulated);
+        break;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+
+      for (const line of lines) {
+        if (line.startsWith('event: ')) {
+          currentEvent = line.slice(7).trim();
+          continue;
+        }
+
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+
+          if (currentEvent === 'done') {
+            callbacks.onDone?.(accumulated);
+            currentEvent = '';
+            continue;
+          }
+
+          if (currentEvent === 'error') {
+            try {
+              const parsed = JSON.parse(data) as SSEErrorEvent;
+              callbacks.onError?.(parsed);
+            } catch {
+              callbacks.onError?.(new Error(data || 'Unknown error'));
+            }
+            currentEvent = '';
+            continue;
+          }
+
+          if (data) {
+            accumulated += data;
+            callbacks.onChunk?.(data, accumulated);
+          }
+
+          currentEvent = '';
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
 
 export async function fetchRooms(
   params?: FetchRoomsParams,
