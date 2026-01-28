@@ -8,6 +8,7 @@ import NicknameField from '@/components/common/NicknameField';
 import ProfileImagePicker from '@/components/common/ProfileImagePicker';
 import FileTooLargeModal from '@/components/signup/FileTooLargeModal';
 import { INTEREST_OPTIONS, normalizeInterests } from '@/constants/interests';
+import { useDeleteProfileImageMutation } from '@/lib/hooks/users/useDeleteProfileImageMutation';
 import { useUpdateMeMutation } from '@/lib/hooks/users/useUpdateMeMutation';
 import { useUpdateProfileImageMutation } from '@/lib/hooks/users/useUpdateProfileImageMutation';
 import { validateNickname } from '@/lib/utils/validateNickname';
@@ -43,8 +44,14 @@ function EditForm({ initialData, onClose }: EditFormProps) {
   const nicknameValidation = validateNickname(nickname);
   const updateMutation = useUpdateMeMutation();
   const updateProfileImageMutation = useUpdateProfileImageMutation();
+  const deleteProfileImageMutation = useDeleteProfileImageMutation();
 
-  const isPending = updateMutation.isPending || updateProfileImageMutation.isPending;
+  const isPending =
+    updateMutation.isPending ||
+    updateProfileImageMutation.isPending ||
+    deleteProfileImageMutation.isPending;
+
+  const hasServerImage = Boolean(initialData?.profileImage?.url) && !selectedFile;
 
   const handleToggleInterest = (value: string) => {
     setInterests((prev) =>
@@ -58,6 +65,24 @@ function EditForm({ initialData, onClose }: EditFormProps) {
     setPreviewUrl(url);
     setSelectedFile(file);
     setSubmitMessage(null);
+  };
+
+  const handleDeleteImage = async () => {
+    if (selectedFile) {
+      setPreviewUrl(initialData?.profileImage?.url ?? null);
+      setSelectedFile(null);
+      return;
+    }
+
+    if (hasServerImage) {
+      try {
+        await deleteProfileImageMutation.mutateAsync();
+        setPreviewUrl(null);
+        setSubmitMessage({ type: 'success', text: '프로필 사진이 삭제되었습니다.' });
+      } catch {
+        setSubmitMessage({ type: 'error', text: '프로필 사진 삭제에 실패했습니다.' });
+      }
+    }
   };
 
   const handleNicknameChange = (value: string) => {
@@ -109,10 +134,11 @@ function EditForm({ initialData, onClose }: EditFormProps) {
         {hasProfileImage && (
           <button
             type="button"
-            onClick={() => setPreviewUrl(null)}
-            className="mt-2 rounded-lg bg-neutral-200 px-4 py-1.5 text-sm text-neutral-600 hover:bg-neutral-300"
+            onClick={handleDeleteImage}
+            disabled={deleteProfileImageMutation.isPending}
+            className="mt-2 rounded-lg bg-neutral-200 px-4 py-1.5 text-sm text-neutral-600 hover:bg-neutral-300 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            삭제
+            {deleteProfileImageMutation.isPending ? '삭제 중...' : '삭제'}
           </button>
         )}
       </div>

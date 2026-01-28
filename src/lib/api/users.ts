@@ -92,6 +92,11 @@ export async function updateProfileImage(body: UpdateProfileImageRequest) {
   return { ok, status, json };
 }
 
+export async function deleteProfileImage() {
+  const { ok, status, json } = await api.delete<void>('/api/users/me/picture');
+  return { ok, status, json };
+}
+
 export async function postSignup(body: SignupRequest): Promise<PostSignupResult> {
   const payload: SignupPayload = {
     email: body.email,
