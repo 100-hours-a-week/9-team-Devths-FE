@@ -23,6 +23,7 @@ export type UIMessage = {
 export function mapAiChatRoomToLlmRoom(room: AiChatRoom): LlmRoom {
   return {
     id: room.roomUuid,
+    numericId: room.roomId,
     title: room.title,
     updatedAt: formatUpdatedAt(room.updatedAt),
     storage: getRoomStorageMode(room.roomUuid),

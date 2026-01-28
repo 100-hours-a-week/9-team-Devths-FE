@@ -55,23 +55,6 @@ export function getRoomStorageMode(roomId: string): RoomStorage {
   return map[roomId]?.mode ?? 'ARCHIVED';
 }
 
-export function archiveRoom(roomId: string): boolean {
-  const map = getStorageMap();
-  const current = map[roomId]?.mode ?? 'TEMP';
-
-  if (current === 'ARCHIVED') {
-    return false;
-  }
-
-  map[roomId] = {
-    mode: 'ARCHIVED',
-    savedAt: new Date().toISOString(),
-  };
-
-  setStorageMap(map);
-  return true;
-}
-
 export function removeRoomStorage(roomId: string): void {
   const map = getStorageMap();
   delete map[roomId];

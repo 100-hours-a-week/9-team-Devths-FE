@@ -90,7 +90,9 @@ export default function LlmRoomsPage() {
           <p className="mb-3 px-1 text-sm font-semibold text-neutral-900">대화 목록</p>
           <LlmRoomList
             rooms={rooms}
-            onEnterRoom={(id) => router.push(`/llm/${encodeURIComponent(id)}`)}
+            onEnterRoom={(id, numericId) =>
+              router.push(`/llm/${encodeURIComponent(id)}?rid=${numericId}`)
+            }
             onDeleteRoom={handleDeleteRoom}
           />
 

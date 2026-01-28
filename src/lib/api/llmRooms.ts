@@ -43,12 +43,6 @@ export async function deleteRoom(roomId: number): Promise<ApiClientResult<void>>
   return api.delete<void>(path);
 }
 
-export async function archiveRoom(roomId: number): Promise<ApiClientResult<void>> {
-  const path = `/api/ai-chatrooms/${roomId}/archive`;
-
-  return api.post<void>(path);
-}
-
 export async function fetchMessages(
   roomId: number,
   params?: FetchMessagesParams,
