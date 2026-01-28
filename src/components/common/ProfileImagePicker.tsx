@@ -6,7 +6,7 @@ import { useRef } from 'react';
 import { cn } from '@/lib/utils';
 
 const MAX_SIZE_BYTES = 2 * 1024 * 1024;
-const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png'] as const;
 
 type ProfileImagePickerProps = {
   previewUrl?: string | null;
@@ -92,7 +92,7 @@ export default function ProfileImagePicker({
         ref={inputRef}
         type="file"
         className="hidden"
-        accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+        accept=".jpg,.jpeg,.png,image/jpeg,image/png"
         onChange={handleChange}
       />
     </section>
