@@ -8,9 +8,10 @@ import NicknameField from '@/components/common/NicknameField';
 import ProfileImagePicker from '@/components/common/ProfileImagePicker';
 import FileTooLargeModal from '@/components/signup/FileTooLargeModal';
 import { INTEREST_OPTIONS, normalizeInterests } from '@/constants/interests';
+import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { useDeleteProfileImageMutation } from '@/lib/hooks/users/useDeleteProfileImageMutation';
 import { useUpdateMeMutation } from '@/lib/hooks/users/useUpdateMeMutation';
-import { useUpdateProfileImageMutation } from '@/lib/hooks/users/useUpdateProfileImageMutation';
+import { useUploadProfileImageMutation } from '@/lib/hooks/users/useUpdateProfileImageMutation';
 import { validateNickname } from '@/lib/utils/validateNickname';
 
 import type { MeData } from '@/lib/api/users';
@@ -44,15 +45,16 @@ function EditForm({ initialData, onWithdraw }: EditFormProps) {
 
   const nicknameValidation = validateNickname(nickname);
   const updateMutation = useUpdateMeMutation();
-  const updateProfileImageMutation = useUpdateProfileImageMutation();
+  const uploadImageMutation = useUploadProfileImageMutation();
   const deleteProfileImageMutation = useDeleteProfileImageMutation();
 
   const isPending =
     updateMutation.isPending ||
-    updateProfileImageMutation.isPending ||
+    uploadImageMutation.isPending ||
     deleteProfileImageMutation.isPending;
 
   const hasServerImage = Boolean(initialData?.profileImage?.url) && !selectedFile;
+  const userId = initialData?.userId ?? initialData?.id ?? getUserIdFromAccessToken();
 
   const handleToggleInterest = (value: string) => {
     setInterests((prev) =>
@@ -75,9 +77,10 @@ function EditForm({ initialData, onWithdraw }: EditFormProps) {
       return;
     }
 
-    if (hasServerImage) {
+    const fileId = initialData?.profileImage?.id;
+    if (hasServerImage && fileId) {
       try {
-        await deleteProfileImageMutation.mutateAsync();
+        await deleteProfileImageMutation.mutateAsync({ fileId });
         setPreviewUrl(null);
         setSubmitMessage({ type: 'success', text: '프로필 사진이 삭제되었습니다.' });
       } catch {
@@ -96,13 +99,40 @@ function EditForm({ initialData, onWithdraw }: EditFormProps) {
 
     setSubmitMessage(null);
 
+    // 변경 사항 체크
+    const initialNickname = initialData?.nickname ?? '';
+    const initialInterests = normalizeInterests(initialData?.interests ?? []);
+
+    const hasImageChange = Boolean(selectedFile);
+    const hasNicknameChange = nickname !== initialNickname;
+    const hasInterestsChange =
+      interests.length !== initialInterests.length ||
+      interests.some((v) => !initialInterests.includes(v as typeof initialInterests[number]));
+
+    const hasAnyChange = hasImageChange || hasNicknameChange || hasInterestsChange;
+
+    if (!hasAnyChange) {
+      setSubmitMessage({ type: 'error', text: '변경된 내용이 없습니다.' });
+      return;
+    }
+
     try {
-      if (selectedFile) {
-        await updateProfileImageMutation.mutateAsync({ file: selectedFile });
+      // 1) 프로필 이미지 업로드 (새 파일이 있는 경우)
+      if (hasImageChange) {
+        if (!userId) {
+          setSubmitMessage({ type: 'error', text: '유저 정보를 확인할 수 없습니다.' });
+          return;
+        }
+
+        await uploadImageMutation.mutateAsync({ file: selectedFile!, userId });
         setSelectedFile(null);
       }
 
-      await updateMutation.mutateAsync({ nickname, interests });
+      // 2) 프로필 업데이트 (PUT /api/users/me)
+      await updateMutation.mutateAsync({
+        nickname,
+        interests: hasInterestsChange ? interests : undefined,
+      });
 
       setSubmitMessage({ type: 'success', text: '회원 정보가 성공적으로 변경되었습니다.' });
     } catch (error) {

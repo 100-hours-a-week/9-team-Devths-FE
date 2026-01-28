@@ -12,6 +12,47 @@ export function getAccessToken() {
   return localStorage.getItem(ACCESS_TOKEN_KEY);
 }
 
+function decodeBase64Url(value: string) {
+  const padded = value
+    .replace(/-/g, '+')
+    .replace(/_/g, '/')
+    .padEnd(Math.ceil(value.length / 4) * 4, '=');
+  return atob(padded);
+}
+
+export function getUserIdFromAccessToken(): number | null {
+  if (typeof window === 'undefined') return null;
+  const token = getAccessToken();
+  if (!token) return null;
+
+  const parts = token.split('.');
+  if (parts.length < 2) return null;
+
+  try {
+    const payloadJson = decodeBase64Url(parts[1]);
+    const payload = JSON.parse(payloadJson) as Record<string, unknown>;
+
+    const candidates = [
+      payload.userId,
+      payload.id,
+      payload.sub,
+      payload.user_id,
+    ];
+
+    for (const value of candidates) {
+      if (typeof value === 'number' && Number.isFinite(value)) return value;
+      if (typeof value === 'string' && value.trim() !== '') {
+        const parsed = Number(value);
+        if (Number.isFinite(parsed)) return parsed;
+      }
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export function clearAccessToken() {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(ACCESS_TOKEN_KEY);

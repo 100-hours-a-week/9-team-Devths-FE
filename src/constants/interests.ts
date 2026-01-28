@@ -14,7 +14,7 @@ const INTEREST_KOREAN_TO_VALUE: Record<string, InterestValue> = {
   백엔드: 'BACKEND',
   프론트엔드: 'FRONTEND',
   클라우드: 'CLOUD',
-  AI: 'AI',
+  인공지능: 'AI',
 };
 
 /** 서버에서 받은 interests를 영문 대문자 형식으로 정규화 */

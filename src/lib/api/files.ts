@@ -53,13 +53,13 @@ export async function postPresigned(body: PresignedRequest) {
 }
 
 export type FileCategory = 'RESUME' | 'PORTFOLIO' | 'JOB_POSTING' | 'ATTACHMENT';
-export type FileRefType = 'CHATROOM' | 'POST' | 'MESSAGE';
+export type FileRefType = 'CHATROOM' | 'POST' | 'MESSAGE' | 'USER';
 
 export type PostFileMetaRequest = {
   originalName: string;
   s3Key: string;
   mimeType: string;
-  category: FileCategory;
+  category?: FileCategory | null;
   fileSize: number;
   refType: FileRefType;
   refId?: number | null;

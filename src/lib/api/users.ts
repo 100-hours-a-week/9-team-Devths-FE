@@ -3,6 +3,8 @@ import { api, apiRequest } from '@/lib/api/client';
 import type { ApiErrorResponse, ApiResponse } from '@/types/api';
 
 export type MeData = {
+  userId?: number;
+  id?: number;
   nickname: string;
   profileImage: { id: number; url: string } | null;
   stats: { followerCount: number; followingCount: number };
@@ -22,7 +24,7 @@ export async function fetchMe(): Promise<FetchMeResult> {
 
 export type UpdateMeRequest = {
   nickname: string;
-  interests: string[];
+  interests?: string[];
 };
 
 export type UpdateMeData = {
@@ -38,10 +40,13 @@ export type UpdateMeResult = {
 };
 
 export async function updateMe(body: UpdateMeRequest): Promise<UpdateMeResult> {
-  // 백엔드가 소문자 interests를 기대할 수 있으므로 변환
+  const uniqueInterests = body.interests
+    ? [...new Set(body.interests.map((i) => i.toLowerCase()))]
+    : undefined;
+
   const payload = {
     nickname: body.nickname,
-    interests: body.interests.map((i) => i.toLowerCase()),
+    ...(uniqueInterests ? { interests: uniqueInterests } : {}),
   };
   const { ok, status, json } = await api.put<UpdateMeData>('/api/users/me', payload);
   return { ok, status, json };
@@ -75,27 +80,6 @@ export type PostSignupResult = {
   status: number;
   json: (ApiResponse<SignupData> | ApiErrorResponse) | null;
 };
-
-export type UpdateProfileImageRequest = {
-  s3Key: string;
-};
-
-export type UpdateProfileImageData = {
-  profileImage: { id: number; url: string };
-};
-
-export async function updateProfileImage(body: UpdateProfileImageRequest) {
-  const { ok, status, json } = await api.post<UpdateProfileImageData>(
-    '/api/users/me/picture',
-    body,
-  );
-  return { ok, status, json };
-}
-
-export async function deleteProfileImage() {
-  const { ok, status, json } = await api.delete<void>('/api/users/me/picture');
-  return { ok, status, json };
-}
 
 // 회원 탈퇴 (DELETE /api/users)
 export async function deleteUser() {

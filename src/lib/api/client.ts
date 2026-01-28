@@ -80,8 +80,19 @@ export async function apiRequest<T>(
   let requestBody: BodyInit | undefined;
 
   if (hasBody) {
-    finalHeaders['Content-Type'] = finalHeaders['Content-Type'] ?? 'application/json';
-    requestBody = JSON.stringify(body);
+    const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+    const isUrlSearchParams =
+      typeof URLSearchParams !== 'undefined' && body instanceof URLSearchParams;
+    const isBlob = typeof Blob !== 'undefined' && body instanceof Blob;
+    const isArrayBuffer = body instanceof ArrayBuffer;
+    const isString = typeof body === 'string';
+
+    if (isFormData || isUrlSearchParams || isBlob || isArrayBuffer || isString) {
+      requestBody = body as BodyInit;
+    } else {
+      finalHeaders['Content-Type'] = finalHeaders['Content-Type'] ?? 'application/json';
+      requestBody = JSON.stringify(body);
+    }
   }
 
   if (withAuth) {

@@ -1,14 +1,18 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { deleteProfileImage } from '@/lib/api/users';
+import { deleteFile } from '@/lib/api/files';
 import { userKeys } from '@/lib/hooks/users/queryKeys';
+
+type DeleteProfileImageInput = {
+  fileId: number;
+};
 
 export function useDeleteProfileImageMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async () => {
-      const result = await deleteProfileImage();
+    mutationFn: async ({ fileId }: DeleteProfileImageInput) => {
+      const result = await deleteFile(fileId);
 
       if (!result.ok) {
         const error = new Error('Failed to delete profile image') as Error & {
