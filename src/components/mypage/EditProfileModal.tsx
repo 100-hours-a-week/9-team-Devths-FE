@@ -7,6 +7,7 @@ import BaseModal from '@/components/common/BaseModal';
 import NicknameField from '@/components/common/NicknameField';
 import ProfileImagePicker from '@/components/common/ProfileImagePicker';
 import { INTEREST_OPTIONS } from '@/constants/interests';
+import { validateNickname } from '@/lib/utils/validateNickname';
 
 import type { MeData } from '@/lib/api/users';
 
@@ -27,6 +28,8 @@ function EditForm({ initialData, onClose }: EditFormProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(
     initialData?.profileImage?.url ?? null,
   );
+
+  const nicknameValidation = validateNickname(nickname);
 
   const handleToggleInterest = (value: string) => {
     setInterests((prev) =>
@@ -56,7 +59,11 @@ function EditForm({ initialData, onClose }: EditFormProps) {
         )}
       </div>
 
-      <NicknameField value={nickname} onChange={setNickname} />
+      <NicknameField
+        value={nickname}
+        onChange={setNickname}
+        errorMessage={nicknameValidation.errorMessage}
+      />
 
       <div>
         <p className="text-sm font-semibold">관심 분야 수정</p>
