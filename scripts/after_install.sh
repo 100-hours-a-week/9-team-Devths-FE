@@ -3,7 +3,7 @@ set -e
 
 echo "===== AfterInstall: 환경 설정 및 의존성 설치 ====="
 
-DEPLOY_DIR="/var/www/devths-fe"
+DEPLOY_DIR="/home/ubuntu/fe"
 
 # 1. pnpm 설치 확인 및 설치
 if ! command -v pnpm &> /dev/null; then
@@ -25,8 +25,7 @@ fi
 
 # 3. PM2 로그 디렉토리 생성
 echo "📁 PM2 로그 디렉토리를 생성합니다..."
-sudo mkdir -p /var/log/pm2
-sudo chown -R ubuntu:ubuntu /var/log/pm2
+sudo mkdir -p ${DEPLOY_DIR}/logs
 
 # 4. 파일 권한 설정
 echo "🔒 파일 권한을 설정합니다..."

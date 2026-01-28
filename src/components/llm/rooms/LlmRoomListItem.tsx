@@ -6,7 +6,7 @@ import type { LlmRoom } from '@/components/llm/rooms/types';
 
 type Props = {
   room: LlmRoom;
-  onEnter?: (roomId: string) => void;
+  onEnter?: () => void;
   onDelete?: (roomId: string) => void;
 };
 
@@ -16,7 +16,7 @@ export default function LlmRoomListItem({ room, onEnter, onDelete }: Props) {
       <div className="flex items-center justify-between gap-3">
         <button
           type="button"
-          onClick={() => onEnter?.(room.id)}
+          onClick={() => onEnter?.()}
           className="flex min-w-0 flex-1 flex-col text-left"
         >
           <span className="truncate text-sm font-semibold text-neutral-900">{room.title}</span>

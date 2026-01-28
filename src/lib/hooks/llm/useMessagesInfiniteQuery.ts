@@ -1,21 +1,21 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 
-import { fetchRooms } from '@/lib/api/llmRooms';
+import { fetchMessages } from '@/lib/api/llmRooms';
 import { llmKeys } from '@/lib/hooks/llm/queryKeys';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 
-export function useRoomsInfiniteQuery() {
+export function useMessagesInfiniteQuery(roomId: number) {
   return useInfiniteQuery({
-    queryKey: llmKeys.rooms(),
+    queryKey: llmKeys.messages(roomId),
     queryFn: async ({ pageParam }) => {
-      const result = await fetchRooms({
+      const result = await fetchMessages(roomId, {
         size: PAGE_SIZE,
         lastId: pageParam,
       });
 
       if (!result.ok || !result.json) {
-        throw new Error('Failed to fetch rooms');
+        throw new Error('Failed to fetch messages');
       }
 
       if ('data' in result.json) {
@@ -29,5 +29,6 @@ export function useRoomsInfiniteQuery() {
       if (!lastPage) return undefined;
       return lastPage.hasNext ? lastPage.lastId : undefined;
     },
+    enabled: roomId > 0,
   });
 }
