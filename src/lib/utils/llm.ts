@@ -1,11 +1,29 @@
 import { getRoomStorageMode } from '@/lib/storage/aiChatroomStorage';
 
 import type { LlmRoom } from '@/components/llm/rooms/types';
-import type { AiChatRoom } from '@/types/llm';
+import type { AiChatRoom, ChatMessage } from '@/types/llm';
+
+export type MessageStatus = 'sending' | 'sent' | 'failed';
+
+export type UIAttachment = {
+  type: 'image' | 'file';
+  name: string;
+  url?: string;
+};
+
+export type UIMessage = {
+  id: string;
+  role: 'USER' | 'AI' | 'SYSTEM';
+  text: string;
+  time?: string;
+  attachments?: UIAttachment[];
+  status?: MessageStatus;
+};
 
 export function mapAiChatRoomToLlmRoom(room: AiChatRoom): LlmRoom {
   return {
     id: room.roomUuid,
+    numericId: room.roomId,
     title: room.title,
     updatedAt: formatUpdatedAt(room.updatedAt),
     storage: getRoomStorageMode(room.roomUuid),
@@ -40,4 +58,31 @@ function formatUpdatedAt(isoString: string): string {
   }
 
   return `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}`;
+}
+
+const S3_BASE_URL = process.env.NEXT_PUBLIC_S3_URL ?? '';
+
+export function toUIMessage(msg: ChatMessage): UIMessage {
+  const attachments: UIAttachment[] | undefined = msg.attachments?.map((att) => ({
+    type: att.mimeType.startsWith('image/') ? 'image' : 'file',
+    name: att.originalName,
+    url: `${S3_BASE_URL}/${att.s3Key}`,
+  }));
+
+  return {
+    id: String(msg.messageId),
+    role: msg.role === 'ASSISTANT' ? 'AI' : 'USER',
+    text: msg.content,
+    time: formatMessageTime(msg.createdAt),
+    attachments: attachments?.length ? attachments : undefined,
+  };
+}
+
+function formatMessageTime(isoString: string): string {
+  const date = new Date(isoString);
+  return date.toLocaleTimeString('ko-KR', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
 }

@@ -35,6 +35,7 @@ type Target = 'RESUME' | 'JOB' | null;
 
 type Props = {
   roomId: string;
+  numericRoomId?: number;
 };
 
 const EMPTY_DOCUMENT: DocumentInput = {
@@ -43,7 +44,7 @@ const EMPTY_DOCUMENT: DocumentInput = {
   pdf: null,
 };
 
-export default function LlmAnalysisPage({ roomId }: Props) {
+export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoomId }: Props) {
   const router = useRouter();
   const [form, setForm] = useState<AnalysisFormState>({
     resume: { ...EMPTY_DOCUMENT },
@@ -53,7 +54,7 @@ export default function LlmAnalysisPage({ roomId }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [target, setTarget] = useState<Target>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [actualRoomId, setActualRoomId] = useState<string | null>(null);
+  const [createdRoom, setCreatedRoom] = useState<{ uuid: string; id: number } | null>(null);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -68,13 +69,14 @@ export default function LlmAnalysisPage({ roomId }: Props) {
   useEffect(() => {
     if (status === 'COMPLETED') {
       setIsLoading(false);
-      const targetRoomId = actualRoomId || roomId;
-      router.push(`/llm/${targetRoomId}/result?taskId=${currentTaskId}`);
+      const targetUuid = createdRoom?.uuid || roomId;
+      const targetNumericId = createdRoom?.id || propNumericRoomId || 0;
+      router.push(`/llm/${targetUuid}/result?taskId=${currentTaskId}&rid=${targetNumericId}`);
     } else if (status === 'FAILED') {
       setIsLoading(false);
       toast(error || '분석에 실패했습니다.');
     }
-  }, [status, error, router, roomId, actualRoomId, currentTaskId]);
+  }, [status, error, router, roomId, createdRoom, currentTaskId, propNumericRoomId]);
 
   const updateResume = useCallback((updates: Partial<DocumentInput>) => {
     setForm((prev) => ({
@@ -208,18 +210,20 @@ export default function LlmAnalysisPage({ roomId }: Props) {
     setIsLoading(true);
 
     try {
-      let targetRoomId = roomId;
+      let numericRoomId = propNumericRoomId || 0;
+
       if (roomId === 'new') {
         const createResult = await createRoom();
         if (!createResult.ok || !createResult.json) {
           throw new Error('채팅방 생성에 실패했습니다.');
         }
         const createJson = createResult.json as ApiResponse<CreateRoomResponse>;
-        targetRoomId = String(createJson.data.roomId);
-        setActualRoomId(targetRoomId);
+        numericRoomId = createJson.data.roomId;
+        setCreatedRoom({
+          uuid: createJson.data.roomUuid,
+          id: createJson.data.roomId,
+        });
       }
-
-      const numericRoomId = Number(targetRoomId);
 
       // 이력서 파일 업로드 (PDF 또는 이미지)
       const resumeInput: AnalysisDocumentInput = {
@@ -308,6 +312,7 @@ export default function LlmAnalysisPage({ roomId }: Props) {
     form.jobPosting.text,
     form.model,
     roomId,
+    propNumericRoomId,
     startPolling,
   ]);
 

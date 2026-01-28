@@ -1,20 +1,79 @@
 'use client';
 
-type Message = {
-  id: string;
-  role: 'USER' | 'AI' | 'SYSTEM';
-  text: string;
-  time?: string;
-  attachments?: Array<{ type: 'image' | 'file'; name: string }>;
-};
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+
+import type { UIMessage } from '@/lib/utils/llm';
 
 type Props = {
-  messages: Message[];
+  messages: UIMessage[];
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
+  onRetry?: (messageId: string) => void;
+  onDeleteFailed?: (messageId: string) => void;
 };
 
-export default function LlmMessageList({ messages }: Props) {
+export default function LlmMessageList({
+  messages,
+  onLoadMore,
+  hasMore,
+  isLoadingMore,
+  onRetry,
+  onDeleteFailed,
+}: Props) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const prevScrollHeightRef = useRef<number>(0);
+  const isLoadingRef = useRef(false);
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    if (!container || !isLoadingRef.current) return;
+
+    const newScrollHeight = container.scrollHeight;
+    const scrollDiff = newScrollHeight - prevScrollHeightRef.current;
+
+    if (scrollDiff > 0) {
+      container.scrollTop += scrollDiff;
+    }
+
+    isLoadingRef.current = false;
+  }, [messages]);
+
+  const handleScroll = useCallback(() => {
+    const container = containerRef.current;
+    if (!container || !onLoadMore || !hasMore || isLoadingMore) return;
+
+    const threshold = 100; // 상단에서 100px 이내
+    if (container.scrollTop < threshold) {
+      prevScrollHeightRef.current = container.scrollHeight;
+      isLoadingRef.current = true;
+      onLoadMore();
+    }
+  }, [onLoadMore, hasMore, isLoadingMore]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (container && messages.length > 0) {
+      container.scrollTop = container.scrollHeight;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
-    <div className="flex-1 overflow-y-auto px-3 py-4">
+    <div ref={containerRef} className="flex-1 overflow-y-auto px-3 py-4">
+      {isLoadingMore && (
+        <div className="mb-3 flex justify-center">
+          <span className="text-xs text-neutral-400">이전 메시지 불러오는 중...</span>
+        </div>
+      )}
       <div className="space-y-3">
         {messages.map((m) => {
           if (m.role === 'SYSTEM') {
@@ -52,6 +111,8 @@ export default function LlmMessageList({ messages }: Props) {
                     className={[
                       'relative rounded-2xl px-3 py-2 text-sm leading-5',
                       isUser ? 'bg-neutral-900 text-white' : 'border bg-white text-neutral-900',
+                      m.status === 'sending' ? 'opacity-60' : '',
+                      m.status === 'failed' ? 'border-red-300 bg-red-50' : '',
                     ].join(' ')}
                   >
                     <p>{m.text}</p>
@@ -76,7 +137,25 @@ export default function LlmMessageList({ messages }: Props) {
                       </div>
                     ) : null}
                   </div>
-                  {m.time ? (
+                  {m.status === 'failed' ? (
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="text-[10px] text-red-500">전송 실패</span>
+                      <button
+                        type="button"
+                        onClick={() => onRetry?.(m.id)}
+                        className="text-[10px] text-neutral-500 underline hover:text-neutral-700"
+                      >
+                        재전송
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDeleteFailed?.(m.id)}
+                        className="text-[10px] text-neutral-500 underline hover:text-neutral-700"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  ) : m.time ? (
                     <span className="mt-1 text-[10px] text-neutral-400">{m.time}</span>
                   ) : null}
                 </div>
