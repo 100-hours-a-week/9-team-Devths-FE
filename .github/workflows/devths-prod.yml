@@ -41,7 +41,7 @@ jobs:
         uses: sarisia/actions-status-discord@v1
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK_PROD_URL }}
-          status: ${{ github.event_name }}
+          status: 'success'
           title: '🔔 운영 배포 승인 요청'
           description: |
             **배포 요청자**: ${{ github.actor }}
