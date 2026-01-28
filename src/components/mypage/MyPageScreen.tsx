@@ -89,7 +89,11 @@ export default function MyPageScreen() {
         initialData={data}
       />
 
-      <WithdrawModal open={isWithdrawOpen} onClose={() => setIsWithdrawOpen(false)} />
+      <WithdrawModal
+        open={isWithdrawOpen}
+        onClose={() => setIsWithdrawOpen(false)}
+        nickname={data?.nickname ?? ''}
+      />
     </main>
   );
 }
