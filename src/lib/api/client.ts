@@ -7,7 +7,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 let isRefreshing = false;
 let refreshPromise: Promise<boolean> | null = null;
 
-async function refreshAccessToken(): Promise<boolean> {
+export async function refreshAccessToken(): Promise<boolean> {
   if (!BASE_URL) return false;
 
   try {

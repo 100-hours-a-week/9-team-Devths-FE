@@ -1,4 +1,4 @@
-import { api, type ApiClientResult } from '@/lib/api/client';
+import { api, refreshAccessToken, type ApiClientResult } from '@/lib/api/client';
 import { getAccessToken } from '@/lib/auth/token';
 
 import type {
@@ -27,14 +27,11 @@ export type StreamMessageCallbacks = {
   onError?: (error: SSEErrorEvent | Error) => void;
 };
 
-export async function streamMessage(
-  roomId: number,
+async function fetchWithAuth(
+  url: string,
   body: SendMessageRequest,
-  callbacks: StreamMessageCallbacks,
-): Promise<void> {
-  const path = `/api/ai-chatrooms/${roomId}/messages`;
-  const url = new URL(path, BASE_URL).toString();
-
+  isRetry = false,
+): Promise<Response> {
   const token = getAccessToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -51,6 +48,26 @@ export async function streamMessage(
     credentials: 'include',
     body: JSON.stringify(body),
   });
+
+  if (response.status === 401 && !isRetry) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      return fetchWithAuth(url, body, true);
+    }
+  }
+
+  return response;
+}
+
+export async function streamMessage(
+  roomId: number,
+  body: SendMessageRequest,
+  callbacks: StreamMessageCallbacks,
+): Promise<void> {
+  const path = `/api/ai-chatrooms/${roomId}/messages`;
+  const url = new URL(path, BASE_URL).toString();
+
+  const response = await fetchWithAuth(url, body);
 
   if (!response.ok) {
     const errorText = await response.text();
