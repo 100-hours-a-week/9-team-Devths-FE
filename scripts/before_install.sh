@@ -33,21 +33,39 @@ echo "✅ Maintenance 모드 전환 완료"
 
 # --- 기존 배포 파일 백업 로직 ---
 if [ -d "$DEPLOY_DIR" ]; then
-    BACKUP_ROOT="${DEPLOY_DIR}/backup"
+    BACKUP_ROOT="/home/ubuntu/fe/backups"
     BACKUP_DIR="${BACKUP_ROOT}/$(date +'%Y%m%d_%H%M%S')"
     echo "기존 배포 파일을 백업합니다: $BACKUP_DIR"
-    sudo mkdir -p "$BACKUP_ROOT"
-    sudo mv "$DEPLOY_DIR" "$BACKUP_DIR"
+
+    # 백업 디렉토리 생성
+    sudo mkdir -p "$BACKUP_DIR"
+
+    # backups 디렉토리를 제외한 나머지 파일/디렉토리 백업
+    cd "$DEPLOY_DIR"
+    for item in *; do
+        if [ "$item" != "backups" ] && [ -e "$item" ]; then
+            echo "백업 중: $item"
+            sudo mv "$item" "$BACKUP_DIR/"
+        fi
+    done
+
+    # 숨김 파일도 백업 (backups 제외)
+    for item in .[!.]*; do
+        if [ -e "$item" ]; then
+            echo "백업 중: $item"
+            sudo mv "$item" "$BACKUP_DIR/"
+        fi
+    done
 
     # 오래된 백업 삭제 (최근 5개 유지)
     echo "오래된 백업을 정리합니다..."
-    sudo find "$BACKUP_ROOT" -maxdepth 1 -type d -name "devths-fe-*" -printf '%T@ %p\n' 2>/dev/null | \
+    sudo find "$BACKUP_ROOT" -maxdepth 1 -type d -name "20*" -printf '%T@ %p\n' 2>/dev/null | \
         sort -rn | tail -n +6 | cut -d' ' -f2- | \
         while IFS= read -r old_backup; do
             echo "삭제: $old_backup"
             sudo rm -rf "$old_backup"
         done
+else
+    sudo mkdir -p "$DEPLOY_DIR"
 fi
-
-sudo mkdir -p "$DEPLOY_DIR"
 echo "✅ BeforeInstall 완료"

@@ -51,12 +51,12 @@ if [ "$NGINX_HTTP_CODE" -eq 200 ] || [ "$NGINX_HTTP_CODE" -eq 301 ] || [ "$NGINX
 else
   echo "⚠️  Nginx HTTP 응답 코드: $NGINX_HTTP_CODE"
   echo "⚠️  Nginx가 아직 리버스 프록시로 설정되지 않았을 수 있습니다."
-  echo "⚠️  /etc/nginx/sites-available/frontend 설정을 확인하세요."
+  echo "⚠️  /etc/nginx/sites-available/fe 설정을 확인하세요."
 fi
 
 # 5. 배포 디렉토리 파일 확인 (SSR 구조)
 echo "🔍 배포 파일 구조를 확인합니다..."
-DEPLOY_DIR="/var/www/devths-fe"
+DEPLOY_DIR="/home/ubuntu/fe"
 if [ ! -f "$DEPLOY_DIR/package.json" ]; then
   echo "❌ package.json 파일이 존재하지 않습니다"
   exit 1
