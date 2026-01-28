@@ -97,6 +97,12 @@ export async function deleteProfileImage() {
   return { ok, status, json };
 }
 
+// 회원 탈퇴 (DELETE /api/users)
+export async function deleteUser() {
+  const { ok, status, json } = await api.delete<void>('/api/users');
+  return { ok, status, json };
+}
+
 export async function postSignup(body: SignupRequest): Promise<PostSignupResult> {
   const payload: SignupPayload = {
     email: body.email,
