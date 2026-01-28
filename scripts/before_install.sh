@@ -6,7 +6,7 @@ echo "===== BeforeInstall: 유지보수 모드 활성화 및 백업 ====="
 # 경로 설정
 AVAILABLE_DIR="/etc/nginx/sites-available"
 ENABLED_DIR="/etc/nginx/sites-enabled"
-DEPLOY_DIR="/var/www/devths-fe"
+DEPLOY_DIR="/home/ubuntu/fe"
 
 # 🚧 Maintenance 모드 활성화 (링크 교체)
 echo "🚧 Maintenance 모드를 활성화합니다..."
@@ -33,8 +33,8 @@ echo "✅ Maintenance 모드 전환 완료"
 
 # --- 기존 배포 파일 백업 로직 ---
 if [ -d "$DEPLOY_DIR" ]; then
-    BACKUP_ROOT="/var/www/backup"
-    BACKUP_DIR="${BACKUP_ROOT}/devths-fe-$(date +'%Y%m%d_%H%M%S')"
+    BACKUP_ROOT="${DEPLOY_DIR}/backup"
+    BACKUP_DIR="${BACKUP_ROOT}/$(date +'%Y%m%d_%H%M%S')"
     echo "기존 배포 파일을 백업합니다: $BACKUP_DIR"
     sudo mkdir -p "$BACKUP_ROOT"
     sudo mv "$DEPLOY_DIR" "$BACKUP_DIR"
