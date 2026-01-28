@@ -20,3 +20,11 @@ export const LLM_ATTACHMENT_CONSTRAINTS: AttachmentConstraints = {
   imageMimeTypes: IMAGE_MIME_TYPES,
   fileMimeTypes: FILE_MIME_TYPES,
 };
+
+export const CHAT_ATTACHMENT_CONSTRAINTS: AttachmentConstraints = {
+  maxImages: 9,
+  maxFiles: 1,
+  maxSizeMB: 5,
+  imageMimeTypes: IMAGE_MIME_TYPES,
+  fileMimeTypes: FILE_MIME_TYPES,
+};

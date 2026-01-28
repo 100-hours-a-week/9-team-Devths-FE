@@ -2,6 +2,8 @@ import { api, type ApiClientResult } from '@/lib/api/client';
 
 import type {
   CreateRoomResponse,
+  EndInterviewRequest,
+  EndInterviewResponse,
   FetchMessagesParams,
   FetchMessagesResponse,
   FetchRoomsParams,
@@ -10,6 +12,8 @@ import type {
   SendMessageResponse,
   StartAnalysisRequest,
   StartAnalysisResponse,
+  StartInterviewRequest,
+  StartInterviewResponse,
   TaskResultData,
 } from '@/types/llm';
 
@@ -37,12 +41,6 @@ export async function deleteRoom(roomId: number): Promise<ApiClientResult<void>>
   const path = `/api/ai-chatrooms/${roomId}`;
 
   return api.delete<void>(path);
-}
-
-export async function archiveRoom(roomId: number): Promise<ApiClientResult<void>> {
-  const path = `/api/ai-chatrooms/${roomId}/archive`;
-
-  return api.post<void>(path);
 }
 
 export async function fetchMessages(
@@ -75,7 +73,7 @@ export async function startAnalysis(
   roomId: number,
   body: StartAnalysisRequest,
 ): Promise<ApiClientResult<StartAnalysisResponse>> {
-  const path = `/api/ai/chatrooms/${roomId}/analysis`;
+  const path = `/api/ai-chatrooms/${roomId}/analysis`;
 
   return api.post<StartAnalysisResponse>(path, body);
 }
@@ -84,4 +82,22 @@ export async function getTaskStatus(taskId: number): Promise<ApiClientResult<Tas
   const path = `/api/ai/tasks/${taskId}`;
 
   return api.get<TaskResultData>(path);
+}
+
+export async function startInterview(
+  roomId: number,
+  body: StartInterviewRequest,
+): Promise<ApiClientResult<StartInterviewResponse>> {
+  const path = `/api/ai-chatrooms/${roomId}/interview`;
+
+  return api.post<StartInterviewResponse>(path, body);
+}
+
+export async function endInterview(
+  roomId: number,
+  body: EndInterviewRequest,
+): Promise<ApiClientResult<EndInterviewResponse>> {
+  const path = `/api/ai-chatrooms/${roomId}/evaluation`;
+
+  return api.post<EndInterviewResponse>(path, body);
 }
