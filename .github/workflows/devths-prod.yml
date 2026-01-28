@@ -24,7 +24,19 @@ jobs:
   notify-approval-request:
     name: Notify Approval Request
     runs-on: ubuntu-22.04
+    if: github.ref == 'refs/heads/main'
     steps:
+      - name: 브랜치 검증
+        run: |
+          if [ "${{ github.ref_name }}" != "main" ]; then
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "❌ 운영 배포는 main 브랜치에서만 실행 가능합니다."
+            echo "현재 브랜치: ${{ github.ref_name }}"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            exit 1
+          fi
+          echo "✅ 브랜치 검증 완료: main"
+
       - name: Discord 승인 요청 알림
         uses: sarisia/actions-status-discord@v1
         with:
