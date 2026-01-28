@@ -169,7 +169,7 @@ export default function SignupPage() {
 
       clearSignupContext();
 
-      router.replace('/calendar');
+      router.replace('/llm');
     } catch (e) {
       const msg = e instanceof Error ? e.message : '회원가입 처리 중 오류가 발생했습니다.';
       toast(msg);

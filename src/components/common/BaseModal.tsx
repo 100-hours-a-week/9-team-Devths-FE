@@ -13,7 +13,7 @@ export default function BaseModal({ open, onClose, title, children }: BaseModalP
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50">
+    <div className="fixed inset-0 z-[60]">
       <button
         type="button"
         className="absolute inset-0 bg-black/40"

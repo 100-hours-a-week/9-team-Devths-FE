@@ -5,7 +5,7 @@ import type { ApiResponse } from '@/types/api';
 
 export type UploadFileOptions = {
   file: File;
-  category: FileCategory;
+  category?: FileCategory | null;
   refType: FileRefType;
   refId?: number | null;
   sortOrder?: number;
@@ -40,7 +40,7 @@ export async function uploadFile(options: UploadFileOptions): Promise<UploadFile
     originalName: file.name,
     s3Key,
     mimeType: file.type,
-    category,
+    ...(category !== undefined ? { category } : {}),
     fileSize: file.size,
     refType,
     refId,
