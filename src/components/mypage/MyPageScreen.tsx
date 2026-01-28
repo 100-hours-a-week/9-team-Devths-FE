@@ -5,11 +5,18 @@ import Image from 'next/image';
 import { useState } from 'react';
 
 import EditProfileModal from '@/components/mypage/EditProfileModal';
+import WithdrawModal from '@/components/mypage/WithdrawModal';
 import { useMeQuery } from '@/lib/hooks/users/useMeQuery';
 
 export default function MyPageScreen() {
   const { data, isLoading, isError } = useMeQuery();
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
+
+  const handleWithdraw = () => {
+    setIsEditOpen(false);
+    setIsWithdrawOpen(true);
+  };
 
   return (
     <main className="flex flex-col px-6 py-4">
@@ -78,8 +85,11 @@ export default function MyPageScreen() {
       <EditProfileModal
         open={isEditOpen}
         onClose={() => setIsEditOpen(false)}
+        onWithdraw={handleWithdraw}
         initialData={data}
       />
+
+      <WithdrawModal open={isWithdrawOpen} onClose={() => setIsWithdrawOpen(false)} />
     </main>
   );
 }

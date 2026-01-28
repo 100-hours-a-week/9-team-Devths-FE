@@ -18,15 +18,16 @@ import type { MeData } from '@/lib/api/users';
 type EditProfileModalProps = {
   open: boolean;
   onClose: () => void;
+  onWithdraw: () => void;
   initialData?: MeData | null;
 };
 
 type EditFormProps = {
   initialData?: MeData | null;
-  onClose: () => void;
+  onWithdraw: () => void;
 };
 
-function EditForm({ initialData, onClose }: EditFormProps) {
+function EditForm({ initialData, onWithdraw }: EditFormProps) {
   const [nickname, setNickname] = useState(initialData?.nickname ?? '');
   const [interests, setInterests] = useState<string[]>(
     normalizeInterests(initialData?.interests ?? []),
@@ -193,7 +194,7 @@ function EditForm({ initialData, onClose }: EditFormProps) {
 
         <button
           type="button"
-          onClick={onClose}
+          onClick={onWithdraw}
           className="text-sm text-neutral-400 hover:text-neutral-600"
         >
           탈퇴하기
@@ -205,12 +206,17 @@ function EditForm({ initialData, onClose }: EditFormProps) {
   );
 }
 
-export default function EditProfileModal({ open, onClose, initialData }: EditProfileModalProps) {
+export default function EditProfileModal({
+  open,
+  onClose,
+  onWithdraw,
+  initialData,
+}: EditProfileModalProps) {
   if (!open) return null;
 
   return (
     <BaseModal open={open} onClose={onClose} title="프로필 수정">
-      <EditForm key={open ? 'open' : 'closed'} initialData={initialData} onClose={onClose} />
+      <EditForm key={open ? 'open' : 'closed'} initialData={initialData} onWithdraw={onWithdraw} />
     </BaseModal>
   );
 }
