@@ -51,7 +51,7 @@ if [ "$NGINX_HTTP_CODE" -eq 200 ] || [ "$NGINX_HTTP_CODE" -eq 301 ] || [ "$NGINX
 else
   echo "⚠️  Nginx HTTP 응답 코드: $NGINX_HTTP_CODE"
   echo "⚠️  Nginx가 아직 리버스 프록시로 설정되지 않았을 수 있습니다."
-  echo "⚠️  /etc/nginx/sites-available/dev-frontend 설정을 확인하세요."
+  echo "⚠️  /etc/nginx/sites-available/frontend 설정을 확인하세요."
 fi
 
 # 5. 배포 디렉토리 파일 확인 (SSR 구조)

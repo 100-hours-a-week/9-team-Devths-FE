@@ -42,11 +42,11 @@ if [ -L "${ENABLED_DIR}/maintenance" ]; then
 fi
 
 # 프런트엔드 사이트 링크 다시 연결
-if [ -f "${AVAILABLE_DIR}/dev-frontend" ]; then
-    sudo ln -sf "${AVAILABLE_DIR}/dev-frontend" "${ENABLED_DIR}/dev-frontend"
-    echo "✅ dev-frontend 링크를 복구했습니다."
+if [ -f "${AVAILABLE_DIR}/frontend" ]; then
+    sudo ln -sf "${AVAILABLE_DIR}/frontend" "${ENABLED_DIR}/frontend"
+    echo "✅ frontend 링크를 복구했습니다."
 else
-    echo "❌ 에러: ${AVAILABLE_DIR}/dev-frontend 원본 파일이 없습니다!"
+    echo "❌ 에러: ${AVAILABLE_DIR}/frontend 원본 파일이 없습니다!"
     exit 1
 fi
 
@@ -69,5 +69,5 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "✅ ApplicationStart 완료"
 echo "📌 Next.js 서버: http://localhost:3000 (PM2 클러스터 모드)"
-echo "📌 Nginx: 리버스 프록시 설정 필요 (/etc/nginx/sites-available/dev-frontend)"
+echo "📌 Nginx: 리버스 프록시 설정 필요 (/etc/nginx/sites-available/frontend)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
