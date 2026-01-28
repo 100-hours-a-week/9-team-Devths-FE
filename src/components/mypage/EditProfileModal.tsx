@@ -68,29 +68,27 @@ function EditForm({ initialData, onClose }: EditFormProps) {
       <div>
         <p className="text-sm font-semibold">관심 분야 수정</p>
         <div className="mt-3 flex flex-wrap gap-2">
-          {INTEREST_OPTIONS.map((option) => {
-            const isSelected = interests.includes(option.value);
-            return isSelected ? (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => handleToggleInterest(option.value)}
-                className="inline-flex items-center gap-1 rounded-full bg-neutral-900 px-3 py-1.5 text-sm text-white"
-              >
-                {option.label}
-                <X className="h-3.5 w-3.5" />
-              </button>
-            ) : (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => handleToggleInterest(option.value)}
-                className="rounded-full border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-50"
-              >
-                {option.label}
-              </button>
-            );
-          })}
+          {INTEREST_OPTIONS.filter((o) => interests.includes(o.value)).map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => handleToggleInterest(option.value)}
+              className="inline-flex items-center gap-1 rounded-full bg-neutral-900 px-3 py-1.5 text-sm text-white"
+            >
+              {option.label}
+              <X className="h-3.5 w-3.5" />
+            </button>
+          ))}
+          {INTEREST_OPTIONS.filter((o) => !interests.includes(o.value)).map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => handleToggleInterest(option.value)}
+              className="rounded-full border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-50"
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
       </div>
 
