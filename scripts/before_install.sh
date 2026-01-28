@@ -12,8 +12,8 @@ DEPLOY_DIR="/var/www/devths-fe"
 echo "🚧 Maintenance 모드를 활성화합니다..."
 
 # 1. 기존 프런트엔드 링크 제거
-if [ -L "${ENABLED_DIR}/frontend" ]; then
-    sudo rm "${ENABLED_DIR}/frontend"
+if [ -L "${ENABLED_DIR}/fe" ]; then
+    sudo rm "${ENABLED_DIR}/fe"
     echo "✅ frontend 링크를 제거했습니다."
 fi
 
