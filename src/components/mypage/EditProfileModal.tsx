@@ -7,7 +7,7 @@ import BaseModal from '@/components/common/BaseModal';
 import NicknameField from '@/components/common/NicknameField';
 import ProfileImagePicker from '@/components/common/ProfileImagePicker';
 import FileTooLargeModal from '@/components/signup/FileTooLargeModal';
-import { INTEREST_OPTIONS } from '@/constants/interests';
+import { INTEREST_OPTIONS, normalizeInterests } from '@/constants/interests';
 import { useUpdateMeMutation } from '@/lib/hooks/users/useUpdateMeMutation';
 import { validateNickname } from '@/lib/utils/validateNickname';
 
@@ -26,7 +26,9 @@ type EditFormProps = {
 
 function EditForm({ initialData, onClose }: EditFormProps) {
   const [nickname, setNickname] = useState(initialData?.nickname ?? '');
-  const [interests, setInterests] = useState<string[]>(initialData?.interests ?? []);
+  const [interests, setInterests] = useState<string[]>(
+    normalizeInterests(initialData?.interests ?? []),
+  );
   const [previewUrl, setPreviewUrl] = useState<string | null>(
     initialData?.profileImage?.url ?? null,
   );

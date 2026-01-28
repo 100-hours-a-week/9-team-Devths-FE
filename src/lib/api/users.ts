@@ -38,7 +38,12 @@ export type UpdateMeResult = {
 };
 
 export async function updateMe(body: UpdateMeRequest): Promise<UpdateMeResult> {
-  const { ok, status, json } = await api.put<UpdateMeData>('/api/users/me', body);
+  // 백엔드가 소문자 interests를 기대할 수 있으므로 변환
+  const payload = {
+    nickname: body.nickname,
+    interests: body.interests.map((i) => i.toLowerCase()),
+  };
+  const { ok, status, json } = await api.put<UpdateMeData>('/api/users/me', payload);
   return { ok, status, json };
 }
 

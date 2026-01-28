@@ -10,7 +10,9 @@ export function useUpdateMeMutation() {
 
   return useMutation({
     mutationFn: async (body: UpdateMeRequest) => {
+      console.log('[useUpdateMeMutation] Request body:', JSON.stringify(body, null, 2));
       const result = await updateMe(body);
+      console.log('[useUpdateMeMutation] Response:', result.status, result.json);
 
       if (!result.ok) {
         const error = new Error('Failed to update profile') as Error & {
