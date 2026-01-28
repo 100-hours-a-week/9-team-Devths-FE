@@ -12,6 +12,7 @@ export default function Page() {
   const searchParams = useSearchParams();
   const roomId = params.roomId as string;
   const numericRoomId = Number(searchParams.get('rid')) || 0;
+  const model = searchParams.get('model');
   const { setOptions, resetOptions } = useHeader();
 
   useEffect(() => {
@@ -24,5 +25,5 @@ export default function Page() {
     return () => resetOptions();
   }, [resetOptions, roomId, router, setOptions]);
 
-  return <LlmChatPage roomId={roomId} numericRoomId={numericRoomId} />;
+  return <LlmChatPage roomId={roomId} numericRoomId={numericRoomId} initialModel={model} />;
 }

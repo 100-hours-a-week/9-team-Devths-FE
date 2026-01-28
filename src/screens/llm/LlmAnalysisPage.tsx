@@ -71,12 +71,14 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
       setIsLoading(false);
       const targetUuid = createdRoom?.uuid || roomId;
       const targetNumericId = createdRoom?.id || propNumericRoomId || 0;
-      router.push(`/llm/${targetUuid}/result?taskId=${currentTaskId}&rid=${targetNumericId}`);
+      router.push(
+        `/llm/${targetUuid}/result?taskId=${currentTaskId}&rid=${targetNumericId}&model=${form.model}`,
+      );
     } else if (status === 'FAILED') {
       setIsLoading(false);
       toast(error || '분석에 실패했습니다.');
     }
-  }, [status, error, router, roomId, createdRoom, currentTaskId, propNumericRoomId]);
+  }, [status, error, router, roomId, createdRoom, currentTaskId, propNumericRoomId, form.model]);
 
   const updateResume = useCallback((updates: Partial<DocumentInput>) => {
     setForm((prev) => ({

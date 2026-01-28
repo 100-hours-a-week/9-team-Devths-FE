@@ -22,9 +22,10 @@ type Props = {
   roomId: string;
   numericRoomId: number;
   taskId: string | null;
+  model: string | null;
 };
 
-export default function LlmResultPage({ roomId, numericRoomId, taskId }: Props) {
+export default function LlmResultPage({ roomId, numericRoomId, taskId, model }: Props) {
   const [isLoading, setIsLoading] = useState(true);
   const [result, setResult] = useState<TaskResultData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -129,7 +130,7 @@ export default function LlmResultPage({ roomId, numericRoomId, taskId }: Props) 
         )}
 
         <Link
-          href={`/llm/${roomId}?rid=${numericRoomId}`}
+          href={`/llm/${roomId}?rid=${numericRoomId}${model ? `&model=${model}` : ''}`}
           className="flex items-center justify-between rounded-2xl border border-neutral-200 bg-black px-4 py-4 text-sm font-semibold text-white hover:bg-neutral-900"
         >
           대화 시작하기

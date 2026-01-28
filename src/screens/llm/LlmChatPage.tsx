@@ -18,10 +18,18 @@ import type { InterviewType, LlmModel } from '@/types/llm';
 type Props = {
   roomId: string;
   numericRoomId: number;
+  initialModel?: string | null;
 };
 
 const MAX_QUESTIONS = 5;
 const DEFAULT_MODEL: LlmModel = 'GEMINI';
+
+function parseModel(value: string | null | undefined): LlmModel {
+  if (value === 'GEMINI' || value === 'VLLM') {
+    return value;
+  }
+  return DEFAULT_MODEL;
+}
 
 type InterviewSession = {
   interviewId: number;
@@ -31,7 +39,7 @@ type InterviewSession = {
 
 type InterviewUIState = 'idle' | 'select' | 'starting' | 'active' | 'ending';
 
-export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
+export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialModel }: Props) {
   const { setOptions, resetOptions } = useAppFrame();
 
   useEffect(() => {
@@ -55,7 +63,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
 
   const [interviewUIState, setInterviewUIState] = useState<InterviewUIState>('idle');
   const [interviewSession, setInterviewSession] = useState<InterviewSession | null>(null);
-  const [model] = useState<LlmModel>(DEFAULT_MODEL);
+  const [model] = useState<LlmModel>(() => parseModel(initialModel));
   const [isSending, setIsSending] = useState(false);
 
   const handleSendMessage = useCallback(
