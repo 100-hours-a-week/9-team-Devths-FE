@@ -3,10 +3,10 @@ os: linux
 
 files:
   - source: /
-    destination: /var/www/devths-fe
+    destination: /home/ubuntu/fe
 
 permissions:
-  - object: /var/www/devths-fe
+  - object: /home/ubuntu/fe
     pattern: '**'
     owner: ubuntu
     group: ubuntu
