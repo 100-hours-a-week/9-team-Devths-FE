@@ -5,7 +5,7 @@ echo "===== ApplicationStart: Node.js 서버 시작 및 Nginx 복구 ====="
 
 AVAILABLE_DIR="/etc/nginx/sites-available"
 ENABLED_DIR="/etc/nginx/sites-enabled"
-DEPLOY_DIR="/var/www/devths-fe"
+DEPLOY_DIR="/home/ubuntu/fe"
 
 # 1. 기존 PM2 프로세스 중지 (존재하는 경우)
 echo "🛑 기존 PM2 프로세스를 중지합니다..."
@@ -42,11 +42,11 @@ if [ -L "${ENABLED_DIR}/maintenance" ]; then
 fi
 
 # 프런트엔드 사이트 링크 다시 연결
-if [ -f "${AVAILABLE_DIR}/dev-frontend" ]; then
-    sudo ln -sf "${AVAILABLE_DIR}/dev-frontend" "${ENABLED_DIR}/dev-frontend"
-    echo "✅ dev-frontend 링크를 복구했습니다."
+if [ -f "${AVAILABLE_DIR}/fe" ]; then
+    sudo ln -sf "${AVAILABLE_DIR}/fe" "${ENABLED_DIR}/fe"
+    echo "✅ frontend 링크를 복구했습니다."
 else
-    echo "❌ 에러: ${AVAILABLE_DIR}/dev-frontend 원본 파일이 없습니다!"
+    echo "❌ 에러: ${AVAILABLE_DIR}/fe 원본 파일이 없습니다!"
     exit 1
 fi
 
@@ -69,5 +69,5 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "✅ ApplicationStart 완료"
 echo "📌 Next.js 서버: http://localhost:3000 (PM2 클러스터 모드)"
-echo "📌 Nginx: 리버스 프록시 설정 필요 (/etc/nginx/sites-available/dev-frontend)"
+echo "📌 Nginx: 리버스 프록시 설정 필요 (/etc/nginx/sites-available/fe)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
