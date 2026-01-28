@@ -2,11 +2,14 @@
 
 import { Pencil, Smile, User } from 'lucide-react';
 import Image from 'next/image';
+import { useState } from 'react';
 
+import EditProfileModal from '@/components/mypage/EditProfileModal';
 import { useMeQuery } from '@/lib/hooks/users/useMeQuery';
 
 export default function MyPageScreen() {
   const { data, isLoading, isError } = useMeQuery();
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   return (
     <main className="flex flex-col px-6 py-4">
@@ -57,6 +60,7 @@ export default function MyPageScreen() {
 
             <button
               type="button"
+              onClick={() => setIsEditOpen(true)}
               className="flex items-center gap-1 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-neutral-600 hover:bg-neutral-50"
             >
               <Pencil className="h-4 w-4" />
@@ -70,6 +74,8 @@ export default function MyPageScreen() {
         <Smile className="h-12 w-12 text-neutral-300" />
         <p className="mt-4 text-sm text-neutral-400">다음 버전에 기능 추가 예정입니다.</p>
       </section>
+
+      <EditProfileModal open={isEditOpen} onClose={() => setIsEditOpen(false)} />
     </main>
   );
 }
