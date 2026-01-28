@@ -1,15 +1,13 @@
-import { api, type ApiClientResult } from '@/lib/api/client';
+import { api, apiStreamRequest, type ApiClientResult } from '@/lib/api/client';
 
 import type {
   CreateRoomResponse,
   EndInterviewRequest,
-  EndInterviewResponse,
   FetchMessagesParams,
   FetchMessagesResponse,
   FetchRoomsParams,
   FetchRoomsResponse,
   SendMessageRequest,
-  SendMessageResponse,
   StartAnalysisRequest,
   StartAnalysisResponse,
   StartInterviewRequest,
@@ -60,13 +58,15 @@ export async function fetchMessages(
   return api.get<FetchMessagesResponse>(path);
 }
 
-export async function sendMessage(
-  roomId: number,
-  body: SendMessageRequest,
-): Promise<ApiClientResult<SendMessageResponse>> {
+export async function sendMessageStream(roomId: number, body: SendMessageRequest) {
   const path = `/api/ai-chatrooms/${roomId}/messages`;
 
-  return api.post<SendMessageResponse>(path, body);
+  return apiStreamRequest({
+    method: 'POST',
+    path,
+    body,
+    accept: 'text/event-stream',
+  });
 }
 
 export async function startAnalysis(
@@ -93,11 +93,13 @@ export async function startInterview(
   return api.post<StartInterviewResponse>(path, body);
 }
 
-export async function endInterview(
-  roomId: number,
-  body: EndInterviewRequest,
-): Promise<ApiClientResult<EndInterviewResponse>> {
+export async function endInterviewStream(roomId: number, body: EndInterviewRequest) {
   const path = `/api/ai-chatrooms/${roomId}/evaluation`;
 
-  return api.post<EndInterviewResponse>(path, body);
+  return apiStreamRequest({
+    method: 'POST',
+    path,
+    body,
+    accept: 'text/event-stream',
+  });
 }

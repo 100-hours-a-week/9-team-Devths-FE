@@ -13,6 +13,7 @@ export default function Page() {
   const roomId = params.roomId as string;
   const taskId = searchParams.get('taskId');
   const numericRoomId = Number(searchParams.get('rid')) || 0;
+  const model = searchParams.get('model');
   const { setOptions, resetOptions } = useHeader();
 
   useEffect(() => {
@@ -25,5 +26,7 @@ export default function Page() {
     return () => resetOptions();
   }, [resetOptions, roomId, numericRoomId, router, setOptions]);
 
-  return <LlmResultPage roomId={roomId} numericRoomId={numericRoomId} taskId={taskId} />;
+  return (
+    <LlmResultPage roomId={roomId} numericRoomId={numericRoomId} taskId={taskId} model={model} />
+  );
 }

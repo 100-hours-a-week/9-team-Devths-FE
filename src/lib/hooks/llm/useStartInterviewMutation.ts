@@ -3,14 +3,14 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { startInterview } from '@/lib/api/llmRooms';
 import { llmKeys } from '@/lib/hooks/llm/queryKeys';
 
-import type { InterviewType } from '@/types/llm';
+import type { InterviewType, LlmModel } from '@/types/llm';
 
 export function useStartInterviewMutation(roomId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (interviewType: InterviewType) => {
-      const result = await startInterview(roomId, { interviewType });
+    mutationFn: async (payload: { interviewType: InterviewType; model: LlmModel }) => {
+      const result = await startInterview(roomId, payload);
 
       if (!result.ok || !result.json) {
         throw new Error('Failed to start interview');

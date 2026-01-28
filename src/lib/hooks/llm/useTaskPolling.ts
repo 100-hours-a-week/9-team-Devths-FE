@@ -52,7 +52,7 @@ export function useTaskPolling(): UseTaskPollingResult {
         setResult(data);
         stopPolling();
       } else if (data.status === 'FAILED') {
-        setError(data.failMessage || '분석에 실패했습니다.');
+        setError('분석에 실패했습니다.');
         setResult(data);
         stopPolling();
       }
