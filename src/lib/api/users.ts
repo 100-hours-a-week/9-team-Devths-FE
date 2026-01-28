@@ -76,6 +76,22 @@ export type PostSignupResult = {
   json: (ApiResponse<SignupData> | ApiErrorResponse) | null;
 };
 
+export type UpdateProfileImageRequest = {
+  s3Key: string;
+};
+
+export type UpdateProfileImageData = {
+  profileImage: { id: number; url: string };
+};
+
+export async function updateProfileImage(body: UpdateProfileImageRequest) {
+  const { ok, status, json } = await api.post<UpdateProfileImageData>(
+    '/api/users/me/picture',
+    body,
+  );
+  return { ok, status, json };
+}
+
 export async function postSignup(body: SignupRequest): Promise<PostSignupResult> {
   const payload: SignupPayload = {
     email: body.email,

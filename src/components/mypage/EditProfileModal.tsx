@@ -9,6 +9,7 @@ import ProfileImagePicker from '@/components/common/ProfileImagePicker';
 import FileTooLargeModal from '@/components/signup/FileTooLargeModal';
 import { INTEREST_OPTIONS, normalizeInterests } from '@/constants/interests';
 import { useUpdateMeMutation } from '@/lib/hooks/users/useUpdateMeMutation';
+import { useUpdateProfileImageMutation } from '@/lib/hooks/users/useUpdateProfileImageMutation';
 import { validateNickname } from '@/lib/utils/validateNickname';
 
 import type { MeData } from '@/lib/api/users';
@@ -32,6 +33,7 @@ function EditForm({ initialData, onClose }: EditFormProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(
     initialData?.profileImage?.url ?? null,
   );
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isFileTooLargeOpen, setIsFileTooLargeOpen] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<{
     type: 'success' | 'error';
@@ -40,6 +42,9 @@ function EditForm({ initialData, onClose }: EditFormProps) {
 
   const nicknameValidation = validateNickname(nickname);
   const updateMutation = useUpdateMeMutation();
+  const updateProfileImageMutation = useUpdateProfileImageMutation();
+
+  const isPending = updateMutation.isPending || updateProfileImageMutation.isPending;
 
   const handleToggleInterest = (value: string) => {
     setInterests((prev) =>
@@ -51,6 +56,8 @@ function EditForm({ initialData, onClose }: EditFormProps) {
   const handleSelectImage = (file: File) => {
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
+    setSelectedFile(file);
+    setSubmitMessage(null);
   };
 
   const handleNicknameChange = (value: string) => {
@@ -58,30 +65,31 @@ function EditForm({ initialData, onClose }: EditFormProps) {
     setSubmitMessage(null);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!nicknameValidation.isValid) return;
 
     setSubmitMessage(null);
 
-    updateMutation.mutate(
-      { nickname, interests },
-      {
-        onSuccess: () => {
-          setSubmitMessage({ type: 'success', text: '회원 정보가 성공적으로 변경되었습니다.' });
-        },
-        onError: (error) => {
-          const err = error as Error & { status?: number; serverMessage?: string };
-          if (err.status === 409) {
-            setSubmitMessage({ type: 'error', text: '중복된 닉네임입니다.' });
-          } else {
-            setSubmitMessage({
-              type: 'error',
-              text: err.serverMessage ?? '프로필 수정에 실패했습니다.',
-            });
-          }
-        },
-      },
-    );
+    try {
+      if (selectedFile) {
+        await updateProfileImageMutation.mutateAsync({ file: selectedFile });
+        setSelectedFile(null);
+      }
+
+      await updateMutation.mutateAsync({ nickname, interests });
+
+      setSubmitMessage({ type: 'success', text: '회원 정보가 성공적으로 변경되었습니다.' });
+    } catch (error) {
+      const err = error as Error & { status?: number; serverMessage?: string };
+      if (err.status === 409) {
+        setSubmitMessage({ type: 'error', text: '중복된 닉네임입니다.' });
+      } else {
+        setSubmitMessage({
+          type: 'error',
+          text: err.serverMessage ?? '프로필 수정에 실패했습니다.',
+        });
+      }
+    }
   };
 
   const hasProfileImage = Boolean(previewUrl);
@@ -151,10 +159,10 @@ function EditForm({ initialData, onClose }: EditFormProps) {
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={!nicknameValidation.isValid || updateMutation.isPending}
+          disabled={!nicknameValidation.isValid || isPending}
           className="h-12 w-full rounded-xl bg-neutral-900 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {updateMutation.isPending ? '변경 중...' : '변경하기'}
+          {isPending ? '변경 중...' : '변경하기'}
         </button>
 
         <button
