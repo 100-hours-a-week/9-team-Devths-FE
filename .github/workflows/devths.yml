@@ -312,6 +312,8 @@ jobs:
             - Static Analysis: ${{ needs.static-analysis.result == 'success' && ' ✅' || ' ❌' }}
             - Build: ${{ needs.build.result == 'success' && ' ✅' || ' ❌' }}
 
+            **🪣 S3 Key**: `${{ needs.build.outputs.s3_key }}`
+
             **🔗 링크**: [커밋 확인하기](${{ github.event.repository.html_url }}/commit/${{ github.sha }})
 
           color: "${{ (needs.lint.result == 'success' && needs.static-analysis.result == 'success' && needs.build.result == 'success') && 65280 || 16711680 }}"
