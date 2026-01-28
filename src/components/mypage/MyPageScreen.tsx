@@ -78,7 +78,7 @@ export default function MyPageScreen() {
       <EditProfileModal
         open={isEditOpen}
         onClose={() => setIsEditOpen(false)}
-        hasProfileImage={Boolean(data?.profileImage?.url)}
+        initialData={data}
       />
     </main>
   );
