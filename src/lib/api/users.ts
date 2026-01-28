@@ -20,6 +20,28 @@ export async function fetchMe(): Promise<FetchMeResult> {
   return { ok, status, json };
 }
 
+export type UpdateMeRequest = {
+  nickname: string;
+  interests: string[];
+};
+
+export type UpdateMeData = {
+  nickname: string;
+  interests: string[];
+  updatedAt: string;
+};
+
+export type UpdateMeResult = {
+  ok: boolean;
+  status: number;
+  json: (ApiResponse<UpdateMeData> | ApiErrorResponse) | null;
+};
+
+export async function updateMe(body: UpdateMeRequest): Promise<UpdateMeResult> {
+  const { ok, status, json } = await api.put<UpdateMeData>('/api/users/me', body);
+  return { ok, status, json };
+}
+
 export type SignupRequest = {
   email: string;
   nickname: string;

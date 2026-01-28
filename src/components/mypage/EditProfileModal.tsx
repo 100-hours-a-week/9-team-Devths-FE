@@ -8,6 +8,7 @@ import NicknameField from '@/components/common/NicknameField';
 import ProfileImagePicker from '@/components/common/ProfileImagePicker';
 import FileTooLargeModal from '@/components/signup/FileTooLargeModal';
 import { INTEREST_OPTIONS } from '@/constants/interests';
+import { useUpdateMeMutation } from '@/lib/hooks/users/useUpdateMeMutation';
 import { validateNickname } from '@/lib/utils/validateNickname';
 
 import type { MeData } from '@/lib/api/users';
@@ -30,13 +31,19 @@ function EditForm({ initialData, onClose }: EditFormProps) {
     initialData?.profileImage?.url ?? null,
   );
   const [isFileTooLargeOpen, setIsFileTooLargeOpen] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   const nicknameValidation = validateNickname(nickname);
+  const updateMutation = useUpdateMeMutation();
 
   const handleToggleInterest = (value: string) => {
     setInterests((prev) =>
       prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
     );
+    setSubmitMessage(null);
   };
 
   const handleSelectImage = (file: File) => {
@@ -44,7 +51,42 @@ function EditForm({ initialData, onClose }: EditFormProps) {
     setPreviewUrl(url);
   };
 
+  const handleNicknameChange = (value: string) => {
+    setNickname(value);
+    setSubmitMessage(null);
+  };
+
+  const handleSubmit = () => {
+    if (!nicknameValidation.isValid) return;
+
+    setSubmitMessage(null);
+
+    updateMutation.mutate(
+      { nickname, interests },
+      {
+        onSuccess: () => {
+          setSubmitMessage({ type: 'success', text: '회원 정보가 성공적으로 변경되었습니다.' });
+        },
+        onError: (error) => {
+          const err = error as Error & { status?: number; serverMessage?: string };
+          if (err.status === 409) {
+            setSubmitMessage({ type: 'error', text: '중복된 닉네임입니다.' });
+          } else {
+            setSubmitMessage({
+              type: 'error',
+              text: err.serverMessage ?? '프로필 수정에 실패했습니다.',
+            });
+          }
+        },
+      },
+    );
+  };
+
   const hasProfileImage = Boolean(previewUrl);
+
+  const helperMessage =
+    nicknameValidation.errorMessage ??
+    (submitMessage?.type === 'error' ? submitMessage.text : null);
 
   return (
     <div className="mt-4 flex flex-col gap-6">
@@ -65,11 +107,16 @@ function EditForm({ initialData, onClose }: EditFormProps) {
         )}
       </div>
 
-      <NicknameField
-        value={nickname}
-        onChange={setNickname}
-        errorMessage={nicknameValidation.errorMessage}
-      />
+      <div>
+        <NicknameField
+          value={nickname}
+          onChange={handleNicknameChange}
+          errorMessage={helperMessage}
+        />
+        {submitMessage?.type === 'success' && (
+          <p className="-mt-3 text-xs text-green-600">{submitMessage.text}</p>
+        )}
+      </div>
 
       <div>
         <p className="text-sm font-semibold">관심 분야 수정</p>
@@ -101,9 +148,11 @@ function EditForm({ initialData, onClose }: EditFormProps) {
       <div className="flex flex-col items-center gap-3 pt-2">
         <button
           type="button"
-          className="h-12 w-full rounded-xl bg-neutral-900 text-sm font-semibold text-white hover:bg-neutral-800"
+          onClick={handleSubmit}
+          disabled={!nicknameValidation.isValid || updateMutation.isPending}
+          className="h-12 w-full rounded-xl bg-neutral-900 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          변경하기
+          {updateMutation.isPending ? '변경 중...' : '변경하기'}
         </button>
 
         <button
@@ -115,10 +164,7 @@ function EditForm({ initialData, onClose }: EditFormProps) {
         </button>
       </div>
 
-      <FileTooLargeModal
-        open={isFileTooLargeOpen}
-        onClose={() => setIsFileTooLargeOpen(false)}
-      />
+      <FileTooLargeModal open={isFileTooLargeOpen} onClose={() => setIsFileTooLargeOpen(false)} />
     </div>
   );
 }
