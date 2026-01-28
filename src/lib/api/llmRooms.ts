@@ -73,7 +73,7 @@ export async function startAnalysis(
   roomId: number,
   body: StartAnalysisRequest,
 ): Promise<ApiClientResult<StartAnalysisResponse>> {
-  const path = `/api/ai/chatrooms/${roomId}/analysis`;
+  const path = `/api/ai-chatrooms/${roomId}/analysis`;
 
   return api.post<StartAnalysisResponse>(path, body);
 }
@@ -88,7 +88,7 @@ export async function startInterview(
   roomId: number,
   body: StartInterviewRequest,
 ): Promise<ApiClientResult<StartInterviewResponse>> {
-  const path = `/api/ai/chatrooms/${roomId}/interview`;
+  const path = `/api/ai-chatrooms/${roomId}/interview`;
 
   return api.post<StartInterviewResponse>(path, body);
 }
@@ -97,7 +97,7 @@ export async function endInterview(
   roomId: number,
   body: EndInterviewRequest,
 ): Promise<ApiClientResult<EndInterviewResponse>> {
-  const path = `/api/ai/chatrooms/${roomId}/evaluation`;
+  const path = `/api/ai-chatrooms/${roomId}/evaluation`;
 
   return api.post<EndInterviewResponse>(path, body);
 }
