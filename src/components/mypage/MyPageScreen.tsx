@@ -75,7 +75,11 @@ export default function MyPageScreen() {
         <p className="mt-4 text-sm text-neutral-400">다음 버전에 기능 추가 예정입니다.</p>
       </section>
 
-      <EditProfileModal open={isEditOpen} onClose={() => setIsEditOpen(false)} />
+      <EditProfileModal
+        open={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        hasProfileImage={Boolean(data?.profileImage?.url)}
+      />
     </main>
   );
 }
