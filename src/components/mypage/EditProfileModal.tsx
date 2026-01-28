@@ -6,6 +6,7 @@ import { useState } from 'react';
 import BaseModal from '@/components/common/BaseModal';
 import NicknameField from '@/components/common/NicknameField';
 import ProfileImagePicker from '@/components/common/ProfileImagePicker';
+import FileTooLargeModal from '@/components/signup/FileTooLargeModal';
 import { INTEREST_OPTIONS } from '@/constants/interests';
 import { validateNickname } from '@/lib/utils/validateNickname';
 
@@ -28,6 +29,7 @@ function EditForm({ initialData, onClose }: EditFormProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(
     initialData?.profileImage?.url ?? null,
   );
+  const [isFileTooLargeOpen, setIsFileTooLargeOpen] = useState(false);
 
   const nicknameValidation = validateNickname(nickname);
 
@@ -47,7 +49,11 @@ function EditForm({ initialData, onClose }: EditFormProps) {
   return (
     <div className="mt-4 flex flex-col gap-6">
       <div className="flex flex-col items-center">
-        <ProfileImagePicker previewUrl={previewUrl} onSelect={handleSelectImage} />
+        <ProfileImagePicker
+          previewUrl={previewUrl}
+          onSelect={handleSelectImage}
+          onFileTooLarge={() => setIsFileTooLargeOpen(true)}
+        />
         {hasProfileImage && (
           <button
             type="button"
@@ -108,6 +114,11 @@ function EditForm({ initialData, onClose }: EditFormProps) {
           탈퇴하기
         </button>
       </div>
+
+      <FileTooLargeModal
+        open={isFileTooLargeOpen}
+        onClose={() => setIsFileTooLargeOpen(false)}
+      />
     </div>
   );
 }
