@@ -16,7 +16,7 @@ type Tab = {
 const TABS: Tab[] = [
   { label: '캘린더', href: '/calendar', icon: Calendar },
   { label: 'AI', href: '/llm', icon: Bot, highlight: true },
-  { label: '프로필', href: '/me', icon: User, disabled: true },
+  { label: '프로필', href: '/profile', icon: User },
 ];
 
 export default function BottomNav() {
