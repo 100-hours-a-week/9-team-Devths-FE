@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { uploadFile } from '@/lib/upload/uploadFile';
 import { userKeys } from '@/lib/hooks/users/queryKeys';
+import { uploadFile } from '@/lib/upload/uploadFile';
 
 type UploadProfileImageInput = {
   file: File;

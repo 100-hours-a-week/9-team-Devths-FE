@@ -107,7 +107,7 @@ function EditForm({ initialData, onWithdraw }: EditFormProps) {
     const hasNicknameChange = nickname !== initialNickname;
     const hasInterestsChange =
       interests.length !== initialInterests.length ||
-      interests.some((v) => !initialInterests.includes(v as typeof initialInterests[number]));
+      interests.some((v) => !initialInterests.includes(v as (typeof initialInterests)[number]));
 
     const hasAnyChange = hasImageChange || hasNicknameChange || hasInterestsChange;
 

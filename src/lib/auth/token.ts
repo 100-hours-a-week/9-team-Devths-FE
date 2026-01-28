@@ -32,12 +32,7 @@ export function getUserIdFromAccessToken(): number | null {
     const payloadJson = decodeBase64Url(parts[1]);
     const payload = JSON.parse(payloadJson) as Record<string, unknown>;
 
-    const candidates = [
-      payload.userId,
-      payload.id,
-      payload.sub,
-      payload.user_id,
-    ];
+    const candidates = [payload.userId, payload.id, payload.sub, payload.user_id];
 
     for (const value of candidates) {
       if (typeof value === 'number' && Number.isFinite(value)) return value;
