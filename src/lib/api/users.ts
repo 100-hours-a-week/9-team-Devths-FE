@@ -1,6 +1,24 @@
-import { apiRequest } from '@/lib/api/client';
+import { api, apiRequest } from '@/lib/api/client';
 
 import type { ApiErrorResponse, ApiResponse } from '@/types/api';
+
+export type MeData = {
+  nickname: string;
+  profileImage: { id: number; url: string } | null;
+  stats: { followerCount: number; followingCount: number };
+  interests: string[];
+};
+
+export type FetchMeResult = {
+  ok: boolean;
+  status: number;
+  json: (ApiResponse<MeData> | ApiErrorResponse) | null;
+};
+
+export async function fetchMe(): Promise<FetchMeResult> {
+  const { ok, status, json } = await api.get<MeData>('/api/users/me');
+  return { ok, status, json };
+}
 
 export type SignupRequest = {
   email: string;
