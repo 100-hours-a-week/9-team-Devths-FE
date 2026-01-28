@@ -42,6 +42,7 @@ jobs:
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK_PROD_URL }}
           status: 'success'
+          content: '@everyone'
           title: '🔔 운영 배포 승인 요청'
           description: |
             **배포 요청자**: ${{ github.actor }}
@@ -86,6 +87,7 @@ jobs:
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK_PROD_URL }}
           status: 'success'
+          content: '@everyone'
           title: '✅ 1차 승인 완료 (DevOps/TechLead)'
           description: |
             **1차 승인자**: ${{ github.actor }}
@@ -236,6 +238,7 @@ jobs:
           webhook: ${{ secrets.DISCORD_WEBHOOK_PROD_URL }}
           status: ${{ needs.deploy-production.result == 'success' && 'success' || 'failure' }}
           title: "🚀 운영 배포 결과 [${{ needs.deploy-production.result == 'success' && '✅성공' || '❌실패' }}]"
+          content: '@everyone'
           description: |
             **배포 타입**: 수동 배포 (Manual)
             **환경**: 🚀 운영(PROD)
@@ -263,6 +266,7 @@ jobs:
           webhook: ${{ secrets.DISCORD_WEBHOOK_PROD_URL }}
           status: 'cancelled'
           title: '⚠️ 운영 배포 취소됨'
+          content: '@everyone'
           description: |
             **배포 타입**: 수동 배포 (Manual)
             **환경**: 🚀 운영(PROD)
