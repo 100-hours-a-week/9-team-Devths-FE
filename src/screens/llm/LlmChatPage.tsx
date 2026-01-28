@@ -1,23 +1,19 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useAppFrame } from '@/components/layout/AppFrameContext';
-import LlmAttachmentSheet from '@/components/llm/chat/LlmAttachmentSheet';
 import LlmComposer from '@/components/llm/chat/LlmComposer';
 import LlmMessageList from '@/components/llm/chat/LlmMessageList';
-import { CHAT_ATTACHMENT_CONSTRAINTS, IMAGE_MIME_TYPES } from '@/constants/attachment';
-import { useEndInterviewMutation } from '@/lib/hooks/llm/useEndInterviewMutation';
+import { endInterviewStream, sendMessageStream } from '@/lib/api/llmRooms';
 import { useMessagesInfiniteQuery } from '@/lib/hooks/llm/useMessagesInfiniteQuery';
-import { useSendMessageMutation } from '@/lib/hooks/llm/useSendMessageMutation';
 import { useStartInterviewMutation } from '@/lib/hooks/llm/useStartInterviewMutation';
 import { toast } from '@/lib/toast/store';
-import { uploadFile } from '@/lib/upload/uploadFile';
 import { toUIMessage } from '@/lib/utils/llm';
-import { validateFiles } from '@/lib/validators/attachment';
+import { readSseStream } from '@/lib/utils/sse';
 
 import type { UIMessage } from '@/lib/utils/llm';
-import type { InterviewType } from '@/types/llm';
+import type { InterviewType, LlmModel } from '@/types/llm';
 
 type Props = {
   roomId: string;
@@ -25,6 +21,7 @@ type Props = {
 };
 
 const MAX_QUESTIONS = 5;
+const DEFAULT_MODEL: LlmModel = 'GEMINI';
 
 type InterviewSession = {
   interviewId: number;
@@ -45,9 +42,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useMessagesInfiniteQuery(numericRoomId);
 
-  const sendMessageMutation = useSendMessageMutation(numericRoomId);
   const startInterviewMutation = useStartInterviewMutation(numericRoomId);
-  const endInterviewMutation = useEndInterviewMutation(numericRoomId);
 
   const serverMessages = useMemo<UIMessage[]>(() => {
     if (!data?.pages) return [];
@@ -58,91 +53,117 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
 
   const [localMessages, setLocalMessages] = useState<UIMessage[]>([]);
 
-  const [attachedImages, setAttachedImages] = useState<File[]>([]);
-  const [attachedPdf, setAttachedPdf] = useState<File | null>(null);
-
   const [interviewUIState, setInterviewUIState] = useState<InterviewUIState>('idle');
   const [interviewSession, setInterviewSession] = useState<InterviewSession | null>(null);
+  const [model] = useState<LlmModel>(DEFAULT_MODEL);
+  const [isSending, setIsSending] = useState(false);
 
   const handleSendMessage = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
-      const hasFiles = attachedImages.length > 0 || attachedPdf !== null;
 
-      if (!trimmed && !hasFiles) return;
+      if (!trimmed) return;
 
-      const tempId = `temp-${Date.now()}`;
-      const filesToUpload = [...attachedImages, ...(attachedPdf ? [attachedPdf] : [])];
+      setIsSending(true);
+
+      const tempUserId = `temp-user-${Date.now()}`;
+      const tempAiId = `temp-ai-${Date.now()}`;
 
       setLocalMessages((prev) => [
         ...prev,
         {
-          id: tempId,
+          id: tempUserId,
           role: 'USER',
-          text: trimmed || '(첨부 파일)',
+          text: trimmed,
           time: '전송 중...',
           status: 'sending',
         },
+        {
+          id: tempAiId,
+          role: 'AI',
+          text: '',
+          time: '응답 중...',
+        },
       ]);
 
-      setAttachedImages([]);
-      setAttachedPdf(null);
-
       try {
-        const fileIds: number[] = [];
-        for (const file of filesToUpload) {
-          const result = await uploadFile({
-            file,
-            category: 'ATTACHMENT',
-            refType: 'MESSAGE',
+        const response = await sendMessageStream(numericRoomId, {
+          content: trimmed,
+          model,
+          interviewId: interviewSession?.interviewId ?? null,
+        });
+
+        let aiText = '';
+        const nowLabel = () =>
+          new Date().toLocaleTimeString('ko-KR', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
           });
-          fileIds.push(result.fileId);
-        }
 
-        sendMessageMutation.mutate(
-          { content: trimmed, fileIds: fileIds.length > 0 ? fileIds : undefined },
-          {
-            onSuccess: (response) => {
-              if (!response) return;
-              setLocalMessages((prev) => {
-                const filtered = prev.filter((m) => m.id !== tempId);
-                return [
-                  ...filtered,
-                  toUIMessage(response.userMessage),
-                  toUIMessage(response.aiResponse),
-                ];
-              });
+        await readSseStream(response, ({ event, data }) => {
+          if (event === 'error') {
+            let errorMessage = '메시지 전송에 실패했습니다.';
+            try {
+              const parsed = JSON.parse(data) as { message?: string };
+              if (parsed.message) errorMessage = parsed.message;
+            } catch {
+              errorMessage = data || errorMessage;
+            }
 
-              if (interviewSession) {
-                const newCount = interviewSession.questionCount + 1;
-                if (newCount >= MAX_QUESTIONS) {
-                  setInterviewSession((prev) =>
-                    prev ? { ...prev, questionCount: newCount } : null,
-                  );
-                } else {
-                  setInterviewSession((prev) =>
-                    prev ? { ...prev, questionCount: newCount } : null,
-                  );
+            setLocalMessages((prev) =>
+              prev.map((m) =>
+                m.id === tempUserId
+                  ? { ...m, status: 'failed', time: '전송 실패' }
+                  : m.id === tempAiId
+                    ? { ...m, text: errorMessage, time: nowLabel() }
+                    : m,
+              ),
+            );
+            toast(errorMessage);
+            return false;
+          }
+
+          if (event === 'done') {
+            setLocalMessages((prev) =>
+              prev.map((m) => {
+                if (m.id === tempUserId) {
+                  return { ...m, status: 'sent', time: nowLabel() };
                 }
-              }
-            },
-            onError: () => {
-              setLocalMessages((prev) =>
-                prev.map((m) =>
-                  m.id === tempId ? { ...m, status: 'failed', time: '전송 실패' } : m,
-                ),
-              );
-            },
-          },
-        );
+                if (m.id === tempAiId) {
+                  return { ...m, text: aiText, time: nowLabel() };
+                }
+                return m;
+              }),
+            );
+
+            if (interviewSession) {
+              const newCount = interviewSession.questionCount + 1;
+              setInterviewSession((prev) => (prev ? { ...prev, questionCount: newCount } : null));
+            }
+
+            return false;
+          }
+
+          aiText += data;
+          setLocalMessages((prev) =>
+            prev.map((m) => (m.id === tempAiId ? { ...m, text: aiText } : m)),
+          );
+
+          return true;
+        });
       } catch {
         setLocalMessages((prev) =>
-          prev.map((m) => (m.id === tempId ? { ...m, status: 'failed', time: '업로드 실패' } : m)),
+          prev
+            .filter((m) => m.id !== tempAiId)
+            .map((m) => (m.id === tempUserId ? { ...m, status: 'failed', time: '전송 실패' } : m)),
         );
-        toast('파일 업로드에 실패했습니다.');
+        toast('메시지 전송에 실패했습니다.');
+      } finally {
+        setIsSending(false);
       }
     },
-    [sendMessageMutation, attachedImages, attachedPdf, interviewSession],
+    [interviewSession, model, numericRoomId],
   );
 
   const handleRetry = useCallback(
@@ -160,144 +181,168 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
     setLocalMessages((prev) => prev.filter((m) => m.id !== messageId));
   }, []);
 
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const [sheetOpen, setSheetOpen] = useState(false);
-
-  const handlePickImages = useCallback(() => {
-    imageInputRef.current?.click();
-  }, []);
-
-  const handlePickFile = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
-
-  const handleImageChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(e.target.files ?? []);
-      if (files.length === 0) return;
-
-      const result = validateFiles(
-        files,
-        CHAT_ATTACHMENT_CONSTRAINTS,
-        attachedImages.length,
-        attachedPdf ? 1 : 0,
-      );
-
-      if (result.errors.length > 0) {
-        toast(result.errors[0].message);
-      }
-
-      if (result.okFiles.length > 0) {
-        setAttachedImages((prev) => [...prev, ...result.okFiles]);
-      }
-
-      e.target.value = '';
-    },
-    [attachedImages.length, attachedPdf],
-  );
-
-  const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(e.target.files ?? []);
-      if (files.length === 0) return;
-
-      const result = validateFiles(
-        files,
-        CHAT_ATTACHMENT_CONSTRAINTS,
-        attachedImages.length,
-        attachedPdf ? 1 : 0,
-      );
-
-      if (result.errors.length > 0) {
-        toast(result.errors[0].message);
-      }
-
-      const pdfFile = result.okFiles.find((f) => f.type === 'application/pdf');
-      if (pdfFile) {
-        setAttachedPdf(pdfFile);
-      }
-
-      e.target.value = '';
-    },
-    [attachedImages.length, attachedPdf],
-  );
-
-  const handleRemoveImage = useCallback((index: number) => {
-    setAttachedImages((prev) => prev.filter((_, i) => i !== index));
-  }, []);
-
-  const handleRemovePdf = useCallback(() => {
-    setAttachedPdf(null);
-  }, []);
-
   const handleStartInterview = useCallback(
     (type: InterviewType) => {
       setInterviewUIState('starting');
 
-      startInterviewMutation.mutate(type, {
-        onSuccess: (response) => {
-          if (!response) return;
-
-          setInterviewSession({
-            interviewId: response.interviewId,
-            type,
-            questionCount: 1,
-          });
-          setInterviewUIState('active');
-
-          setLocalMessages((prev) => [
-            ...prev,
-            {
-              id: String(response.content.messageId),
-              role: 'AI',
-              text: response.content.content,
-              time: new Date(response.content.createdAt).toLocaleTimeString('ko-KR', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true,
-              }),
-            },
-          ]);
+      startInterviewMutation.mutate(
+        {
+          interviewType: type,
+          model,
         },
-        onError: () => {
-          toast('면접 모드 시작에 실패했습니다.');
-          setInterviewUIState('idle');
+        {
+          onSuccess: async (response) => {
+            if (!response) return;
+
+            setInterviewSession({
+              interviewId: response.interviewId,
+              type,
+              questionCount: 0,
+            });
+            setInterviewUIState('active');
+
+            const tempAiId = `temp-ai-interview-${Date.now()}`;
+            setLocalMessages((prev) => [
+              ...prev,
+              {
+                id: tempAiId,
+                role: 'AI',
+                text: '',
+                time: '질문 생성 중...',
+              },
+            ]);
+
+            try {
+              const streamResponse = await sendMessageStream(numericRoomId, {
+                content: '면접을 시작해주세요.',
+                model,
+                interviewId: response.interviewId,
+              });
+
+              let aiText = '';
+              const nowLabel = () =>
+                new Date().toLocaleTimeString('ko-KR', {
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  hour12: true,
+                });
+
+              await readSseStream(streamResponse, ({ event, data }) => {
+                if (event === 'error') {
+                  setLocalMessages((prev) =>
+                    prev.map((m) =>
+                      m.id === tempAiId
+                        ? { ...m, text: '질문 생성에 실패했습니다.', time: nowLabel() }
+                        : m,
+                    ),
+                  );
+                  return false;
+                }
+
+                if (event === 'done') {
+                  setLocalMessages((prev) =>
+                    prev.map((m) =>
+                      m.id === tempAiId ? { ...m, text: aiText, time: nowLabel() } : m,
+                    ),
+                  );
+                  setInterviewSession((prev) => (prev ? { ...prev, questionCount: 1 } : null));
+                  return false;
+                }
+
+                aiText += data;
+                setLocalMessages((prev) =>
+                  prev.map((m) => (m.id === tempAiId ? { ...m, text: aiText } : m)),
+                );
+                return true;
+              });
+            } catch {
+              setLocalMessages((prev) => prev.filter((m) => m.id !== tempAiId));
+              toast('면접 질문 생성에 실패했습니다.');
+            }
+          },
+          onError: () => {
+            toast('면접 모드 시작에 실패했습니다.');
+            setInterviewUIState('idle');
+          },
         },
-      });
+      );
     },
-    [startInterviewMutation],
+    [startInterviewMutation, model, numericRoomId],
   );
 
-  const handleEndInterview = useCallback(() => {
+  const handleEndInterview = useCallback(async () => {
     if (!interviewSession) return;
 
     setInterviewUIState('ending');
 
-    endInterviewMutation.mutate(interviewSession.interviewId, {
-      onSuccess: (response) => {
-        if (!response) return;
+    const systemId = `sys-${Date.now()}`;
+    const evalId = `temp-eval-${Date.now()}`;
 
-        setLocalMessages((prev) => [
-          ...prev,
-          {
-            id: `sys-${Date.now()}`,
-            role: 'SYSTEM',
-            text: '면접이 종료되었습니다. 답변 평가를 시작합니다.',
-          },
-        ]);
+    setLocalMessages((prev) => [
+      ...prev,
+      {
+        id: systemId,
+        role: 'SYSTEM',
+        text: '면접이 종료되었습니다. 답변 평가를 시작합니다.',
+      },
+      {
+        id: evalId,
+        role: 'AI',
+        text: '',
+        time: '평가 중...',
+      },
+    ]);
 
-        setInterviewSession(null);
-        setInterviewUIState('idle');
-        toast('면접 평가가 시작되었습니다.');
-      },
-      onError: () => {
-        toast('면접 종료에 실패했습니다.');
-        setInterviewUIState('active');
-      },
-    });
-  }, [interviewSession, endInterviewMutation]);
+    try {
+      const response = await endInterviewStream(numericRoomId, {
+        interviewId: interviewSession.interviewId,
+      });
+
+      let evalText = '';
+      const nowLabel = () =>
+        new Date().toLocaleTimeString('ko-KR', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+        });
+
+      await readSseStream(response, ({ event, data }) => {
+        if (event === 'error') {
+          let errorMessage = '면접 평가에 실패했습니다.';
+          try {
+            const parsed = JSON.parse(data) as { message?: string };
+            if (parsed.message) errorMessage = parsed.message;
+          } catch {
+            errorMessage = data || errorMessage;
+          }
+
+          setLocalMessages((prev) =>
+            prev.map((m) => (m.id === evalId ? { ...m, text: errorMessage, time: nowLabel() } : m)),
+          );
+          toast(errorMessage);
+          return false;
+        }
+
+        if (event === 'done') {
+          setLocalMessages((prev) =>
+            prev.map((m) => (m.id === evalId ? { ...m, text: evalText, time: nowLabel() } : m)),
+          );
+          setInterviewSession(null);
+          setInterviewUIState('idle');
+          return false;
+        }
+
+        evalText += data;
+        setLocalMessages((prev) =>
+          prev.map((m) => (m.id === evalId ? { ...m, text: evalText } : m)),
+        );
+        return true;
+      });
+    } catch {
+      toast('면접 종료에 실패했습니다.');
+      setInterviewUIState('active');
+    }
+  }, [interviewSession, numericRoomId]);
 
   useEffect(() => {
     if (interviewSession && interviewSession.questionCount >= MAX_QUESTIONS) {
@@ -366,7 +411,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
               </span>
               <button
                 type="button"
-                onClick={() => handleStartInterview('PERSONAL')}
+                onClick={() => handleStartInterview('BEHAVIOR')}
                 className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-neutral-900 shadow-sm hover:bg-neutral-50"
               >
                 인성 면접
@@ -400,7 +445,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
                 면접 모드 진행중
               </span>
               <span className="rounded-full border border-neutral-200 bg-white px-3 py-1 text-[11px] font-semibold text-neutral-800 shadow-sm">
-                {interviewSession.type === 'PERSONAL' ? '인성 면접' : '기술 면접'}
+                {interviewSession.type === 'BEHAVIOR' ? '인성 면접' : '기술 면접'}
               </span>
               <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-[11px] font-semibold text-neutral-600">
                 질문 {interviewSession.questionCount}/{MAX_QUESTIONS}
@@ -422,40 +467,8 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId }: Props) {
           )}
         </div>
 
-        <LlmComposer
-          onAttach={() => setSheetOpen(true)}
-          onSend={handleSendMessage}
-          disabled={sendMessageMutation.isPending}
-          attachedImages={attachedImages}
-          attachedPdf={attachedPdf}
-          onRemoveImage={handleRemoveImage}
-          onRemovePdf={handleRemovePdf}
-        />
+        <LlmComposer onSend={handleSendMessage} disabled={isSending} />
       </div>
-
-      <LlmAttachmentSheet
-        open={sheetOpen}
-        title="채팅 첨부"
-        onClose={() => setSheetOpen(false)}
-        onPickImages={handlePickImages}
-        onPickFile={handlePickFile}
-      />
-
-      <input
-        ref={imageInputRef}
-        type="file"
-        accept={IMAGE_MIME_TYPES.join(',')}
-        multiple
-        className="hidden"
-        onChange={handleImageChange}
-      />
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="application/pdf"
-        className="hidden"
-        onChange={handleFileChange}
-      />
     </main>
   );
 }

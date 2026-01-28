@@ -20,13 +20,16 @@ export type ChatMessageAttachment = {
   fileSize: number;
 };
 
+export type MessageRole = 'USER' | 'ASSISTANT' | 'SYSTEM';
+export type MessageType = 'NORMAL' | 'REPORT' | 'INTERVIEW';
+
 export type ChatMessage = {
   roomId: number;
   messageId: number;
   interviewId: number | null;
-  role: 'USER' | 'ASSISTANT';
+  role: MessageRole;
   content: string;
-  type: 'NORMAL';
+  type: MessageType;
   metadata: Record<string, unknown> | null;
   attachments?: ChatMessageAttachment[];
   createdAt: string;
@@ -51,11 +54,6 @@ export type FetchMessagesResponse = {
   hasNext: boolean;
 };
 
-export type SendMessageResponse = {
-  userMessage: ChatMessage;
-  aiResponse: ChatMessage;
-};
-
 export type FetchRoomsParams = {
   size?: number;
   lastId?: number;
@@ -68,36 +66,24 @@ export type FetchMessagesParams = {
 
 export type SendMessageRequest = {
   content: string;
-  fileIds?: number[];
+  model: LlmModel;
+  interviewId: number | null;
 };
 
-export type InterviewType = 'TECH' | 'PERSONAL';
+export type InterviewType = 'TECH' | 'BEHAVIOR';
 
 export type StartInterviewRequest = {
   interviewType: InterviewType;
-};
-
-export type InterviewMessage = {
-  messageId: number;
-  role: 'ASSISTANT';
-  content: string;
-  type: 'INTERVIEW';
-  createdAt: string;
+  model: LlmModel;
 };
 
 export type StartInterviewResponse = {
   interviewId: number;
-  status: 'IN_PROGRESS';
-  content: InterviewMessage;
+  interviewType: InterviewType;
 };
 
 export type EndInterviewRequest = {
   interviewId: number;
-};
-
-export type EndInterviewResponse = {
-  taskId: number;
-  status: TaskStatus;
 };
 
 export type LlmModel = 'GEMINI' | 'VLLM';
@@ -127,7 +113,7 @@ export type StartAnalysisRequest = {
   jobPost: AnalysisDocumentInput;
 };
 
-export type TaskStatus = 'PENDING' | 'PROGRESSING' | 'COMPLETED' | 'FAILED';
+export type TaskStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
 
 export type StartAnalysisResponse = {
   taskId: number;
@@ -149,14 +135,14 @@ export type AnalysisResultMessage = {
   createdAt: string;
 };
 
+export type TaskType = 'ANALYSIS' | 'MASKING' | 'EXTRACT';
+
 export type TaskResultData = {
   taskId: number;
-  taskType: 'RESUME' | 'INTERVIEW' | 'SCHEDULE';
+  taskType: TaskType;
   referenceId: number;
   status: TaskStatus;
-  result: AnalysisResultMessage | null;
-  failReason?: string;
-  failMessage?: string;
+  result: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
   isNotified: boolean;

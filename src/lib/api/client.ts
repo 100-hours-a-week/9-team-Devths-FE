@@ -64,6 +64,53 @@ function buildUrl(path: string) {
   return new URL(path, BASE_URL).toString();
 }
 
+export function buildApiUrl(path: string) {
+  return buildUrl(path);
+}
+
+export async function apiStreamRequest(options: RequestOptions & { accept?: string }) {
+  const {
+    method,
+    path,
+    body,
+    withAuth = true,
+    credentials = 'include',
+    headers = {},
+    accept,
+  } = options;
+
+  const url = buildUrl(path);
+  const finalHeaders: Record<string, string> = {
+    ...headers,
+  };
+
+  if (accept) {
+    finalHeaders.Accept = accept;
+  }
+
+  const hasBody = body !== undefined && body !== null;
+  let requestBody: BodyInit | undefined;
+
+  if (hasBody) {
+    finalHeaders['Content-Type'] = finalHeaders['Content-Type'] ?? 'application/json';
+    requestBody = JSON.stringify(body);
+  }
+
+  if (withAuth) {
+    const token = getAccessToken();
+    if (token) {
+      finalHeaders.Authorization = `Bearer ${token}`;
+    }
+  }
+
+  return fetch(url, {
+    method,
+    headers: finalHeaders,
+    credentials,
+    body: requestBody,
+  });
+}
+
 export async function apiRequest<T>(
   options: RequestOptions,
   isRetry = false,

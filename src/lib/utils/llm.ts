@@ -62,6 +62,17 @@ function formatUpdatedAt(isoString: string): string {
 
 const S3_BASE_URL = process.env.NEXT_PUBLIC_S3_URL ?? '';
 
+function mapRole(role: ChatMessage['role']): UIMessage['role'] {
+  switch (role) {
+    case 'ASSISTANT':
+      return 'AI';
+    case 'SYSTEM':
+      return 'SYSTEM';
+    default:
+      return 'USER';
+  }
+}
+
 export function toUIMessage(msg: ChatMessage): UIMessage {
   const attachments: UIAttachment[] | undefined = msg.attachments?.map((att) => ({
     type: att.mimeType.startsWith('image/') ? 'image' : 'file',
@@ -71,7 +82,7 @@ export function toUIMessage(msg: ChatMessage): UIMessage {
 
   return {
     id: String(msg.messageId),
-    role: msg.role === 'ASSISTANT' ? 'AI' : 'USER',
+    role: mapRole(msg.role),
     text: msg.content,
     time: formatMessageTime(msg.createdAt),
     attachments: attachments?.length ? attachments : undefined,

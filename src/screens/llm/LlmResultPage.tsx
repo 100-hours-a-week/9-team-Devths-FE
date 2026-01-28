@@ -9,6 +9,15 @@ import { getTaskStatus } from '@/lib/api/llmRooms';
 import type { ApiResponse } from '@/types/api';
 import type { TaskResultData } from '@/types/llm';
 
+type AnalysisResult = {
+  content?: string;
+  metadata?: {
+    score?: number;
+    summary?: string;
+    strengths?: string[];
+  };
+};
+
 type Props = {
   roomId: string;
   numericRoomId: number;
@@ -67,8 +76,9 @@ export default function LlmResultPage({ roomId, numericRoomId, taskId }: Props) 
     );
   }
 
-  const content = result?.result?.content || '';
-  const metadata = result?.result?.metadata;
+  const analysisResult = result?.result as AnalysisResult | null;
+  const content = analysisResult?.content ?? '';
+  const metadata = analysisResult?.metadata;
 
   return (
     <main className="min-h-[calc(100dvh-56px-64px)] bg-white px-4 pt-6 pb-6 text-black">
