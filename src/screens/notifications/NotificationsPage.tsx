@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
+
 import NotificationList from '@/components/notifications/NotificationList';
 import { useNotificationsInfiniteQuery } from '@/lib/hooks/notifications/useNotificationsInfiniteQuery';
 
@@ -16,6 +18,26 @@ export default function NotificationsPage() {
   } = useNotificationsInfiniteQuery({ size: 10 });
 
   const notifications = data?.pages.flatMap((page) => page.notifications) ?? [];
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const element = sentinelRef.current;
+    if (!element) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.2, rootMargin: '200px' },
+    );
+
+    observer.observe(element);
+
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   return (
     <main className="px-3 pt-4 pb-3">
@@ -40,16 +62,15 @@ export default function NotificationsPage() {
         </div>
       ) : null}
 
-      {!isLoading && !isError && hasNextPage ? (
-        <div className="mt-4 flex justify-center">
-          <button
-            type="button"
-            onClick={() => fetchNextPage()}
-            disabled={isFetchingNextPage}
-            className="rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 disabled:opacity-50"
-          >
-            {isFetchingNextPage ? '불러오는 중...' : '더 보기'}
-          </button>
+      {!isError ? (
+        <div ref={sentinelRef} className="mt-4 flex justify-center">
+          {isFetchingNextPage ? (
+            <span className="text-xs text-neutral-400">불러오는 중...</span>
+          ) : hasNextPage ? (
+            <span className="text-xs text-neutral-400">스크롤로 더 보기</span>
+          ) : notifications.length > 0 ? (
+            <span className="text-xs text-neutral-300">모든 알림을 확인했어요</span>
+          ) : null}
         </div>
       ) : null}
     </main>
