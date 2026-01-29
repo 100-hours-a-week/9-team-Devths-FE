@@ -54,8 +54,6 @@ export default function ProfileImagePicker({
 
   return (
     <section className="flex flex-col items-center">
-      <div className="text-sm font-semibold">프로필 사진</div>
-
       <button
         type="button"
         onClick={openPicker}
