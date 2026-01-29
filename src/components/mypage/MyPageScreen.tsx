@@ -20,8 +20,6 @@ export default function MyPageScreen() {
 
   return (
     <main className="flex flex-col px-6 py-4">
-      <h1 className="text-xl font-bold">마이페이지</h1>
-
       <section className="mt-4 rounded-xl bg-white p-4 shadow-sm">
         {isLoading ? (
           <div className="flex items-center gap-4">
