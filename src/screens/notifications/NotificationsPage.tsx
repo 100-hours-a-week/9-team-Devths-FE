@@ -1,11 +1,14 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 
 import NotificationList from '@/components/notifications/NotificationList';
+import { notificationKeys } from '@/lib/hooks/notifications/queryKeys';
 import { useNotificationsInfiniteQuery } from '@/lib/hooks/notifications/useNotificationsInfiniteQuery';
 
 export default function NotificationsPage() {
+  const queryClient = useQueryClient();
   const {
     data,
     isLoading,
@@ -19,6 +22,10 @@ export default function NotificationsPage() {
 
   const notifications = data?.pages.flatMap((page) => page.notifications) ?? [];
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    queryClient.setQueryData(notificationKeys.unreadCount(), 0);
+  }, [queryClient]);
 
   useEffect(() => {
     const element = sentinelRef.current;
@@ -45,9 +52,7 @@ export default function NotificationsPage() {
         notifications={notifications}
         isLoading={isLoading}
         isError={isError}
-        errorMessage={
-          error instanceof Error ? error.message : '알림을 불러오지 못했습니다.'
-        }
+        errorMessage={error instanceof Error ? error.message : '알림을 불러오지 못했습니다.'}
       />
 
       {isError ? (

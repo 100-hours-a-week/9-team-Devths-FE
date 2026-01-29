@@ -1,4 +1,5 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 
 import { getNotifications } from '@/lib/api/notifications';
 import { notificationKeys } from '@/lib/hooks/notifications/queryKeys';
@@ -8,7 +9,9 @@ type UseNotificationsInfiniteQueryParams = {
 };
 
 export function useNotificationsInfiniteQuery({ size }: UseNotificationsInfiniteQueryParams = {}) {
-  return useInfiniteQuery({
+  const queryClient = useQueryClient();
+
+  const query = useInfiniteQuery({
     queryKey: notificationKeys.list({ size }),
     queryFn: async ({ pageParam }) => {
       const result = await getNotifications({
@@ -32,4 +35,12 @@ export function useNotificationsInfiniteQuery({ size }: UseNotificationsInfinite
       return lastPage.lastId ?? undefined;
     },
   });
+
+  useEffect(() => {
+    if (query.isSuccess) {
+      queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount() });
+    }
+  }, [query.isSuccess, queryClient]);
+
+  return query;
 }
