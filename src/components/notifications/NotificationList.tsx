@@ -15,10 +15,7 @@ function NotificationSkeleton() {
   return (
     <div className="space-y-3">
       {[0, 1, 2].map((idx) => (
-        <div
-          key={idx}
-          className="rounded-2xl border border-neutral-200 bg-white px-4 py-3"
-        >
+        <div key={idx} className="rounded-2xl border border-neutral-200 bg-white px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="h-3 w-20 animate-pulse rounded bg-neutral-200" />
             <div className="h-3 w-12 animate-pulse rounded bg-neutral-200" />

@@ -1,7 +1,8 @@
 'use client';
 
-import { formatNotificationDate } from '@/lib/utils/notifications';
 import { useRouter } from 'next/navigation';
+
+import { formatNotificationDate } from '@/lib/utils/notifications';
 
 import type { NotificationResponse } from '@/types/notifications';
 
