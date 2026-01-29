@@ -34,7 +34,7 @@ export default function BaseModal({
 
       <div
         className={cn(
-          'fixed left-1/2 top-1/2 z-[51] w-[calc(100%-40px)] max-w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-5 shadow-lg',
+          'fixed top-1/2 left-1/2 z-[51] w-[calc(100%-40px)] max-w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-5 shadow-lg',
           contentClassName,
         )}
       >
