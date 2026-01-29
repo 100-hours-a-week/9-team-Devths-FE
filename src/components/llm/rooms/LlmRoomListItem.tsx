@@ -8,16 +8,29 @@ type Props = {
   room: LlmRoom;
   isAnalyzing?: boolean;
   onEnter?: () => void;
+  onAnalyzingClick?: () => void;
   onDelete?: (roomId: string) => void;
 };
 
-export default function LlmRoomListItem({ room, isAnalyzing, onEnter, onDelete }: Props) {
+export default function LlmRoomListItem({
+  room,
+  isAnalyzing,
+  onEnter,
+  onAnalyzingClick,
+  onDelete,
+}: Props) {
   return (
     <div className="rounded-2xl border bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between gap-3">
         <button
           type="button"
-          onClick={() => onEnter?.()}
+          onClick={() => {
+            if (isAnalyzing) {
+              onAnalyzingClick?.();
+              return;
+            }
+            onEnter?.();
+          }}
           className="flex min-w-0 flex-1 flex-col text-left"
         >
           <div className="flex min-w-0 items-center gap-2">

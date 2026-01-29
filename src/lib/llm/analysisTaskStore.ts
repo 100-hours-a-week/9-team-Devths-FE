@@ -8,6 +8,7 @@ type AnalysisTask = {
   taskId: number;
   roomId: number;
   roomUuid: string;
+  roomTitle: string;
   status: TaskStatus;
   model: LlmModel;
   startedAt: number;

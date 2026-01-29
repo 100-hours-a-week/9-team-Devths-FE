@@ -12,7 +12,7 @@ import { useDeleteRoomMutation } from '@/lib/hooks/llm/useDeleteRoomMutation';
 import { useRoomsInfiniteQuery } from '@/lib/hooks/llm/useRoomsInfiniteQuery';
 import { useAnalysisTaskStore } from '@/lib/llm/analysisTaskStore';
 import { toast } from '@/lib/toast/store';
-import { mapAiChatRoomToLlmRoom } from '@/lib/utils/llm';
+import { formatUpdatedAt, mapAiChatRoomToLlmRoom } from '@/lib/utils/llm';
 
 export default function LlmRoomsPage() {
   const router = useRouter();
@@ -71,7 +71,7 @@ export default function LlmRoomsPage() {
   }
 
   // 서버에서 받아온 rooms를 최신순(updatedAt 기준 내림차순)으로 정렬
-  const rooms =
+  let rooms =
     data?.pages
       .flatMap((page) => (page ? page.rooms : []))
       .sort((a, b) => {
@@ -79,6 +79,22 @@ export default function LlmRoomsPage() {
         return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
       })
       .map(mapAiChatRoomToLlmRoom) ?? [];
+
+  if (isAnalysisActive && activeTask) {
+    const hasActiveRoom = rooms.some((room) => room.numericId === activeTask.roomId);
+    if (!hasActiveRoom) {
+      rooms = [
+        {
+          id: activeTask.roomUuid,
+          numericId: activeTask.roomId,
+          title: activeTask.roomTitle || 'AI 분석',
+          updatedAt: formatUpdatedAt(new Date(activeTask.startedAt).toISOString()),
+          storage: 'TEMP',
+        },
+        ...rooms,
+      ];
+    }
+  }
   const hasRooms = rooms.length > 0;
 
   if (!hasRooms) {
@@ -91,7 +107,7 @@ export default function LlmRoomsPage() {
         <LlmRoomCreateCard
           href="/llm/analysis"
           disabled={isAnalysisActive}
-          onDisabledClick={() => toast('분석 중입니다. 잠시만 기다려주세요!')}
+          onDisabledClick={() => toast('분석 진행 중입니다. 완료 후 확인해주세요.')}
         />
 
         <div className="mt-4">
@@ -99,13 +115,10 @@ export default function LlmRoomsPage() {
           <LlmRoomList
             rooms={rooms}
             activeAnalysisRoomId={isAnalysisActive ? activeTask?.roomId : null}
-            onEnterRoom={(id, numericId) => {
-              if (isAnalysisActive && activeTask?.roomId === numericId) {
-                toast('분석 중입니다. 잠시만 기다려주세요!');
-                return;
-              }
-              router.push(`/llm/${encodeURIComponent(id)}?rid=${numericId}`);
-            }}
+            onEnterRoom={(id, numericId) =>
+              router.push(`/llm/${encodeURIComponent(id)}?rid=${numericId}`)
+            }
+            onAnalyzingRoomClick={() => toast('분석 진행 중입니다. 완료 후 확인해주세요.')}
             onDeleteRoom={handleDeleteRoom}
           />
 

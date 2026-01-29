@@ -58,7 +58,7 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { activeTask, setActiveTask } = useAnalysisTaskStore();
+  const { activeTask, setActiveTask, clearActiveTask } = useAnalysisTaskStore();
   const isAnalysisActive =
     activeTask !== null && activeTask.status !== 'COMPLETED' && activeTask.status !== 'FAILED';
 
@@ -217,8 +217,10 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
     setIsLoading(true);
 
     try {
+      const startedAt = Date.now();
       let numericRoomId = propNumericRoomId || 0;
       let roomUuid = roomId;
+      let roomTitle = 'AI 분석';
 
       if (roomId === 'new') {
         const createResult = await createRoom();
@@ -228,6 +230,26 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
         const createJson = createResult.json as ApiResponse<CreateRoomResponse>;
         numericRoomId = createJson.data.roomId;
         roomUuid = createJson.data.roomUuid;
+        roomTitle = createJson.data.title || 'AI 분석';
+        setActiveTask({
+          taskId: 0,
+          roomId: numericRoomId,
+          roomUuid,
+          roomTitle,
+          status: 'PENDING',
+          model: form.model,
+          startedAt,
+        });
+      } else {
+        setActiveTask({
+          taskId: 0,
+          roomId: numericRoomId,
+          roomUuid,
+          roomTitle,
+          status: 'PENDING',
+          model: form.model,
+          startedAt,
+        });
       }
 
       // 이력서 파일 업로드 (PDF 또는 이미지)
@@ -307,12 +329,14 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
         taskId,
         roomId: numericRoomId,
         roomUuid,
+        roomTitle,
         status: analysisJson.data.status ?? 'PENDING',
         model: form.model,
-        startedAt: Date.now(),
+        startedAt,
       });
     } catch (err) {
       setIsLoading(false);
+      clearActiveTask();
       toast(err instanceof Error ? err.message : '분석 요청 중 오류가 발생했습니다.');
     }
   }, [
@@ -327,6 +351,7 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
     propNumericRoomId,
     isAnalysisActive,
     setActiveTask,
+    clearActiveTask,
   ]);
 
   return (
