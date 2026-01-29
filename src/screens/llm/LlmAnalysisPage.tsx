@@ -15,7 +15,7 @@ import {
   LLM_ATTACHMENT_CONSTRAINTS,
 } from '@/constants/attachment';
 import { createRoom, startAnalysis } from '@/lib/api/llmRooms';
-import { useTaskPolling } from '@/lib/hooks/llm/useTaskPolling';
+import { useAnalysisTaskStore } from '@/lib/llm/analysisTaskStore';
 import { toast } from '@/lib/toast/store';
 import { uploadFile } from '@/lib/upload/uploadFile';
 import { getAnalysisDisabledReason } from '@/lib/validators/analysisForm';
@@ -54,31 +54,32 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
   const [sheetOpen, setSheetOpen] = useState(false);
   const [target, setTarget] = useState<Target>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [createdRoom, setCreatedRoom] = useState<{ uuid: string; id: number } | null>(null);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { status, error, isPolling, startPolling } = useTaskPolling();
+  const { activeTask, setActiveTask } = useAnalysisTaskStore();
+  const isAnalysisActive =
+    activeTask !== null && activeTask.status !== 'COMPLETED' && activeTask.status !== 'FAILED';
 
-  const disabledReason = getAnalysisDisabledReason(form.resume, form.jobPosting);
-  const isSubmitDisabled = isLoading || isPolling || disabledReason !== null;
+  const baseDisabledReason = getAnalysisDisabledReason(form.resume, form.jobPosting);
+  const disabledReason =
+    isAnalysisActive && !isLoading
+      ? '분석이 진행 중입니다. 잠시만 기다려주세요.'
+      : baseDisabledReason;
+  const isSubmitDisabled = isLoading || disabledReason !== null;
 
   const [currentTaskId, setCurrentTaskId] = useState<number | null>(null);
-
   useEffect(() => {
-    if (status === 'COMPLETED') {
+    if (!activeTask && currentTaskId) {
       setIsLoading(false);
-      const targetUuid = createdRoom?.uuid || roomId;
-      const targetNumericId = createdRoom?.id || propNumericRoomId || 0;
-      router.push(
-        `/llm/${targetUuid}/result?taskId=${currentTaskId}&rid=${targetNumericId}&model=${form.model}`,
-      );
-    } else if (status === 'FAILED') {
-      setIsLoading(false);
-      toast(error || '분석에 실패했습니다.');
     }
-  }, [status, error, router, roomId, createdRoom, currentTaskId, propNumericRoomId, form.model]);
+  }, [activeTask, currentTaskId]);
+
+  const handleCloseLoading = useCallback(() => {
+    setIsLoading(false);
+    router.push('/llm');
+  }, [router]);
 
   const updateResume = useCallback((updates: Partial<DocumentInput>) => {
     setForm((prev) => ({
@@ -209,10 +210,15 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
   }, []);
 
   const handleSubmit = useCallback(async () => {
+    if (isAnalysisActive) {
+      toast('분석 중입니다. 잠시만 기다려주세요.');
+      return;
+    }
     setIsLoading(true);
 
     try {
       let numericRoomId = propNumericRoomId || 0;
+      let roomUuid = roomId;
 
       if (roomId === 'new') {
         const createResult = await createRoom();
@@ -221,10 +227,7 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
         }
         const createJson = createResult.json as ApiResponse<CreateRoomResponse>;
         numericRoomId = createJson.data.roomId;
-        setCreatedRoom({
-          uuid: createJson.data.roomUuid,
-          id: createJson.data.roomId,
-        });
+        roomUuid = createJson.data.roomUuid;
       }
 
       // 이력서 파일 업로드 (PDF 또는 이미지)
@@ -248,7 +251,7 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
       } else if (form.resume.images.length > 0) {
         const result = await uploadFile({
           file: form.resume.images[0],
-          category: 'PORTFOLIO',
+          category: 'RESUME',
           refType: 'CHATROOM',
           refId: numericRoomId,
         });
@@ -300,7 +303,14 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
       const { taskId } = analysisJson.data;
 
       setCurrentTaskId(taskId);
-      startPolling(taskId);
+      setActiveTask({
+        taskId,
+        roomId: numericRoomId,
+        roomUuid,
+        status: analysisJson.data.status ?? 'PENDING',
+        model: form.model,
+        startedAt: Date.now(),
+      });
     } catch (err) {
       setIsLoading(false);
       toast(err instanceof Error ? err.message : '분석 요청 중 오류가 발생했습니다.');
@@ -315,7 +325,8 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
     form.model,
     roomId,
     propNumericRoomId,
-    startPolling,
+    isAnalysisActive,
+    setActiveTask,
   ]);
 
   return (
@@ -430,7 +441,7 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
         onPickFile={handlePickFile}
       />
 
-      <LlmLoadingModal open={isLoading} onClose={() => setIsLoading(false)} />
+      <LlmLoadingModal open={isLoading} onClose={handleCloseLoading} />
     </main>
   );
 }

@@ -6,11 +6,12 @@ import type { LlmRoom } from '@/components/llm/rooms/types';
 
 type Props = {
   room: LlmRoom;
+  isAnalyzing?: boolean;
   onEnter?: () => void;
   onDelete?: (roomId: string) => void;
 };
 
-export default function LlmRoomListItem({ room, onEnter, onDelete }: Props) {
+export default function LlmRoomListItem({ room, isAnalyzing, onEnter, onDelete }: Props) {
   return (
     <div className="rounded-2xl border bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between gap-3">
@@ -19,7 +20,14 @@ export default function LlmRoomListItem({ room, onEnter, onDelete }: Props) {
           onClick={() => onEnter?.()}
           className="flex min-w-0 flex-1 flex-col text-left"
         >
-          <span className="truncate text-sm font-semibold text-neutral-900">{room.title}</span>
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-sm font-semibold text-neutral-900">{room.title}</span>
+            {isAnalyzing ? (
+              <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                분석 중
+              </span>
+            ) : null}
+          </div>
           <span className="mt-1 text-[11px] text-neutral-500">{room.updatedAt}</span>
         </button>
 

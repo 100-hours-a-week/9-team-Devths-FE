@@ -6,17 +6,24 @@ import type { LlmRoom } from '@/components/llm/rooms/types';
 
 type Props = {
   rooms: LlmRoom[];
+  activeAnalysisRoomId?: number | null;
   onEnterRoom: (roomId: string, numericId: number) => void;
   onDeleteRoom: (roomId: string) => void;
 };
 
-export default function LlmRoomList({ rooms, onEnterRoom, onDeleteRoom }: Props) {
+export default function LlmRoomList({
+  rooms,
+  activeAnalysisRoomId,
+  onEnterRoom,
+  onDeleteRoom,
+}: Props) {
   return (
     <div className="flex flex-col gap-4">
       {rooms.map((room) => (
         <LlmRoomListItem
           key={room.id}
           room={room}
+          isAnalyzing={activeAnalysisRoomId === room.numericId}
           onEnter={() => onEnterRoom(room.id, room.numericId)}
           onDelete={onDeleteRoom}
         />
