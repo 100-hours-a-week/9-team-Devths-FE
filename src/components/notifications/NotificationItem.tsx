@@ -10,6 +10,40 @@ type NotificationItemProps = {
   notification: NotificationResponse;
 };
 
+function normalizeTargetPath(path: string) {
+  const trimmed = path.trim();
+  if (!trimmed) return '/notifications';
+  if (trimmed.startsWith('/')) return trimmed;
+  return `/${trimmed}`;
+}
+
+function resolveNotificationPath(notification: NotificationResponse) {
+  const normalized = normalizeTargetPath(notification.targetPath);
+
+  // backend → frontend route mapping
+  if (normalized.startsWith('/ai/chat/')) {
+    const roomId = normalized.replace('/ai/chat/', '').split('?')[0];
+    return `/llm/${roomId}?rid=${roomId}`;
+  }
+
+  if (normalized.startsWith('/llm/result/')) {
+    const roomId = normalized.replace('/llm/result/', '').split('?')[0];
+    return `/llm/${roomId}/result`;
+  }
+
+  if (normalized.startsWith('/llm/analysis/')) {
+    const roomId = normalized.replace('/llm/analysis/', '').split('?')[0];
+    return `/llm/${roomId}/analysis`;
+  }
+
+  if (normalized.startsWith('/llm/room/')) {
+    const roomId = normalized.replace('/llm/room/', '').split('?')[0];
+    return `/llm/${roomId}`;
+  }
+
+  return normalized;
+}
+
 export default function NotificationItem({ notification }: NotificationItemProps) {
   const router = useRouter();
   const senderName = notification.sender?.senderName ?? '시스템';
@@ -18,7 +52,7 @@ export default function NotificationItem({ notification }: NotificationItemProps
   return (
     <button
       type="button"
-      onClick={() => router.push(notification.targetPath)}
+      onClick={() => router.push(resolveNotificationPath(notification))}
       className={
         notification.isRead
           ? 'w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-left text-neutral-500'

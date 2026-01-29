@@ -23,7 +23,6 @@ export default function Header({
   const router = useRouter();
   const { data: unreadCount } = useUnreadCountQuery();
   const showBadge = typeof unreadCount === 'number' && unreadCount > 0;
-  const badgeText = unreadCount && unreadCount > 99 ? '99+' : String(unreadCount ?? '');
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white">
@@ -53,9 +52,7 @@ export default function Header({
             >
               <Bell className="h-5 w-5" />
               {showBadge ? (
-                <span className="absolute -top-1 -right-1 inline-flex min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">
-                  {badgeText}
-                </span>
+                <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500" />
               ) : null}
             </button>
           )}
