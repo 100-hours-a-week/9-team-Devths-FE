@@ -20,17 +20,7 @@ export type UIMessage = {
   status?: MessageStatus;
 };
 
-export function mapAiChatRoomToLlmRoom(room: AiChatRoom): LlmRoom {
-  return {
-    id: room.roomUuid,
-    numericId: room.roomId,
-    title: room.title,
-    updatedAt: formatUpdatedAt(room.updatedAt),
-    storage: getRoomStorageMode(room.roomUuid),
-  };
-}
-
-function formatUpdatedAt(isoString: string): string {
+export function formatUpdatedAt(isoString: string): string {
   const date = new Date(isoString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -58,6 +48,16 @@ function formatUpdatedAt(isoString: string): string {
   }
 
   return `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}`;
+}
+
+export function mapAiChatRoomToLlmRoom(room: AiChatRoom): LlmRoom {
+  return {
+    id: room.roomUuid,
+    numericId: room.roomId,
+    title: room.title,
+    updatedAt: formatUpdatedAt(room.updatedAt),
+    storage: getRoomStorageMode(room.roomUuid),
+  };
 }
 
 const S3_BASE_URL = process.env.NEXT_PUBLIC_S3_URL ?? '';

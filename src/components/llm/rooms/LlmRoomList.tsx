@@ -9,6 +9,7 @@ type Props = {
   activeAnalysisRoomId?: number | null;
   onEnterRoom: (roomId: string, numericId: number) => void;
   onDeleteRoom: (roomId: string) => void;
+  onAnalyzingRoomClick?: (roomId: string, numericId: number) => void;
 };
 
 export default function LlmRoomList({
@@ -16,6 +17,7 @@ export default function LlmRoomList({
   activeAnalysisRoomId,
   onEnterRoom,
   onDeleteRoom,
+  onAnalyzingRoomClick,
 }: Props) {
   return (
     <div className="flex flex-col gap-4">
@@ -25,6 +27,7 @@ export default function LlmRoomList({
           room={room}
           isAnalyzing={activeAnalysisRoomId === room.numericId}
           onEnter={() => onEnterRoom(room.id, room.numericId)}
+          onAnalyzingClick={() => onAnalyzingRoomClick?.(room.id, room.numericId)}
           onDelete={onDeleteRoom}
         />
       ))}
