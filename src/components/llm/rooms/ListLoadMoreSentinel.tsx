@@ -45,9 +45,7 @@ export default function ListLoadMoreSentinel({
           스크롤로 더 보기
         </div>
       ) : (
-        <div className="px-3 py-1 text-[11px] text-neutral-400">
-          모든 대화를 불러왔습니다
-        </div>
+        <div className="px-3 py-1 text-[11px] text-neutral-400">모든 대화를 불러왔습니다</div>
       )}
     </div>
   );
