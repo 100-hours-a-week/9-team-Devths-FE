@@ -1,8 +1,6 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
 import { X } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import BaseModal from '@/components/common/BaseModal';
@@ -10,8 +8,7 @@ import NicknameField from '@/components/common/NicknameField';
 import ProfileImagePicker from '@/components/common/ProfileImagePicker';
 import FileTooLargeModal from '@/components/signup/FileTooLargeModal';
 import { INTEREST_OPTIONS, normalizeInterests } from '@/constants/interests';
-import { postLogout } from '@/lib/api/auth';
-import { clearAccessToken, getUserIdFromAccessToken } from '@/lib/auth/token';
+import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { useDeleteProfileImageMutation } from '@/lib/hooks/users/useDeleteProfileImageMutation';
 import { useUpdateMeMutation } from '@/lib/hooks/users/useUpdateMeMutation';
 import { useUploadProfileImageMutation } from '@/lib/hooks/users/useUpdateProfileImageMutation';
@@ -23,17 +20,17 @@ type EditProfileModalProps = {
   open: boolean;
   onClose: () => void;
   onWithdraw: () => void;
+  onLogout: () => void;
   initialData?: MeData | null;
 };
 
 type EditFormProps = {
   initialData?: MeData | null;
   onWithdraw: () => void;
+  onLogout: () => void;
 };
 
-function EditForm({ initialData, onWithdraw }: EditFormProps) {
-  const router = useRouter();
-  const queryClient = useQueryClient();
+function EditForm({ initialData, onWithdraw, onLogout }: EditFormProps) {
   const [nickname, setNickname] = useState(initialData?.nickname ?? '');
   const [interests, setInterests] = useState<string[]>(
     normalizeInterests(initialData?.interests ?? []),
@@ -43,7 +40,6 @@ function EditForm({ initialData, onWithdraw }: EditFormProps) {
   );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isFileTooLargeOpen, setIsFileTooLargeOpen] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<{
     type: 'success' | 'error';
     text: string;
@@ -98,29 +94,6 @@ function EditForm({ initialData, onWithdraw }: EditFormProps) {
   const handleNicknameChange = (value: string) => {
     setNickname(value);
     setSubmitMessage(null);
-  };
-
-  const handleLogout = async () => {
-    if (isLoggingOut) return;
-
-    setIsLoggingOut(true);
-    setSubmitMessage(null);
-
-    try {
-      const result = await postLogout();
-
-      if (!result.ok) {
-        throw new Error('로그아웃에 실패했습니다.');
-      }
-
-      clearAccessToken();
-      queryClient.clear();
-      router.replace('/');
-    } catch {
-      setSubmitMessage({ type: 'error', text: '로그아웃에 실패했습니다.' });
-    } finally {
-      setIsLoggingOut(false);
-    }
   };
 
   const handleSubmit = async () => {
@@ -253,11 +226,10 @@ function EditForm({ initialData, onWithdraw }: EditFormProps) {
 
         <button
           type="button"
-          onClick={handleLogout}
-          disabled={isLoggingOut}
-          className="text-sm text-neutral-400 hover:text-neutral-600 disabled:cursor-not-allowed disabled:opacity-50"
+          onClick={onLogout}
+          className="text-sm text-neutral-400 hover:text-neutral-600"
         >
-          {isLoggingOut ? '로그아웃 중...' : '로그아웃'}
+          로그아웃
         </button>
 
         <button
@@ -278,13 +250,19 @@ export default function EditProfileModal({
   open,
   onClose,
   onWithdraw,
+  onLogout,
   initialData,
 }: EditProfileModalProps) {
   if (!open) return null;
 
   return (
     <BaseModal open={open} onClose={onClose} title="프로필 수정">
-      <EditForm key={open ? 'open' : 'closed'} initialData={initialData} onWithdraw={onWithdraw} />
+      <EditForm
+        key={open ? 'open' : 'closed'}
+        initialData={initialData}
+        onWithdraw={onWithdraw}
+        onLogout={onLogout}
+      />
     </BaseModal>
   );
 }

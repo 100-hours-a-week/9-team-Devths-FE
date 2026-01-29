@@ -1,21 +1,59 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { Pencil, Smile, User } from 'lucide-react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import ConfirmModal from '@/components/common/ConfirmModal';
 import EditProfileModal from '@/components/mypage/EditProfileModal';
 import WithdrawModal from '@/components/mypage/WithdrawModal';
+import { postLogout } from '@/lib/api/auth';
+import { clearAccessToken } from '@/lib/auth/token';
 import { useMeQuery } from '@/lib/hooks/users/useMeQuery';
+import { toast } from '@/lib/toast/store';
 
 export default function MyPageScreen() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const { data, isLoading, isError } = useMeQuery();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleWithdraw = () => {
     setIsEditOpen(false);
     setIsWithdrawOpen(true);
+  };
+
+  const handleLogoutOpen = () => {
+    setIsEditOpen(false);
+    setIsLogoutConfirmOpen(true);
+  };
+
+  const handleLogoutCancel = () => {
+    if (isLoggingOut) return;
+    setIsLogoutConfirmOpen(false);
+  };
+
+  const handleLogoutConfirm = async () => {
+    if (isLoggingOut) return;
+
+    setIsLoggingOut(true);
+    try {
+      const result = await postLogout();
+      if (!result.ok) {
+        throw new Error('로그아웃에 실패했습니다.');
+      }
+      clearAccessToken();
+      queryClient.clear();
+      router.replace('/');
+    } catch {
+      toast('로그아웃에 실패했습니다.');
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -84,7 +122,18 @@ export default function MyPageScreen() {
         open={isEditOpen}
         onClose={() => setIsEditOpen(false)}
         onWithdraw={handleWithdraw}
+        onLogout={handleLogoutOpen}
         initialData={data}
+      />
+
+      <ConfirmModal
+        isOpen={isLogoutConfirmOpen}
+        title="로그아웃"
+        message="로그아웃 하시겠습니까?"
+        confirmText="확인"
+        cancelText="취소"
+        onConfirm={handleLogoutConfirm}
+        onCancel={handleLogoutCancel}
       />
 
       <WithdrawModal
