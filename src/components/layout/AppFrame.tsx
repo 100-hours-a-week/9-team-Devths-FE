@@ -6,6 +6,7 @@ import { AppFrameContext, type AppFrameOptions } from '@/components/layout/AppFr
 import BottomNav from '@/components/layout/BottomNav';
 import Header from '@/components/layout/Header';
 import { HeaderContext, type HeaderOptions } from '@/components/layout/HeaderContext';
+import LlmAnalysisTaskWatcher from '@/components/llm/analysis/LlmAnalysisTaskWatcher';
 
 import type { CSSProperties, ReactNode } from 'react';
 
@@ -70,6 +71,7 @@ export default function AppFrame({
             } as CSSProperties
           }
         >
+          <LlmAnalysisTaskWatcher />
           <div className="mx-auto min-h-dvh w-full bg-white sm:max-w-[430px]">
             <Header
               title={options.title}

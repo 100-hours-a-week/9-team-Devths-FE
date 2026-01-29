@@ -10,6 +10,7 @@ import LlmRoomEmptyState from '@/components/llm/rooms/LlmRoomEmptyState';
 import LlmRoomList from '@/components/llm/rooms/LlmRoomList';
 import { useDeleteRoomMutation } from '@/lib/hooks/llm/useDeleteRoomMutation';
 import { useRoomsInfiniteQuery } from '@/lib/hooks/llm/useRoomsInfiniteQuery';
+import { useAnalysisTaskStore } from '@/lib/llm/analysisTaskStore';
 import { toast } from '@/lib/toast/store';
 import { mapAiChatRoomToLlmRoom } from '@/lib/utils/llm';
 
@@ -19,6 +20,9 @@ export default function LlmRoomsPage() {
     useRoomsInfiniteQuery();
 
   const deleteMutation = useDeleteRoomMutation();
+  const activeTask = useAnalysisTaskStore((state) => state.activeTask);
+  const isAnalysisActive =
+    activeTask !== null && activeTask.status !== 'COMPLETED' && activeTask.status !== 'FAILED';
 
   const [deleteTarget, setDeleteTarget] = useState<{ uuid: string; id: number } | null>(null);
 
@@ -84,15 +88,24 @@ export default function LlmRoomsPage() {
   return (
     <>
       <main className="px-3 pt-4 pb-3">
-        <LlmRoomCreateCard href="/llm/analysis" />
+        <LlmRoomCreateCard
+          href="/llm/analysis"
+          disabled={isAnalysisActive}
+          onDisabledClick={() => toast('분석 중입니다. 잠시만 기다려주세요!')}
+        />
 
         <div className="mt-4">
           <p className="mb-3 px-1 text-sm font-semibold text-neutral-900">대화 목록</p>
           <LlmRoomList
             rooms={rooms}
-            onEnterRoom={(id, numericId) =>
-              router.push(`/llm/${encodeURIComponent(id)}?rid=${numericId}`)
-            }
+            activeAnalysisRoomId={isAnalysisActive ? activeTask?.roomId : null}
+            onEnterRoom={(id, numericId) => {
+              if (isAnalysisActive && activeTask?.roomId === numericId) {
+                toast('분석 중입니다. 잠시만 기다려주세요!');
+                return;
+              }
+              router.push(`/llm/${encodeURIComponent(id)}?rid=${numericId}`);
+            }}
             onDeleteRoom={handleDeleteRoom}
           />
 
