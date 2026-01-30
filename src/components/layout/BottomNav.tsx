@@ -30,7 +30,7 @@ export default function BottomNav({ hidden = false }: BottomNavProps) {
     <nav
       className={clsx(
         'fixed bottom-0 left-1/2 z-50 w-full -translate-x-1/2 bg-white transition-transform duration-200 sm:max-w-[430px]',
-        hidden ? 'translate-y-full pointer-events-none' : 'translate-y-0',
+        hidden ? 'pointer-events-none translate-y-full' : 'translate-y-0',
       )}
     >
       <div className="border-t">

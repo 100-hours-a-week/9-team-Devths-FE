@@ -24,10 +24,7 @@ export function calcCompletionProgress<T extends { isCompleted: boolean }>(
   items: T[],
 ): ProgressSummary {
   const totalCount = items.length;
-  const completedCount = items.reduce(
-    (count, item) => count + (item.isCompleted ? 1 : 0),
-    0,
-  );
+  const completedCount = items.reduce((count, item) => count + (item.isCompleted ? 1 : 0), 0);
 
   return calcProgressFromCounts(completedCount, totalCount);
 }

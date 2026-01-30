@@ -117,9 +117,7 @@ export default function AppFrame({
             <div className="px-4 pb-[var(--bottom-nav-h)] sm:px-6">{children}</div>
           </div>
 
-          {frameOptions.showBottomNav ? (
-            <BottomNav hidden={!isBottomNavVisible} />
-          ) : null}
+          {frameOptions.showBottomNav ? <BottomNav hidden={!isBottomNavVisible} /> : null}
         </div>
       </HeaderContext.Provider>
     </AppFrameContext.Provider>

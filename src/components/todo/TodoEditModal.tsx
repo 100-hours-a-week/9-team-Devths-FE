@@ -12,11 +12,7 @@ type TodoEditModalProps = {
   open: boolean;
   onClose: () => void;
   todo: Todo | null;
-  onSubmit?: (payload: {
-    todoId: string;
-    title: string;
-    dueDate: LocalDateString;
-  }) => Promise<
+  onSubmit?: (payload: { todoId: string; title: string; dueDate: LocalDateString }) => Promise<
     | {
         ok: true;
       }

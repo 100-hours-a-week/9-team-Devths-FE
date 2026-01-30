@@ -71,7 +71,7 @@ export default function TodoItemRow({
         </button>
 
         {isMenuOpen ? (
-          <div className="absolute right-0 top-full z-20 -mt-1 w-24 rounded-lg border border-neutral-200 bg-white py-1 text-sm shadow-md">
+          <div className="absolute top-full right-0 z-20 -mt-1 w-24 rounded-lg border border-neutral-200 bg-white py-1 text-sm shadow-md">
             <button
               type="button"
               onClick={() => {
