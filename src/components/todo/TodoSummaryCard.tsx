@@ -129,7 +129,7 @@ export default function TodoSummaryCard({
     <section className="bg-white py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h3 className="text-base font-semibold text-neutral-900">{title}</h3>
+          <h3 className="text-base font-bold text-[#151515]">{title}</h3>
           <span className="text-xs font-medium text-neutral-500">{percent}% 완료</span>
         </div>
         <button
