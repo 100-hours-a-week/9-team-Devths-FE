@@ -84,9 +84,6 @@ export default function CalendarEventCreateModal({
   useEffect(() => {
     if (!open) return;
 
-    // ✅ 모달이 열릴 때마다 폼을 초기화하려는 의도적인 setState.
-    // 이 프로젝트의 eslint 규칙이 useEffect 내부 setState를 일괄 경고하므로, 이 케이스만 예외 처리.
-
     setFormState(initialFormState);
     setErrors({});
     setSubmitError(null);

@@ -12,6 +12,8 @@ type CalendarEventDetailModalProps = {
   open: boolean;
   onClose: () => void;
   onEdit?: () => void;
+  onDelete?: () => void;
+  deleteLoading?: boolean;
   loading: boolean;
   error: string | null;
   detail: GoogleEventDetailResponse | null;
@@ -97,24 +99,42 @@ export default function CalendarEventDetailModal({
   open,
   onClose,
   onEdit,
+  onDelete,
+  deleteLoading = false,
   loading,
   error,
   detail,
 }: CalendarEventDetailModalProps) {
-  const showEditButton = Boolean(onEdit) && !loading && !error && Boolean(detail);
+  const showActions = !loading && !error && Boolean(detail);
+  const actionsDisabled = deleteLoading;
+  const showEditButton = Boolean(onEdit) && showActions;
+  const showDeleteButton = Boolean(onDelete) && showActions;
 
   return (
     <BaseModal open={open} onClose={onClose} title="일정 상세">
       {renderContent({ loading, error, detail })}
-      {showEditButton && (
-        <div className="mt-4 flex justify-end">
-          <button
-            type="button"
-            className="h-9 rounded-md bg-primary px-4 text-sm text-primary-foreground"
-            onClick={onEdit}
-          >
-            수정
-          </button>
+      {(showEditButton || showDeleteButton) && (
+        <div className="mt-4 flex justify-end gap-2">
+          {showDeleteButton && (
+            <button
+              type="button"
+              className="h-9 rounded-md border border-destructive px-4 text-sm text-destructive disabled:opacity-50"
+              onClick={onDelete}
+              disabled={actionsDisabled}
+            >
+              {deleteLoading ? '삭제 중...' : '삭제'}
+            </button>
+          )}
+          {showEditButton && (
+            <button
+              type="button"
+              className="h-9 rounded-md bg-primary px-4 text-sm text-primary-foreground disabled:opacity-50"
+              onClick={onEdit}
+              disabled={actionsDisabled}
+            >
+              수정
+            </button>
+          )}
         </div>
       )}
     </BaseModal>

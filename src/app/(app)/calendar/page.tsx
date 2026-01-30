@@ -9,7 +9,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import CalendarEventCreateModal from '@/components/calendar/CalendarEventCreateModal';
 import CalendarEventDetailModal from '@/components/calendar/CalendarEventDetailModal';
 import CalendarEventEditModal from '@/components/calendar/CalendarEventEditModal';
-import { getEvent, listEvents } from '@/lib/api/calendar';
+import { deleteEvent, getEvent, listEvents } from '@/lib/api/calendar';
 import { getSeoulDateRangeFromDatesSet } from '@/lib/datetime/seoul';
 
 import type { GoogleEventDetailResponse, InterviewStage } from '@/types/calendar';
@@ -27,6 +27,7 @@ export default function CalendarPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [detail, setDetail] = useState<GoogleEventDetailResponse | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const currentRangeRef = useRef<DateRange | null>(null);
@@ -102,6 +103,7 @@ export default function CalendarPage() {
     setDetail(null);
     setDetailError(null);
     setDetailLoading(false);
+    setDeleteLoading(false);
   }, []);
 
   const fetchDetail = useCallback(async (eventId: string, options?: { open?: boolean }) => {
@@ -177,6 +179,33 @@ export default function CalendarPage() {
     [fetchDetail, fetchEvents, stageFilter, tagFilter],
   );
 
+  const handleDelete = useCallback(async () => {
+    if (!detail || deleteLoading) return;
+    const confirmed = window.confirm('이 일정을 삭제할까요?');
+    if (!confirmed) return;
+
+    setDeleteLoading(true);
+
+    try {
+      const result = await deleteEvent(detail.eventId);
+
+      if (!result.ok) {
+        setDetailError(result.message ?? '일정 삭제에 실패했습니다.');
+        return;
+      }
+
+      handleCloseDetail();
+
+      if (currentRangeRef.current) {
+        fetchEvents(currentRangeRef.current, { stage: stageFilter, tag: tagFilter });
+      }
+    } catch {
+      setDetailError('일정 삭제에 실패했습니다.');
+    } finally {
+      setDeleteLoading(false);
+    }
+  }, [deleteLoading, detail, fetchEvents, handleCloseDetail, stageFilter, tagFilter]);
+
   return (
     <main className="calendar-shell p-6">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
@@ -235,6 +264,8 @@ export default function CalendarPage() {
         open={detailOpen}
         onClose={handleCloseDetail}
         onEdit={handleEditOpen}
+        onDelete={handleDelete}
+        deleteLoading={deleteLoading}
         loading={detailLoading}
         error={detailError}
         detail={detail}
