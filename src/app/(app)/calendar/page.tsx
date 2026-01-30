@@ -6,6 +6,7 @@ import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import CalendarEventCreateModal from '@/components/calendar/CalendarEventCreateModal';
 import CalendarEventDetailModal from '@/components/calendar/CalendarEventDetailModal';
 import { getEvent, listEvents } from '@/lib/api/calendar';
 import { getSeoulDateRangeFromDatesSet } from '@/lib/datetime/seoul';
@@ -25,6 +26,7 @@ export default function CalendarPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [detail, setDetail] = useState<GoogleEventDetailResponse | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
   const currentRangeRef = useRef<DateRange | null>(null);
   const requestIdRef = useRef(0);
   const detailRequestIdRef = useRef(0);
@@ -140,32 +142,46 @@ export default function CalendarPage() {
     }
   }, []);
 
+  const handleCreated = useCallback(() => {
+    if (!currentRangeRef.current) return;
+    fetchEvents(currentRangeRef.current, { stage: stageFilter, tag: tagFilter });
+  }, [fetchEvents, stageFilter, tagFilter]);
+
   return (
     <main className="calendar-shell p-6">
-      <div className="mb-4 flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-sm">
-          <span>전형 단계</span>
-          <select
-            className="border-input bg-background h-9 rounded-md border px-3 text-sm"
-            value={stageFilter}
-            onChange={(event) => setStageFilter(event.target.value as InterviewStage | '')}
-          >
-            <option value="">전체</option>
-            <option value="DOCUMENT">서류</option>
-            <option value="CODING_TEST">코딩 테스트</option>
-            <option value="INTERVIEW">면접</option>
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span>태그</span>
-          <input
-            className="border-input bg-background h-9 rounded-md border px-3 text-sm"
-            type="text"
-            placeholder="태그 입력"
-            value={tagFilter}
-            onChange={(event) => setTagFilter(event.target.value)}
-          />
-        </label>
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="flex flex-col gap-1 text-sm">
+            <span>전형 단계</span>
+            <select
+              className="border-input bg-background h-9 rounded-md border px-3 text-sm"
+              value={stageFilter}
+              onChange={(event) => setStageFilter(event.target.value as InterviewStage | '')}
+            >
+              <option value="">전체</option>
+              <option value="DOCUMENT">서류</option>
+              <option value="CODING_TEST">코딩 테스트</option>
+              <option value="INTERVIEW">면접</option>
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span>태그</span>
+            <input
+              className="border-input bg-background h-9 rounded-md border px-3 text-sm"
+              type="text"
+              placeholder="태그 입력"
+              value={tagFilter}
+              onChange={(event) => setTagFilter(event.target.value)}
+            />
+          </label>
+        </div>
+        <button
+          type="button"
+          className="h-9 rounded-md bg-primary px-4 text-sm text-primary-foreground"
+          onClick={() => setCreateOpen(true)}
+        >
+          + 일정 추가
+        </button>
       </div>
       {loading && <p className="mb-2 text-sm">로딩 중...</p>}
       {!loading && error && <p className="mb-2 text-sm text-red-600">{error}</p>}
@@ -191,6 +207,12 @@ export default function CalendarPage() {
         loading={detailLoading}
         error={detailError}
         detail={detail}
+      />
+
+      <CalendarEventCreateModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={handleCreated}
       />
     </main>
   );
