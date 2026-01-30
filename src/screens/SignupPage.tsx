@@ -11,7 +11,12 @@ import FileTooLargeModal from '@/components/signup/FileTooLargeModal';
 import { INTEREST_OPTIONS, type InterestValue } from '@/constants/interests';
 import { postPresignedSignup } from '@/lib/api/files';
 import { postSignup } from '@/lib/api/users';
-import { clearSignupContext, getSignupEmail, getTempToken } from '@/lib/auth/token';
+import {
+  clearSignupContext,
+  getSignupEmail,
+  getTempToken,
+  setAccessToken,
+} from '@/lib/auth/token';
 import { toast } from '@/lib/toast/store';
 import { uploadToPresignedUrl } from '@/lib/upload/s3Presigned';
 import { getNicknameErrorMessage } from '@/lib/validators/nickname';
@@ -151,7 +156,7 @@ export default function SignupPage() {
         if (!finalProfileImageS3Key) return;
       }
 
-      const { ok, status, json } = await postSignup({
+      const { ok, status, json, accessToken } = await postSignup({
         email,
         nickname: nickname.trim(),
         interests,
@@ -166,6 +171,14 @@ export default function SignupPage() {
       }
 
       toast('회원가입이 완료되었습니다.');
+
+      if (!accessToken) {
+        toast('로그인 토큰을 받지 못했어요. 다시 로그인해 주세요.');
+        router.replace('/');
+        return;
+      }
+
+      setAccessToken(accessToken);
 
       clearSignupContext();
 
