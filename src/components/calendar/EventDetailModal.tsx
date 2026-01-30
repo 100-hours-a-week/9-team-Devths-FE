@@ -8,7 +8,7 @@ import type {
   NotificationUnit,
 } from '@/types/calendar';
 
-type CalendarEventDetailModalProps = {
+type EventDetailModalProps = {
   open: boolean;
   onClose: () => void;
   onEdit?: () => void;
@@ -39,7 +39,7 @@ function renderContent({
   loading,
   error,
   detail,
-}: Pick<CalendarEventDetailModalProps, 'loading' | 'error' | 'detail'>) {
+}: Pick<EventDetailModalProps, 'loading' | 'error' | 'detail'>) {
   if (loading) {
     return <p className="text-sm">로딩 중...</p>;
   }
@@ -95,7 +95,7 @@ function renderContent({
   );
 }
 
-export default function CalendarEventDetailModal({
+export default function EventDetailModal({
   open,
   onClose,
   onEdit,
@@ -104,7 +104,7 @@ export default function CalendarEventDetailModal({
   loading,
   error,
   detail,
-}: CalendarEventDetailModalProps) {
+}: EventDetailModalProps) {
   const showActions = !loading && !error && Boolean(detail);
   const actionsDisabled = deleteLoading;
   const showEditButton = Boolean(onEdit) && showActions;

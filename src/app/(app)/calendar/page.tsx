@@ -1,15 +1,13 @@
 'use client';
 
-import dayGridPlugin from '@fullcalendar/daygrid';
-import interactionPlugin from '@fullcalendar/interaction';
-import FullCalendar from '@fullcalendar/react';
-import timeGridPlugin from '@fullcalendar/timegrid';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import CalendarEventCreateModal from '@/components/calendar/CalendarEventCreateModal';
-import CalendarEventDetailModal from '@/components/calendar/CalendarEventDetailModal';
-import CalendarEventEditModal from '@/components/calendar/CalendarEventEditModal';
-import { deleteEvent, getEvent, listEvents } from '@/lib/api/calendar';
+import CalendarFilters from '@/components/calendar/CalendarFilters';
+import CalendarView from '@/components/calendar/CalendarView';
+import EventDetailModal from '@/components/calendar/EventDetailModal';
+import EventFormModal, { type EventFormMode } from '@/components/calendar/EventFormModal';
+import { createEvent, deleteEvent, getEvent, listEvents, updateEvent } from '@/lib/api/calendar';
+import { toFullCalendarEvent } from '@/lib/calendar/mappers';
 import { getSeoulDateRangeFromDatesSet } from '@/lib/datetime/seoul';
 
 import type { GoogleEventDetailResponse, InterviewStage } from '@/types/calendar';
@@ -28,8 +26,10 @@ export default function CalendarPage() {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [detail, setDetail] = useState<GoogleEventDetailResponse | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState<EventFormMode>('create');
+  const [formSubmitting, setFormSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const currentRangeRef = useRef<DateRange | null>(null);
   const requestIdRef = useRef(0);
   const detailRequestIdRef = useRef(0);
@@ -57,16 +57,7 @@ export default function CalendarPage() {
           return;
         }
 
-        const mappedEvents: EventInput[] = (result.data ?? []).map((event) => ({
-          id: event.eventId,
-          title: event.title,
-          start: event.startTime,
-          end: event.endTime,
-          extendedProps: {
-            stage: event.stage,
-            tags: event.tags,
-          },
-        }));
+        const mappedEvents: EventInput[] = (result.data ?? []).map(toFullCalendarEvent);
 
         setEvents(mappedEvents);
       } catch {
@@ -159,24 +150,66 @@ export default function CalendarPage() {
     fetchEvents(currentRangeRef.current, { stage: stageFilter, tag: tagFilter });
   }, [fetchEvents, stageFilter, tagFilter]);
 
+  const handleCreateOpen = useCallback(() => {
+    setFormMode('create');
+    setFormError(null);
+    setFormOpen(true);
+  }, []);
+
   const handleEditOpen = useCallback(() => {
     if (!detail) return;
     setDetailOpen(false);
-    setEditOpen(true);
+    setFormMode('edit');
+    setFormError(null);
+    setFormOpen(true);
   }, [detail]);
 
-  const handleEditClose = useCallback(() => {
-    setEditOpen(false);
+  const handleFormClose = useCallback(() => {
+    setFormOpen(false);
+    setFormError(null);
   }, []);
 
-  const handleUpdated = useCallback(
-    async (eventId: string) => {
-      if (currentRangeRef.current) {
-        fetchEvents(currentRangeRef.current, { stage: stageFilter, tag: tagFilter });
+  const handleFormSubmit = useCallback(
+    async (payload: Parameters<typeof createEvent>[0]) => {
+      setFormSubmitting(true);
+      setFormError(null);
+
+      try {
+        if (formMode === 'edit') {
+          if (!detail) {
+            setFormError('일정 정보를 불러올 수 없습니다.');
+            return;
+          }
+
+          const result = await updateEvent(detail.eventId, payload);
+          if (!result.ok) {
+            setFormError(result.message ?? '일정 수정에 실패했습니다.');
+            return;
+          }
+
+          setFormOpen(false);
+          if (currentRangeRef.current) {
+            fetchEvents(currentRangeRef.current, { stage: stageFilter, tag: tagFilter });
+          }
+          await fetchDetail(detail.eventId, { open: true });
+          return;
+        }
+
+        const result = await createEvent(payload);
+        if (!result.ok) {
+          setFormError(result.message ?? '일정 생성에 실패했습니다.');
+          return;
+        }
+
+        setFormOpen(false);
+        handleCreated();
+      } catch {
+        setFormError('요청 처리 중 문제가 발생했습니다.');
+      } finally {
+        setFormSubmitting(false);
       }
-      await fetchDetail(eventId, { open: true });
     },
-    [fetchDetail, fetchEvents, stageFilter, tagFilter],
+    [detail, fetchDetail, fetchEvents, formMode, handleCreated, stageFilter, tagFilter],
   );
 
   const handleDelete = useCallback(async () => {
@@ -208,59 +241,23 @@ export default function CalendarPage() {
 
   return (
     <main className="calendar-shell p-6">
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <div className="flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-1 text-sm">
-            <span>전형 단계</span>
-            <select
-              className="border-input bg-background h-9 rounded-md border px-3 text-sm"
-              value={stageFilter}
-              onChange={(event) => setStageFilter(event.target.value as InterviewStage | '')}
-            >
-              <option value="">전체</option>
-              <option value="DOCUMENT">서류</option>
-              <option value="CODING_TEST">코딩 테스트</option>
-              <option value="INTERVIEW">면접</option>
-            </select>
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span>태그</span>
-            <input
-              className="border-input bg-background h-9 rounded-md border px-3 text-sm"
-              type="text"
-              placeholder="태그 입력"
-              value={tagFilter}
-              onChange={(event) => setTagFilter(event.target.value)}
-            />
-          </label>
-        </div>
-        <button
-          type="button"
-          className="h-9 rounded-md bg-primary px-4 text-sm text-primary-foreground"
-          onClick={() => setCreateOpen(true)}
-        >
-          + 일정 추가
-        </button>
-      </div>
+      <CalendarFilters
+        stage={stageFilter}
+        tag={tagFilter}
+        onStageChange={setStageFilter}
+        onTagChange={setTagFilter}
+        onCreate={handleCreateOpen}
+      />
       {loading && <p className="mb-2 text-sm">로딩 중...</p>}
       {!loading && error && <p className="mb-2 text-sm text-red-600">{error}</p>}
 
-      <FullCalendar
-        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-        initialView="dayGridMonth"
-        timeZone="Asia/Seoul"
-        headerToolbar={{
-          left: 'prev,next today',
-          center: 'title',
-          right: 'dayGridMonth,timeGridWeek,timeGridDay',
-        }}
-        height="auto"
+      <CalendarView
         events={events}
-        datesSet={handleDatesSet}
-        eventClick={handleEventClick}
+        onDatesSet={handleDatesSet}
+        onEventClick={handleEventClick}
       />
 
-      <CalendarEventDetailModal
+      <EventDetailModal
         open={detailOpen}
         onClose={handleCloseDetail}
         onEdit={handleEditOpen}
@@ -271,17 +268,14 @@ export default function CalendarPage() {
         detail={detail}
       />
 
-      <CalendarEventCreateModal
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        onCreated={handleCreated}
-      />
-
-      <CalendarEventEditModal
-        open={editOpen}
-        onClose={handleEditClose}
+      <EventFormModal
+        open={formOpen}
+        mode={formMode}
         detail={detail}
-        onUpdated={handleUpdated}
+        onClose={handleFormClose}
+        onSubmit={handleFormSubmit}
+        submitting={formSubmitting}
+        submitError={formError}
       />
     </main>
   );
