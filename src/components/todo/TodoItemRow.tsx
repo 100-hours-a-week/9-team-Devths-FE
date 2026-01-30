@@ -12,6 +12,7 @@ type TodoItemRowProps = {
   onClick?: (todoId: string) => void;
   onEdit?: (todoId: string) => void;
   onDelete?: (todoId: string) => void;
+  meta?: string;
 };
 
 export default function TodoItemRow({
@@ -22,6 +23,7 @@ export default function TodoItemRow({
   onClick,
   onEdit,
   onDelete,
+  meta,
 }: TodoItemRowProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -47,11 +49,14 @@ export default function TodoItemRow({
         type="button"
         onClick={() => onClick?.(todoId)}
         className={cn(
-          'flex-1 text-left text-sm transition-colors',
+          'min-w-0 flex-1 text-left text-sm transition-colors',
           isCompleted ? 'text-neutral-400 line-through' : 'text-neutral-900',
         )}
       >
-        {title}
+        <span className="flex items-center gap-2">
+          <span className="truncate">{title}</span>
+          {meta ? <span className="text-xs text-neutral-400">{meta}</span> : null}
+        </span>
       </button>
 
       <div className="relative">

@@ -356,6 +356,7 @@ export default function TodoSummaryCard({
                 key={todo.todoId}
                 todoId={todo.todoId}
                 title={todo.title}
+                meta={todo.dueDate ?? ''}
                 isCompleted={todo.isCompleted}
                 onToggle={handleToggle}
                 onClick={onTodoClick}
