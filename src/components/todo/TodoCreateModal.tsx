@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import BaseModal from '@/components/common/BaseModal';
-import { toLocalDate } from '@/lib/datetime/seoul';
+import { getSeoulToday } from '@/lib/datetime/format';
 
 import type { LocalDateString } from '@/types/calendar';
 
@@ -29,7 +29,7 @@ export default function TodoCreateModal({
   defaultDueDate,
   onSubmit,
 }: TodoCreateModalProps) {
-  const today = useMemo(() => toLocalDate(new Date()), []);
+  const today = useMemo(() => getSeoulToday(), []);
   const initialDueDate = defaultDueDate ?? today;
 
   const [title, setTitle] = useState('');

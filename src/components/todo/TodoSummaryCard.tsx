@@ -7,8 +7,8 @@ import TodoCreateModal from '@/components/todo/TodoCreateModal';
 import TodoEditModal from '@/components/todo/TodoEditModal';
 import TodoItemRow from '@/components/todo/TodoItemRow';
 import { createTodo, deleteTodo, listTodos, updateTodo, updateTodoStatus } from '@/lib/api/todos';
-import { toLocalDate } from '@/lib/datetime/seoul';
-import { calcProgress } from '@/lib/utils/todo';
+import { getSeoulToday } from '@/lib/datetime/format';
+import { calcCompletionProgress } from '@/lib/utils/progress';
 
 import type { LocalDateString } from '@/types/calendar';
 import type { Todo } from '@/types/todo';
@@ -42,7 +42,7 @@ export default function TodoSummaryCard({
   const [isDeleting, setIsDeleting] = useState(false);
   const requestIdRef = useRef(0);
 
-  const targetDate = dateFilter ?? toLocalDate(new Date());
+  const targetDate = dateFilter ?? getSeoulToday();
   const isDateFilterActive = Boolean(dateFilter);
 
   useEffect(() => {
@@ -107,7 +107,7 @@ export default function TodoSummaryCard({
     if (isDateFilterActive) return [];
     return localTodos.filter((todo) => todo.dueDate && todo.dueDate !== targetDate);
   }, [isDateFilterActive, localTodos, targetDate]);
-  const { percent } = calcProgress(todayTodos);
+  const { percent } = calcCompletionProgress(todayTodos);
 
   const handleToggle = useCallback(
     async (todoId: string) => {
