@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import TodoCreateModal from '@/components/todo/TodoCreateModal';
 import TodoItemRow from '@/components/todo/TodoItemRow';
 import { listTodos, updateTodoStatus } from '@/lib/api/todos';
 import { toLocalDate } from '@/lib/datetime/seoul';
@@ -30,6 +31,7 @@ export default function TodoSummaryCard({
   const [localTodos, setLocalTodos] = useState<Todo[]>(todosProp ?? []);
   const [isLoading, setIsLoading] = useState(!todosProp);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const requestIdRef = useRef(0);
 
   useEffect(() => {
@@ -76,6 +78,8 @@ export default function TodoSummaryCard({
         }
       });
   }, [targetDate, todosProp]);
+
+  const scheduledTodos = localTodos;
   const scheduledIncomplete = useMemo(
     () => localTodos.filter((todo) => !todo.isCompleted),
     [localTodos],
@@ -125,6 +129,11 @@ export default function TodoSummaryCard({
     [localTodos, onToggleTodo],
   );
 
+  const handleOpenCreate = useCallback(() => {
+    onAddClick?.();
+    setIsCreateOpen(true);
+  }, [onAddClick]);
+
   return (
     <section className="bg-white py-4">
       <div className="flex items-center justify-between">
@@ -134,7 +143,7 @@ export default function TodoSummaryCard({
         </div>
         <button
           type="button"
-          onClick={onAddClick}
+          onClick={handleOpenCreate}
           className="flex h-9 items-center gap-1 rounded-lg bg-[#05C075] px-4 text-sm font-medium text-white transition-all hover:bg-[#04A865]"
           aria-label="할 일 추가"
         >
@@ -174,7 +183,7 @@ export default function TodoSummaryCard({
           </>
         ) : errorMessage ? (
           <p className="text-sm text-neutral-500">{errorMessage}</p>
-        ) : localTodos.length === 0 ? (
+        ) : scheduledTodos.length === 0 ? (
           <p className="text-xs text-neutral-400">오늘 할 일이 없어요</p>
         ) : (
           scheduledIncomplete.map((todo) => (
@@ -204,6 +213,12 @@ export default function TodoSummaryCard({
           ))}
         </div>
       ) : null}
+
+      <TodoCreateModal
+        open={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        defaultDueDate={targetDate}
+      />
     </section>
   );
 }
