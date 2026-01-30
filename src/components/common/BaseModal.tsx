@@ -12,6 +12,7 @@ type BaseModalProps = {
   title?: string;
   children: ReactNode;
   contentClassName?: string;
+  variant?: 'center' | 'sheet';
 };
 
 export default function BaseModal({
@@ -20,8 +21,14 @@ export default function BaseModal({
   title,
   children,
   contentClassName,
+  variant = 'center',
 }: BaseModalProps) {
   if (!open) return null;
+
+  const baseClass =
+    variant === 'sheet'
+      ? 'fixed bottom-0 left-1/2 z-[51] w-full max-w-[430px] -translate-x-1/2 rounded-t-2xl bg-white p-5 shadow-lg'
+      : 'fixed top-1/2 left-1/2 z-[51] w-[calc(100%-40px)] max-w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-5 shadow-lg';
 
   return createPortal(
     <div className="fixed inset-0 z-50">
@@ -34,7 +41,8 @@ export default function BaseModal({
 
       <div
         className={cn(
-          'fixed top-1/2 left-1/2 z-[51] w-[calc(100%-40px)] max-w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-5 shadow-lg',
+          baseClass,
+          variant === 'sheet' ? 'max-h-[85vh] overflow-y-auto' : '',
           contentClassName,
         )}
       >

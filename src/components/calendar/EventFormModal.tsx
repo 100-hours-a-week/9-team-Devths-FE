@@ -59,7 +59,7 @@ const emptyFormState: FormState = {
   description: '',
   tags: '',
   notificationTime: '',
-  notificationUnit: '',
+  notificationUnit: 'MINUTE',
 };
 
 function normalizeLocalDateTimeInput(value: string) {
@@ -119,7 +119,7 @@ export default function EventFormModal({
         description: detail.description ?? '',
         tags: detail.tags.join(', '),
         notificationTime: detail.notificationTime?.toString() ?? '',
-        notificationUnit: detail.notificationTime ? detail.notificationUnit : '',
+        notificationUnit: detail.notificationTime ? detail.notificationUnit : 'MINUTE',
       };
 
       setFormState(nextState);
@@ -201,19 +201,34 @@ export default function EventFormModal({
 
   const title = mode === 'edit' ? '일정 수정' : '일정 추가';
 
+  const labelClass = 'text-xs font-semibold text-[#6B6B6B]';
+  const requiredMark = <span className="ml-1 text-[#F04D4D]">*</span>;
+  const fieldClass =
+    'h-11 w-full rounded-2xl border border-[#E5E7EB] bg-white px-4 text-sm text-[#151515] placeholder:text-[#B6B6B6] focus:border-[#05C075] focus:outline-none';
+  const compactFieldClass =
+    'h-11 rounded-2xl border border-[#E5E7EB] bg-white px-4 text-sm text-[#151515] focus:border-[#05C075] focus:outline-none';
+  const dateFieldClass = fieldClass;
+  const textAreaClass =
+    'min-h-[96px] w-full rounded-2xl border border-[#E5E7EB] bg-white px-4 py-3 text-sm text-[#151515] placeholder:text-[#B6B6B6] focus:border-[#05C075] focus:outline-none';
+
   return (
-    <BaseModal open={open} onClose={onClose} title={title} contentClassName="max-w-[520px]">
+    <BaseModal
+      open={open}
+      onClose={onClose}
+      title={title}
+      variant="sheet"
+      contentClassName="max-w-[430px] pt-4"
+    >
       {modeError ? (
         <p className="mt-3 text-sm text-red-600">{modeError}</p>
       ) : (
-        <form className="mt-4 space-y-4 text-sm" onSubmit={handleSubmit}>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-zinc-500">전형 단계</label>
-            <select
-              className="border-input bg-background h-9 rounded-md border px-3"
-              value={formState.stage}
-              onChange={handleChange('stage')}
-            >
+        <form className="mt-4 space-y-5 text-sm" onSubmit={handleSubmit}>
+          <div className="flex flex-col gap-2">
+            <label className={labelClass}>
+              전형 단계
+              {requiredMark}
+            </label>
+            <select className={fieldClass} value={formState.stage} onChange={handleChange('stage')}>
               <option value="">선택</option>
               {stageOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -224,10 +239,13 @@ export default function EventFormModal({
             {errors.stage && <p className="text-xs text-red-600">{errors.stage}</p>}
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-zinc-500">제목</label>
+          <div className="flex flex-col gap-2">
+            <label className={labelClass}>
+              제목
+              {requiredMark}
+            </label>
             <input
-              className="border-input bg-background h-9 rounded-md border px-3"
+              className={fieldClass}
               value={formState.title}
               onChange={handleChange('title')}
               placeholder="예: 1차 면접"
@@ -235,10 +253,13 @@ export default function EventFormModal({
             {errors.title && <p className="text-xs text-red-600">{errors.title}</p>}
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-zinc-500">회사</label>
+          <div className="flex flex-col gap-2">
+            <label className={labelClass}>
+              회사
+              {requiredMark}
+            </label>
             <input
-              className="border-input bg-background h-9 rounded-md border px-3"
+              className={fieldClass}
               value={formState.company}
               onChange={handleChange('company')}
               placeholder="예: Devths"
@@ -246,42 +267,48 @@ export default function EventFormModal({
             {errors.company && <p className="text-xs text-red-600">{errors.company}</p>}
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-zinc-500">시작 시간</label>
-              <input
-                type="datetime-local"
-                className="border-input bg-background h-9 rounded-md border px-3"
-                value={formState.startTime}
-                onChange={handleChange('startTime')}
-              />
-              {errors.startTime && <p className="text-xs text-red-600">{errors.startTime}</p>}
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-zinc-500">종료 시간</label>
-              <input
-                type="datetime-local"
-                className="border-input bg-background h-9 rounded-md border px-3"
-                value={formState.endTime}
-                onChange={handleChange('endTime')}
-              />
-              {errors.endTime && <p className="text-xs text-red-600">{errors.endTime}</p>}
-            </div>
+          <div className="flex flex-col gap-2">
+            <label className={labelClass}>
+              시작 시간
+              {requiredMark}
+            </label>
+            <input
+              type="datetime-local"
+              className={dateFieldClass}
+              value={formState.startTime}
+              onChange={handleChange('startTime')}
+            />
+            {errors.startTime && <p className="text-xs text-red-600">{errors.startTime}</p>}
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-zinc-500">설명</label>
+          <div className="flex flex-col gap-2">
+            <label className={labelClass}>
+              종료 시간
+              {requiredMark}
+            </label>
+            <input
+              type="datetime-local"
+              className={dateFieldClass}
+              value={formState.endTime}
+              onChange={handleChange('endTime')}
+            />
+            {errors.endTime && <p className="text-xs text-red-600">{errors.endTime}</p>}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className={labelClass}>설명</label>
             <textarea
-              className="border-input bg-background min-h-[80px] rounded-md border px-3 py-2"
+              className={textAreaClass}
               value={formState.description}
               onChange={handleChange('description')}
+              placeholder="일정에 대한 설명을 입력하세요"
             />
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-zinc-500">태그</label>
+          <div className="flex flex-col gap-2">
+            <label className={labelClass}>태그</label>
             <input
-              className="border-input bg-background h-9 rounded-md border px-3"
+              className={fieldClass}
               value={formState.tags}
               onChange={handleChange('tags')}
               placeholder="예: 프론트엔드, 인턴"
@@ -289,24 +316,21 @@ export default function EventFormModal({
             <p className="text-xs text-zinc-400">콤마(,)로 구분해 입력하세요.</p>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-[1fr_140px]">
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-zinc-500">알림 시간</label>
+          <div className="flex flex-col gap-3">
+            <label className={labelClass}>
+              알림 설정
+              {requiredMark}
+            </label>
+            <div className="flex items-center gap-2">
               <input
                 type="number"
                 min={1}
-                className="border-input bg-background h-9 rounded-md border px-3"
+                className={`${compactFieldClass} w-20 text-center`}
                 value={formState.notificationTime}
                 onChange={handleChange('notificationTime')}
               />
-              {errors.notificationTime && (
-                <p className="text-xs text-red-600">{errors.notificationTime}</p>
-              )}
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-zinc-500">알림 단위</label>
               <select
-                className="border-input bg-background h-9 rounded-md border px-3"
+                className={`${compactFieldClass} w-24 pr-8`}
                 value={formState.notificationUnit}
                 onChange={handleChange('notificationUnit')}
               >
@@ -317,16 +341,19 @@ export default function EventFormModal({
                   </option>
                 ))}
               </select>
-              {errors.notificationUnit && (
-                <p className="text-xs text-red-600">{errors.notificationUnit}</p>
-              )}
+              <span className="text-sm text-[#6B6B6B]">전 알림</span>
             </div>
+            {(errors.notificationTime || errors.notificationUnit) && (
+              <p className="text-xs text-red-600">
+                {errors.notificationTime || errors.notificationUnit}
+              </p>
+            )}
           </div>
 
-          <div className="flex justify-end gap-2">
+          <div className="grid grid-cols-2 gap-3 pt-2">
             <button
               type="button"
-              className="border-input h-9 rounded-md border px-3 text-sm"
+              className="h-11 w-full rounded-full border border-[#E5E7EB] bg-white px-6 text-sm font-semibold text-[#4B4B4B] shadow-sm"
               onClick={onClose}
               disabled={submitting}
             >
@@ -334,7 +361,7 @@ export default function EventFormModal({
             </button>
             <button
               type="submit"
-              className="bg-primary text-primary-foreground h-9 rounded-md px-4 text-sm disabled:opacity-50"
+              className="h-11 w-full rounded-full bg-gradient-to-r from-[#45C97B] to-[#74D9A7] px-8 text-sm font-semibold text-white shadow-sm disabled:opacity-50"
               disabled={isSubmitDisabled || submitting}
             >
               {submitting ? '저장 중...' : '저장'}

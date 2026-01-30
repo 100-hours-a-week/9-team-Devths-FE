@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import CalendarFilters from '@/components/calendar/CalendarFilters';
 import CalendarView from '@/components/calendar/CalendarView';
@@ -11,9 +11,49 @@ import { toFullCalendarEvent } from '@/lib/calendar/mappers';
 import { getSeoulDateRangeFromDatesSet } from '@/lib/datetime/seoul';
 
 import type { GoogleEventDetailResponse, InterviewStage } from '@/types/calendar';
-import type { DatesSetArg, EventClickArg, EventInput } from '@fullcalendar/core';
+import type { CalendarApi, DatesSetArg, EventClickArg, EventInput } from '@fullcalendar/core';
+import type { DateClickArg } from '@fullcalendar/interaction';
 
 type DateRange = ReturnType<typeof getSeoulDateRangeFromDatesSet>;
+
+const stageDotClasses: Record<InterviewStage, string> = {
+  DOCUMENT: 'bg-blue-500',
+  CODING_TEST: 'bg-purple-500',
+  INTERVIEW: 'bg-green-500',
+};
+
+const formatDateLabel = (date: Date) =>
+  date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long' });
+
+const getWeekOfMonth = (date: Date) => {
+  const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+  const firstDayIndex = (firstDayOfMonth.getDay() + 6) % 7;
+  return Math.ceil((date.getDate() + firstDayIndex) / 7);
+};
+
+const formatEventTime = (start: Date | null, end: Date | null) => {
+  if (!start) return '';
+  if (!end) {
+    return start.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  const sameDay =
+    start.getFullYear() === end.getFullYear() &&
+    start.getMonth() === end.getMonth() &&
+    start.getDate() === end.getDate();
+
+  if (sameDay) {
+    return `${start.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString(
+      'ko-KR',
+      { hour: '2-digit', minute: '2-digit' },
+    )}`;
+  }
+
+  return `${start.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })} ~ ${end.toLocaleDateString(
+    'ko-KR',
+    { month: 'short', day: 'numeric' },
+  )}`;
+};
 
 export default function CalendarPage() {
   const [events, setEvents] = useState<EventInput[]>([]);
@@ -21,6 +61,9 @@ export default function CalendarPage() {
   const [error, setError] = useState<string | null>(null);
   const [stageFilter, setStageFilter] = useState<InterviewStage | ''>('');
   const [tagFilter, setTagFilter] = useState('');
+  const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
+  const [currentStart, setCurrentStart] = useState<Date | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
@@ -33,6 +76,7 @@ export default function CalendarPage() {
   const currentRangeRef = useRef<DateRange | null>(null);
   const requestIdRef = useRef(0);
   const detailRequestIdRef = useRef(0);
+  const calendarApiRef = useRef<CalendarApi | null>(null);
 
   const fetchEvents = useCallback(
     async (range: DateRange, filters: { stage: InterviewStage | ''; tag: string }) => {
@@ -78,6 +122,7 @@ export default function CalendarPage() {
     async (arg: DatesSetArg) => {
       const range = getSeoulDateRangeFromDatesSet(arg);
       currentRangeRef.current = range;
+      setCurrentStart(arg.view.currentStart);
       await fetchEvents(range, { stage: stageFilter, tag: tagFilter });
     },
     [fetchEvents, stageFilter, tagFilter],
@@ -153,6 +198,11 @@ export default function CalendarPage() {
     setFormMode('create');
     setFormError(null);
     setFormOpen(true);
+  }, []);
+
+  const handleResetFilters = useCallback(() => {
+    setStageFilter('');
+    setTagFilter('');
   }, []);
 
   const handleEditOpen = useCallback(() => {
@@ -238,27 +288,208 @@ export default function CalendarPage() {
     }
   }, [deleteLoading, detail, fetchEvents, handleCloseDetail, stageFilter, tagFilter]);
 
+  const handleCalendarReady = useCallback((api: CalendarApi) => {
+    calendarApiRef.current = api;
+  }, []);
+
+  const handleDateSelect = useCallback((arg: DateClickArg) => {
+    setSelectedDate(arg.date);
+  }, []);
+
+  const handlePrev = useCallback(() => {
+    calendarApiRef.current?.prev();
+  }, []);
+
+  const handleNext = useCallback(() => {
+    calendarApiRef.current?.next();
+  }, []);
+
+  const handleEventRowClick = useCallback(
+    async (eventId: string) => {
+      await fetchDetail(eventId, { open: true });
+    },
+    [fetchDetail],
+  );
+
+  const sortedEvents = useMemo(() => {
+    return [...events].sort((a, b) => {
+      const startA = a.start ? new Date(a.start as string | number | Date).getTime() : 0;
+      const startB = b.start ? new Date(b.start as string | number | Date).getTime() : 0;
+      return startA - startB;
+    });
+  }, [events]);
+
+  const baseTitle = formatDateLabel(currentStart ?? new Date());
+  const currentTitle =
+    viewMode === 'week' && currentStart
+      ? `${baseTitle} ${getWeekOfMonth(currentStart)}주차`
+      : baseTitle;
+
   return (
-    <main className="calendar-shell p-6">
+    <main className="calendar-shell pb-8">
+      <div className="-mx-4 border-b border-[#E8E8E8] bg-white">
+        <div className="flex">
+          <button
+            type="button"
+            onClick={() => setViewMode('month')}
+            className={`flex-1 py-3 text-sm font-medium transition-all ${
+              viewMode === 'month' ? 'border-b-2 border-[#151515] text-[#151515]' : 'text-[#8A8A8A]'
+            }`}
+          >
+            월간
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('week')}
+            className={`flex-1 py-3 text-sm font-medium transition-all ${
+              viewMode === 'week' ? 'border-b-2 border-[#151515] text-[#151515]' : 'text-[#8A8A8A]'
+            }`}
+          >
+            주간
+          </button>
+        </div>
+      </div>
+
       <CalendarFilters
         stage={stageFilter}
         tag={tagFilter}
         onStageChange={setStageFilter}
         onTagChange={setTagFilter}
-        onCreate={handleCreateOpen}
-      />
-      {!loading && error && <p className="mb-2 text-sm text-red-600">{error}</p>}
-
-      <CalendarView
-        events={events}
-        onDatesSet={handleDatesSet}
-        onEventClick={handleEventClick}
-        loading={loading}
+        onReset={handleResetFilters}
       />
 
-      {!loading && !error && events.length === 0 && (
-        <p className="mt-4 text-center text-sm text-zinc-500">등록된 일정이 없습니다.</p>
-      )}
+      {!loading && error ? <p className="mt-3 mb-2 text-sm text-red-600">{error}</p> : null}
+
+      <section className="-mx-4 border-b border-[#E8E8E8] bg-white px-4 py-4">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="text-base font-semibold text-[#151515]">{currentTitle}</div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handlePrev}
+              className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-[#F2F2F2]"
+              aria-label="이전"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={handleNext}
+              className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-[#F2F2F2]"
+              aria-label="다음"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <CalendarView
+          className="calendar-grid"
+          events={events}
+          onDatesSet={handleDatesSet}
+          onEventClick={handleEventClick}
+          onDateSelect={handleDateSelect}
+          viewMode={viewMode}
+          onApiReady={handleCalendarReady}
+          loading={loading}
+          selectedDate={selectedDate}
+        />
+      </section>
+
+      <section className="pt-4">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-base font-bold text-[#151515]">
+            일정 목록
+            {sortedEvents.length > 0 ? (
+              <span className="ml-2 text-sm font-normal text-[#8A8A8A]">
+                {sortedEvents.length}개
+              </span>
+            ) : null}
+          </h2>
+          <button
+            type="button"
+            onClick={handleCreateOpen}
+            className="flex h-9 items-center gap-1 rounded-lg bg-[#05C075] px-4 text-sm font-medium text-white transition-all hover:bg-[#04A865]"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            추가
+          </button>
+        </div>
+
+        {sortedEvents.length === 0 && !loading && !error ? (
+          <div className="rounded-2xl border border-[#E8E8E8] bg-white px-4 py-12 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-[#E8E8E8] bg-[#FAFAFA]">
+              <svg
+                className="h-7 w-7 text-[#C8C8C8]"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.6}
+                  d="M8 7V3m8 4V3M4 11h16M6 19h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
+            <p className="text-sm text-[#8A8A8A]">
+              등록된 일정이 없습니다. 새 일정을 추가해보세요!
+            </p>
+          </div>
+        ) : null}
+
+        {sortedEvents.length > 0 ? (
+          <div className="space-y-2">
+            {sortedEvents.map((event) => {
+              const stage = event.extendedProps?.stage as InterviewStage | undefined;
+              const dotClass = stage ? stageDotClasses[stage] : 'bg-zinc-400';
+              const startDate = event.start
+                ? new Date(event.start as string | number | Date)
+                : null;
+              const endDate = event.end ? new Date(event.end as string | number | Date) : null;
+              const title = String(event.title ?? '');
+              const displayTitle = title.replace(/^\[[^\]]+\]\s*/, '') || title;
+
+              return (
+                <button
+                  key={String(event.id ?? title)}
+                  type="button"
+                  onClick={() => handleEventRowClick(String(event.id ?? ''))}
+                  className="flex w-full items-center gap-3 rounded-lg border border-[#E8E8E8] bg-white p-3 text-left shadow-sm transition-all hover:shadow-md"
+                >
+                  <span className={`h-2.5 w-2.5 rounded-full ${dotClass}`} />
+                  <div className="flex-1 overflow-hidden">
+                    <p className="truncate text-sm font-medium text-[#151515]">{displayTitle}</p>
+                    <p className="text-xs text-[#8A8A8A]">{formatEventTime(startDate, endDate)}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+      </section>
 
       <EventDetailModal
         open={detailOpen}
