@@ -6,6 +6,7 @@ import CalendarFilters from '@/components/calendar/CalendarFilters';
 import CalendarView from '@/components/calendar/CalendarView';
 import EventDetailModal from '@/components/calendar/EventDetailModal';
 import EventFormModal, { type EventFormMode } from '@/components/calendar/EventFormModal';
+import TodoSummaryCard from '@/components/todo/TodoSummaryCard';
 import { createEvent, deleteEvent, getEvent, listEvents, updateEvent } from '@/lib/api/calendar';
 import { toFullCalendarEvent } from '@/lib/calendar/mappers';
 import { getSeoulDateRangeFromDatesSet } from '@/lib/datetime/seoul';
@@ -489,6 +490,10 @@ export default function CalendarPage() {
             })}
           </div>
         ) : null}
+      </section>
+
+      <section className="pt-4">
+        <TodoSummaryCard />
       </section>
 
       <EventDetailModal

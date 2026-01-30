@@ -16,7 +16,7 @@ export default function TodoItemRow({
   onClick,
 }: TodoItemRowProps) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex w-full items-center gap-3 rounded-lg border border-neutral-200 bg-white px-3 py-2">
       <button
         type="button"
         onClick={() => onToggle?.(todoId)}

@@ -119,20 +119,23 @@ export default function TodoSummaryCard({
   );
 
   return (
-    <section className="rounded-2xl border border-neutral-200 bg-white px-4 py-4">
+    <section className="bg-white py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h3 className="text-base font-semibold text-neutral-900">{title}</h3>
-          <button
-            type="button"
-            onClick={onAddClick}
-            className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-neutral-200 text-sm text-neutral-500"
-            aria-label="할 일 추가"
-          >
-            +
-          </button>
+          <span className="text-xs font-medium text-neutral-500">{percent}% 완료</span>
         </div>
-        <span className="text-xs font-medium text-neutral-500">{percent}% 완료</span>
+        <button
+          type="button"
+          onClick={onAddClick}
+          className="flex h-9 items-center gap-1 rounded-lg bg-[#05C075] px-4 text-sm font-medium text-white transition-all hover:bg-[#04A865]"
+          aria-label="할 일 추가"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          추가
+        </button>
       </div>
 
       <div
@@ -166,20 +169,17 @@ export default function TodoSummaryCard({
       </div>
 
       {scheduledCompleted.length > 0 ? (
-        <div className="mt-5 border-t border-neutral-100 pt-4">
-          <p className="mb-3 text-xs font-semibold text-neutral-500">완료됨</p>
-          <div className="space-y-3">
-            {scheduledCompleted.map((todo) => (
-              <TodoItemRow
-                key={todo.todoId}
-                todoId={todo.todoId}
-                title={todo.title}
-                isCompleted={todo.isCompleted}
-                onToggle={handleToggle}
-                onClick={onTodoClick}
-              />
-            ))}
-          </div>
+        <div className="mt-4 space-y-3">
+          {scheduledCompleted.map((todo) => (
+            <TodoItemRow
+              key={todo.todoId}
+              todoId={todo.todoId}
+              title={todo.title}
+              isCompleted={todo.isCompleted}
+              onToggle={handleToggle}
+              onClick={onTodoClick}
+            />
+          ))}
         </div>
       ) : null}
 
