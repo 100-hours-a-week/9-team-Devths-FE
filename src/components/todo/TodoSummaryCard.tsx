@@ -54,7 +54,7 @@ export default function TodoSummaryCard({
     setErrorMessage(null);
 
     try {
-      const result = await listTodos(targetDate);
+      const result = await listTodos();
       if (requestIdRef.current !== requestId) return;
 
       if (!result.ok) {
@@ -73,22 +73,29 @@ export default function TodoSummaryCard({
         setIsLoading(false);
       }
     }
-  }, [targetDate, todosProp]);
+  }, [todosProp]);
 
   useEffect(() => {
     fetchTodos();
   }, [fetchTodos]);
 
-  const scheduledTodos = localTodos;
+  const todayTodos = useMemo(
+    () => localTodos.filter((todo) => todo.dueDate === targetDate),
+    [localTodos, targetDate],
+  );
   const scheduledIncomplete = useMemo(
-    () => localTodos.filter((todo) => !todo.isCompleted),
-    [localTodos],
+    () => todayTodos.filter((todo) => !todo.isCompleted),
+    [todayTodos],
   );
   const scheduledCompleted = useMemo(
-    () => localTodos.filter((todo) => todo.isCompleted),
-    [localTodos],
+    () => todayTodos.filter((todo) => todo.isCompleted),
+    [todayTodos],
   );
-  const { percent } = calcProgress(localTodos);
+  const otherTodos = useMemo(
+    () => localTodos.filter((todo) => todo.dueDate && todo.dueDate !== targetDate),
+    [localTodos, targetDate],
+  );
+  const { percent } = calcProgress(todayTodos);
 
   const handleToggle = useCallback(
     async (todoId: string) => {
@@ -200,7 +207,7 @@ export default function TodoSummaryCard({
           </>
         ) : errorMessage ? (
           <p className="text-sm text-neutral-500">{errorMessage}</p>
-        ) : scheduledTodos.length === 0 ? (
+        ) : todayTodos.length === 0 ? (
           <p className="text-xs text-neutral-400">오늘 할 일이 없어요</p>
         ) : (
           scheduledIncomplete.map((todo) => (
@@ -228,6 +235,24 @@ export default function TodoSummaryCard({
               onClick={onTodoClick}
             />
           ))}
+        </div>
+      ) : null}
+
+      {!isLoading && !errorMessage && otherTodos.length > 0 ? (
+        <div className="mt-5 border-t border-neutral-100 pt-4">
+          <p className="mb-3 text-xs font-semibold text-neutral-500">오늘 외 일정</p>
+          <div className="space-y-3">
+            {otherTodos.map((todo) => (
+              <TodoItemRow
+                key={todo.todoId}
+                todoId={todo.todoId}
+                title={todo.title}
+                isCompleted={todo.isCompleted}
+                onToggle={handleToggle}
+                onClick={onTodoClick}
+              />
+            ))}
+          </div>
         </div>
       ) : null}
 
