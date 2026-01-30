@@ -496,7 +496,7 @@ export default function CalendarPage() {
         ) : null}
       </section>
 
-      <section className="pt-4">
+      <section className="pt-4 pb-8">
         <TodoSummaryCard dateFilter={selectedDateFilter} />
       </section>
 

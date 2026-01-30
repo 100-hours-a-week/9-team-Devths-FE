@@ -19,11 +19,20 @@ const TABS: Tab[] = [
   { label: '프로필', href: '/profile', icon: User },
 ];
 
-export default function BottomNav() {
+type BottomNavProps = {
+  hidden?: boolean;
+};
+
+export default function BottomNav({ hidden = false }: BottomNavProps) {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-1/2 z-50 w-full -translate-x-1/2 bg-white sm:max-w-[430px]">
+    <nav
+      className={clsx(
+        'fixed bottom-0 left-1/2 z-50 w-full -translate-x-1/2 bg-white transition-transform duration-200 sm:max-w-[430px]',
+        hidden ? 'translate-y-full pointer-events-none' : 'translate-y-0',
+      )}
+    >
       <div className="border-t">
         <div className="grid h-16 grid-cols-3 px-2">
           {TABS.map((tab) => {
