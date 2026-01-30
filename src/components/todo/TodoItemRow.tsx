@@ -10,6 +10,8 @@ type TodoItemRowProps = {
   isCompleted: boolean;
   onToggle?: (todoId: string) => void;
   onClick?: (todoId: string) => void;
+  onEdit?: (todoId: string) => void;
+  onDelete?: (todoId: string) => void;
 };
 
 export default function TodoItemRow({
@@ -18,6 +20,8 @@ export default function TodoItemRow({
   isCompleted,
   onToggle,
   onClick,
+  onEdit,
+  onDelete,
 }: TodoItemRowProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -65,14 +69,20 @@ export default function TodoItemRow({
           <div className="absolute right-0 top-full z-20 -mt-1 w-24 rounded-lg border border-neutral-200 bg-white py-1 text-sm shadow-md">
             <button
               type="button"
-              onClick={() => setIsMenuOpen(false)}
+              onClick={() => {
+                onEdit?.(todoId);
+                setIsMenuOpen(false);
+              }}
               className="w-full px-3 py-2 text-left text-neutral-700 hover:bg-neutral-50"
             >
               수정
             </button>
             <button
               type="button"
-              onClick={() => setIsMenuOpen(false)}
+              onClick={() => {
+                onDelete?.(todoId);
+                setIsMenuOpen(false);
+              }}
               className="w-full px-3 py-2 text-left text-red-500 hover:bg-red-50"
             >
               삭제

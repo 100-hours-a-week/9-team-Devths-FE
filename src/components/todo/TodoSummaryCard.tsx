@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import TodoCreateModal from '@/components/todo/TodoCreateModal';
 import TodoItemRow from '@/components/todo/TodoItemRow';
-import { createTodo, listTodos, updateTodoStatus } from '@/lib/api/todos';
+import BaseModal from '@/components/common/BaseModal';
+import { createTodo, deleteTodo, listTodos, updateTodoStatus } from '@/lib/api/todos';
 import { toLocalDate } from '@/lib/datetime/seoul';
 import { calcProgress } from '@/lib/utils/todo';
 
@@ -32,6 +33,10 @@ export default function TodoSummaryCard({
   const [isLoading, setIsLoading] = useState(!todosProp);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Todo | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const requestIdRef = useRef(0);
 
   const targetDate = dateFilter ?? toLocalDate(new Date());
@@ -157,6 +162,47 @@ export default function TodoSummaryCard({
     [fetchTodos],
   );
 
+  const handleRequestDelete = useCallback(
+    (todoId: string) => {
+      const target = localTodos.find((todo) => todo.todoId === todoId);
+      if (!target) return;
+      setDeleteTarget(target);
+      setDeleteError(null);
+      setIsDeleteOpen(true);
+    },
+    [localTodos],
+  );
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteTarget || isDeleting) return;
+
+    const snapshot = localTodos;
+    setIsDeleting(true);
+    setDeleteError(null);
+    setLocalTodos((prev) => prev.filter((todo) => todo.todoId !== deleteTarget.todoId));
+
+    try {
+      const result = await deleteTodo(deleteTarget.todoId);
+      if (!result.ok) {
+        setLocalTodos(snapshot);
+        setDeleteError(result.message ?? '삭제에 실패했습니다.');
+        return;
+      }
+
+      setIsDeleteOpen(false);
+      setDeleteTarget(null);
+
+      if (!todosProp) {
+        await fetchTodos();
+      }
+    } catch {
+      setLocalTodos(snapshot);
+      setDeleteError('삭제에 실패했습니다.');
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [deleteTarget, fetchTodos, isDeleting, localTodos, todosProp]);
+
   const handleOpenCreate = useCallback(() => {
     onAddClick?.();
     setIsCreateOpen(true);
@@ -222,6 +268,7 @@ export default function TodoSummaryCard({
               isCompleted={todo.isCompleted}
               onToggle={handleToggle}
               onClick={onTodoClick}
+              onDelete={handleRequestDelete}
             />
           ))
         )}
@@ -237,6 +284,7 @@ export default function TodoSummaryCard({
               isCompleted={todo.isCompleted}
               onToggle={handleToggle}
               onClick={onTodoClick}
+              onDelete={handleRequestDelete}
             />
           ))}
         </div>
@@ -254,6 +302,7 @@ export default function TodoSummaryCard({
                 isCompleted={todo.isCompleted}
                 onToggle={handleToggle}
                 onClick={onTodoClick}
+                onDelete={handleRequestDelete}
               />
             ))}
           </div>
@@ -266,6 +315,32 @@ export default function TodoSummaryCard({
         defaultDueDate={targetDate}
         onSubmit={handleCreateTodo}
       />
+
+      <BaseModal open={isDeleteOpen} onClose={() => setIsDeleteOpen(false)} title="할 일 삭제">
+        <div className="mt-4 space-y-4">
+          <p className="text-sm text-neutral-600">
+            {deleteTarget?.title ? `"${deleteTarget.title}"` : '이 항목'}을(를) 삭제할까요?
+          </p>
+          {deleteError ? <p className="text-xs text-red-500">{deleteError}</p> : null}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setIsDeleteOpen(false)}
+              className="h-11 flex-1 rounded-xl border border-neutral-300 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              className="h-11 flex-1 rounded-xl bg-red-600 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isDeleting ? '삭제 중...' : '삭제'}
+            </button>
+          </div>
+        </div>
+      </BaseModal>
     </section>
   );
 }
