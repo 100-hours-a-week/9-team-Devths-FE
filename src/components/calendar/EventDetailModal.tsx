@@ -84,7 +84,20 @@ function renderContent({
       <div className="flex gap-3">
         <dt className="w-16 text-zinc-500">태그</dt>
         <dd className="flex-1 text-zinc-900">
-          {detail.tags.length > 0 ? detail.tags.join(', ') : '없음'}
+          {detail.tags.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {detail.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full bg-zinc-100 px-2 py-1 text-xs text-zinc-600"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          ) : (
+            '없음'
+          )}
         </dd>
       </div>
       <div className="flex gap-3">

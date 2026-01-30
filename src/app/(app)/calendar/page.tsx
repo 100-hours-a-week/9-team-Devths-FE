@@ -248,14 +248,18 @@ export default function CalendarPage() {
         onTagChange={setTagFilter}
         onCreate={handleCreateOpen}
       />
-      {loading && <p className="mb-2 text-sm">로딩 중...</p>}
       {!loading && error && <p className="mb-2 text-sm text-red-600">{error}</p>}
 
       <CalendarView
         events={events}
         onDatesSet={handleDatesSet}
         onEventClick={handleEventClick}
+        loading={loading}
       />
+
+      {!loading && !error && events.length === 0 && (
+        <p className="mt-4 text-center text-sm text-zinc-500">등록된 일정이 없습니다.</p>
+      )}
 
       <EventDetailModal
         open={detailOpen}
