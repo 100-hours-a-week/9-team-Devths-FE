@@ -22,6 +22,8 @@ export type GoogleEventCreateResponse = {
   eventId: string;
 };
 
+export type GoogleEventUpdateRequest = GoogleEventCreateRequest;
+
 export type GoogleEventListResponse = {
   eventId: string;
   title: string;
