@@ -2,7 +2,10 @@ name: Devths-FE CI 파이프라인
 
 on:
   pull_request:
-    branches: [develop, release, main]
+    branches:
+      - develop
+      - release/*
+      - main
 
 env:
   NODE_VERSION: '22.x'
@@ -26,13 +29,13 @@ jobs:
             exit 0
           fi
 
-          # main일 때 허용 브랜치: release, hotfix/*
-          if [[ "$HEAD" =~ ^release$ || "$HEAD" =~ ^hotfix\/.+$ ]]; then
+          # main일 때 허용 브랜치: release/*, hotfix/*
+          if [[ "$HEAD" =~ ^release\/.+$ || "$HEAD" =~ ^hotfix\/.+$ ]]; then
             echo "✅ 브랜치 정책 통과 (허용된 소스 브랜치)"
             exit 0
           fi
 
-          echo "❌ 정책 위반: main에는 release 또는 hotfix/* 브랜치만 PR 가능"
+          echo "❌ 정책 위반: main에는 release/* 또는 hotfix/* 브랜치만 PR 가능"
           exit 1
 
   # 1. 통합 품질 검사 (Lint + Prettier + TypeCheck)
@@ -137,9 +140,10 @@ jobs:
 
       - name: 환경 변수 설정
         run: |
-          if [ "${{ github.event.pull_request.base.ref }}" == "main" ]; then
+          BASE="${{ github.event.pull_request.base.ref }}"
+          if [ "$BASE" == "main" ]; then
             echo "${{ secrets.ENV_FILE_PROD }}" > .env
-          elif [ "${{ github.event.pull_request.base.ref }}" == "release" ]; then
+          elif [[ "$BASE" == release/* ]]; then
             echo "${{ secrets.ENV_FILE_STAGING }}" > .env
           else
             echo "${{ secrets.ENV_FILE_DEV }}" > .env
@@ -159,12 +163,12 @@ jobs:
         env:
           USER_MAP: ${{ secrets.USER_MAP_JSON }}
         run: |
-          # 브랜치 가드 재평가 (main은 release/hotfix/*만 허용)
+          # 브랜치 가드 재평가 (main은 release/*/hotfix/*만 허용)
           BASE="${{ github.event.pull_request.base.ref }}"
           HEAD="${{ github.event.pull_request.head.ref }}"
-          if [ "$BASE" == "main" ] && [[ ! "$HEAD" =~ ^release$ && ! "$HEAD" =~ ^hotfix\/.+$ ]]; then
+          if [ "$BASE" == "main" ] && [[ ! "$HEAD" =~ ^release\/.+$ && ! "$HEAD" =~ ^hotfix\/.+$ ]]; then
             GUARD_ALLOWED=false
-            GUARD_REASON="main에는 release 또는 hotfix/* 브랜치만 PR 가능"
+            GUARD_REASON="main에는 release/* 또는 hotfix/* 브랜치만 PR 가능"
           else
             GUARD_ALLOWED=true
             GUARD_REASON="정책 통과"
