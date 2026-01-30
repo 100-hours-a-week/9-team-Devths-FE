@@ -6,9 +6,10 @@ import CalendarFilters from '@/components/calendar/CalendarFilters';
 import CalendarView from '@/components/calendar/CalendarView';
 import EventDetailModal from '@/components/calendar/EventDetailModal';
 import EventFormModal, { type EventFormMode } from '@/components/calendar/EventFormModal';
+import TodoSummaryCard from '@/components/todo/TodoSummaryCard';
 import { createEvent, deleteEvent, getEvent, listEvents, updateEvent } from '@/lib/api/calendar';
 import { toFullCalendarEvent } from '@/lib/calendar/mappers';
-import { getSeoulDateRangeFromDatesSet } from '@/lib/datetime/seoul';
+import { getSeoulDateRangeFromDatesSet, toLocalDate } from '@/lib/datetime/seoul';
 
 import type { GoogleEventDetailResponse, InterviewStage } from '@/types/calendar';
 import type { CalendarApi, DatesSetArg, EventClickArg, EventInput } from '@fullcalendar/core';
@@ -293,7 +294,14 @@ export default function CalendarPage() {
   }, []);
 
   const handleDateSelect = useCallback((arg: DateClickArg) => {
-    setSelectedDate(arg.date);
+    setSelectedDate((prev) => {
+      if (!prev) return arg.date;
+      const sameDay =
+        prev.getFullYear() === arg.date.getFullYear() &&
+        prev.getMonth() === arg.date.getMonth() &&
+        prev.getDate() === arg.date.getDate();
+      return sameDay ? null : arg.date;
+    });
   }, []);
 
   const handlePrev = useCallback(() => {
@@ -324,6 +332,10 @@ export default function CalendarPage() {
     viewMode === 'week' && currentStart
       ? `${baseTitle} ${getWeekOfMonth(currentStart)}주차`
       : baseTitle;
+  const selectedDateFilter = useMemo(
+    () => (selectedDate ? toLocalDate(selectedDate) : undefined),
+    [selectedDate],
+  );
 
   return (
     <main className="calendar-shell pb-8">
@@ -489,6 +501,10 @@ export default function CalendarPage() {
             })}
           </div>
         ) : null}
+      </section>
+
+      <section className="pt-4 pb-8">
+        <TodoSummaryCard dateFilter={selectedDateFilter} />
       </section>
 
       <EventDetailModal

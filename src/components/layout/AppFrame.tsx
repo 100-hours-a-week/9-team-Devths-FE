@@ -38,6 +38,7 @@ export default function AppFrame({
   const [options, setOptions] = useState<HeaderOptions>(defaultOptions);
   const defaultFrameOptions = useMemo<AppFrameOptions>(() => ({ showBottomNav: true }), []);
   const [frameOptions, setFrameOptions] = useState<AppFrameOptions>(defaultFrameOptions);
+  const [isBottomNavVisible, setIsBottomNavVisible] = useState(true);
 
   useEffect(() => {
     setOptions(defaultOptions);
@@ -45,6 +46,40 @@ export default function AppFrame({
   useEffect(() => {
     setFrameOptions(defaultFrameOptions);
   }, [defaultFrameOptions]);
+
+  useEffect(() => {
+    if (!frameOptions.showBottomNav) return;
+
+    let lastScrollY = window.scrollY;
+    let ticking = false;
+
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+
+      window.requestAnimationFrame(() => {
+        const currentY = window.scrollY;
+        const delta = currentY - lastScrollY;
+
+        if (Math.abs(delta) > 4) {
+          if (delta > 0 && currentY > 24) {
+            setIsBottomNavVisible(false);
+          } else if (delta < 0) {
+            setIsBottomNavVisible(true);
+          }
+        }
+
+        lastScrollY = currentY;
+        ticking = false;
+      });
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, [frameOptions.showBottomNav]);
 
   const resetOptions = useCallback(() => {
     setOptions(defaultOptions);
@@ -82,7 +117,7 @@ export default function AppFrame({
             <div className="px-4 pb-[var(--bottom-nav-h)] sm:px-6">{children}</div>
           </div>
 
-          {frameOptions.showBottomNav ? <BottomNav /> : null}
+          {frameOptions.showBottomNav ? <BottomNav hidden={!isBottomNavVisible} /> : null}
         </div>
       </HeaderContext.Provider>
     </AppFrameContext.Provider>
