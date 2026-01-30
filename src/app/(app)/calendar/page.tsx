@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import CalendarEventCreateModal from '@/components/calendar/CalendarEventCreateModal';
 import CalendarEventDetailModal from '@/components/calendar/CalendarEventDetailModal';
+import CalendarEventEditModal from '@/components/calendar/CalendarEventEditModal';
 import { getEvent, listEvents } from '@/lib/api/calendar';
 import { getSeoulDateRangeFromDatesSet } from '@/lib/datetime/seoul';
 
@@ -27,6 +28,7 @@ export default function CalendarPage() {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [detail, setDetail] = useState<GoogleEventDetailResponse | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const currentRangeRef = useRef<DateRange | null>(null);
   const requestIdRef = useRef(0);
   const detailRequestIdRef = useRef(0);
@@ -102,14 +104,14 @@ export default function CalendarPage() {
     setDetailLoading(false);
   }, []);
 
-  const handleEventClick = useCallback(async (arg: EventClickArg) => {
-    const eventId = String(arg.event.id ?? '');
+  const fetchDetail = useCallback(async (eventId: string, options?: { open?: boolean }) => {
     if (!eventId) return;
-
     const requestId = detailRequestIdRef.current + 1;
     detailRequestIdRef.current = requestId;
 
-    setDetailOpen(true);
+    if (options?.open ?? true) {
+      setDetailOpen(true);
+    }
     setDetailLoading(true);
     setDetailError(null);
     setDetail(null);
@@ -142,10 +144,38 @@ export default function CalendarPage() {
     }
   }, []);
 
+  const handleEventClick = useCallback(
+    async (arg: EventClickArg) => {
+      const eventId = String(arg.event.id ?? '');
+      await fetchDetail(eventId, { open: true });
+    },
+    [fetchDetail],
+  );
+
   const handleCreated = useCallback(() => {
     if (!currentRangeRef.current) return;
     fetchEvents(currentRangeRef.current, { stage: stageFilter, tag: tagFilter });
   }, [fetchEvents, stageFilter, tagFilter]);
+
+  const handleEditOpen = useCallback(() => {
+    if (!detail) return;
+    setDetailOpen(false);
+    setEditOpen(true);
+  }, [detail]);
+
+  const handleEditClose = useCallback(() => {
+    setEditOpen(false);
+  }, []);
+
+  const handleUpdated = useCallback(
+    async (eventId: string) => {
+      if (currentRangeRef.current) {
+        fetchEvents(currentRangeRef.current, { stage: stageFilter, tag: tagFilter });
+      }
+      await fetchDetail(eventId, { open: true });
+    },
+    [fetchDetail, fetchEvents, stageFilter, tagFilter],
+  );
 
   return (
     <main className="calendar-shell p-6">
@@ -204,6 +234,7 @@ export default function CalendarPage() {
       <CalendarEventDetailModal
         open={detailOpen}
         onClose={handleCloseDetail}
+        onEdit={handleEditOpen}
         loading={detailLoading}
         error={detailError}
         detail={detail}
@@ -213,6 +244,13 @@ export default function CalendarPage() {
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         onCreated={handleCreated}
+      />
+
+      <CalendarEventEditModal
+        open={editOpen}
+        onClose={handleEditClose}
+        detail={detail}
+        onUpdated={handleUpdated}
       />
     </main>
   );

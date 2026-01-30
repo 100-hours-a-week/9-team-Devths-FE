@@ -3,15 +3,20 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import BaseModal from '@/components/common/BaseModal';
-import { createEvent } from '@/lib/api/calendar';
+import { updateEvent } from '@/lib/api/calendar';
 
-import type { InterviewStage, NotificationUnit } from '@/types/calendar';
+import type {
+  GoogleEventDetailResponse,
+  InterviewStage,
+  NotificationUnit,
+} from '@/types/calendar';
 import type { ChangeEvent, FormEvent } from 'react';
 
-type CalendarEventCreateModalProps = {
+type CalendarEventEditModalProps = {
   open: boolean;
   onClose: () => void;
-  onCreated?: () => void;
+  detail: GoogleEventDetailResponse | null;
+  onUpdated?: (eventId: string) => void;
 };
 
 type FormState = {
@@ -40,7 +45,7 @@ const notificationUnitOptions: Array<{ value: NotificationUnit; label: string }>
   { value: 'DAY', label: '일' },
 ];
 
-const initialFormState: FormState = {
+const emptyFormState: FormState = {
   stage: '',
   title: '',
   company: '',
@@ -54,9 +59,13 @@ const initialFormState: FormState = {
 
 function normalizeLocalDateTimeInput(value: string) {
   if (!value) return value;
-  // datetime-local은 "YYYY-MM-DDTHH:mm" 형태(초 없음)로 들어오니 초를 붙여 서버 스펙에 맞춤
   if (value.length === 16) return `${value}:00`;
   return value;
+}
+
+function toInputValue(value: string) {
+  if (!value) return '';
+  return value.slice(0, 16);
 }
 
 function parseTags(raw: string) {
@@ -71,27 +80,43 @@ function parseTags(raw: string) {
   return items.length > 0 ? items : null;
 }
 
-export default function CalendarEventCreateModal({
+export default function CalendarEventEditModal({
   open,
   onClose,
-  onCreated,
-}: CalendarEventCreateModalProps) {
-  const [formState, setFormState] = useState<FormState>(initialFormState);
+  detail,
+  onUpdated,
+}: CalendarEventEditModalProps) {
+  const [formState, setFormState] = useState<FormState>(emptyFormState);
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
+    if (!detail) {
+      setFormState(emptyFormState);
+      setErrors({});
+      setSubmitError('일정 정보를 불러올 수 없습니다.');
+      return;
+    }
 
-    // ✅ 모달이 열릴 때마다 폼을 초기화하려는 의도적인 setState.
-    // 이 프로젝트의 eslint 규칙이 useEffect 내부 setState를 일괄 경고하므로, 이 케이스만 예외 처리.
+    const nextState: FormState = {
+      stage: detail.stage,
+      title: detail.title,
+      company: detail.company,
+      startTime: toInputValue(detail.startTime),
+      endTime: toInputValue(detail.endTime),
+      description: detail.description ?? '',
+      tags: detail.tags.join(', '),
+      notificationTime: detail.notificationTime?.toString() ?? '',
+      notificationUnit: detail.notificationTime ? detail.notificationUnit : '',
+    };
 
-    setFormState(initialFormState);
+    setFormState(nextState);
     setErrors({});
     setSubmitError(null);
     setSubmitting(false);
-  }, [open]);
+  }, [detail, open]);
 
   const isSubmitDisabled = useMemo(() => {
     return formState.title.trim().length === 0 || formState.company.trim().length === 0;
@@ -105,6 +130,11 @@ export default function CalendarEventCreateModal({
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (!detail) {
+      setSubmitError('일정 정보를 불러올 수 없습니다.');
+      return;
+    }
 
     const nextErrors: FormErrors = {};
 
@@ -151,24 +181,24 @@ export default function CalendarEventCreateModal({
     };
 
     try {
-      const result = await createEvent(payload);
+      const result = await updateEvent(detail.eventId, payload);
 
       if (!result.ok) {
-        setSubmitError(result.message ?? '일정 생성에 실패했습니다.');
+        setSubmitError(result.message ?? '일정 수정에 실패했습니다.');
         return;
       }
 
       onClose();
-      onCreated?.();
+      onUpdated?.(detail.eventId);
     } catch {
-      setSubmitError('일정 생성에 실패했습니다.');
+      setSubmitError('일정 수정에 실패했습니다.');
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <BaseModal open={open} onClose={onClose} title="일정 추가" contentClassName="max-w-[520px]">
+    <BaseModal open={open} onClose={onClose} title="일정 수정" contentClassName="max-w-[520px]">
       <form className="mt-4 space-y-4 text-sm" onSubmit={handleSubmit}>
         <div className="flex flex-col gap-1">
           <label className="text-xs text-zinc-500">전형 단계</label>

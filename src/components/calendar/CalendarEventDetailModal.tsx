@@ -11,6 +11,7 @@ import type {
 type CalendarEventDetailModalProps = {
   open: boolean;
   onClose: () => void;
+  onEdit?: () => void;
   loading: boolean;
   error: string | null;
   detail: GoogleEventDetailResponse | null;
@@ -95,13 +96,27 @@ function renderContent({
 export default function CalendarEventDetailModal({
   open,
   onClose,
+  onEdit,
   loading,
   error,
   detail,
 }: CalendarEventDetailModalProps) {
+  const showEditButton = Boolean(onEdit) && !loading && !error && Boolean(detail);
+
   return (
     <BaseModal open={open} onClose={onClose} title="일정 상세">
       {renderContent({ loading, error, detail })}
+      {showEditButton && (
+        <div className="mt-4 flex justify-end">
+          <button
+            type="button"
+            className="h-9 rounded-md bg-primary px-4 text-sm text-primary-foreground"
+            onClick={onEdit}
+          >
+            수정
+          </button>
+        </div>
+      )}
     </BaseModal>
   );
 }
