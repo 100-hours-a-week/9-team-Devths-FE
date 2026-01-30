@@ -1,3 +1,7 @@
+'use client';
+
+import { useState } from 'react';
+
 import { cn } from '@/lib/utils';
 
 type TodoItemRowProps = {
@@ -15,8 +19,10 @@ export default function TodoItemRow({
   onToggle,
   onClick,
 }: TodoItemRowProps) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   return (
-    <div className="flex w-full items-center gap-3 rounded-lg border border-neutral-200 bg-white px-3 py-2">
+    <div className="relative flex w-full items-center gap-3 rounded-lg border border-neutral-200 bg-white px-3 py-2">
       <button
         type="button"
         onClick={() => onToggle?.(todoId)}
@@ -43,6 +49,37 @@ export default function TodoItemRow({
       >
         {title}
       </button>
+
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setIsMenuOpen((prev) => !prev)}
+          aria-label="메뉴"
+          aria-expanded={isMenuOpen}
+          className="flex h-7 w-7 items-center justify-center rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600"
+        >
+          ⋯
+        </button>
+
+        {isMenuOpen ? (
+          <div className="absolute right-0 top-full z-20 -mt-1 w-24 rounded-lg border border-neutral-200 bg-white py-1 text-sm shadow-md">
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen(false)}
+              className="w-full px-3 py-2 text-left text-neutral-700 hover:bg-neutral-50"
+            >
+              수정
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen(false)}
+              className="w-full px-3 py-2 text-left text-red-500 hover:bg-red-50"
+            >
+              삭제
+            </button>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
