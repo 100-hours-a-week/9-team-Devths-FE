@@ -49,6 +49,7 @@ export default function TodoSummaryCard({
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true);
     setErrorMessage(null);
 
@@ -75,20 +76,15 @@ export default function TodoSummaryCard({
         }
       });
   }, [targetDate, todosProp]);
-
-  const scheduledTodos = useMemo(
-    () => localTodos.filter((todo) => todo.dueDate === targetDate),
-    [localTodos, targetDate],
-  );
   const scheduledIncomplete = useMemo(
-    () => scheduledTodos.filter((todo) => !todo.isCompleted),
-    [scheduledTodos],
+    () => localTodos.filter((todo) => !todo.isCompleted),
+    [localTodos],
   );
   const scheduledCompleted = useMemo(
-    () => scheduledTodos.filter((todo) => todo.isCompleted),
-    [scheduledTodos],
+    () => localTodos.filter((todo) => todo.isCompleted),
+    [localTodos],
   );
-  const { percent } = calcProgress(scheduledTodos);
+  const { percent } = calcProgress(localTodos);
 
   const handleToggle = useCallback(
     async (todoId: string) => {
@@ -178,7 +174,7 @@ export default function TodoSummaryCard({
           </>
         ) : errorMessage ? (
           <p className="text-sm text-neutral-500">{errorMessage}</p>
-        ) : scheduledTodos.length === 0 ? (
+        ) : localTodos.length === 0 ? (
           <p className="text-xs text-neutral-400">오늘 할 일이 없어요</p>
         ) : (
           scheduledIncomplete.map((todo) => (
@@ -208,7 +204,6 @@ export default function TodoSummaryCard({
           ))}
         </div>
       ) : null}
-
     </section>
   );
 }
