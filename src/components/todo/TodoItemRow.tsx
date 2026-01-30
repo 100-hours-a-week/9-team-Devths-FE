@@ -1,18 +1,25 @@
 import { cn } from '@/lib/utils';
 
 type TodoItemRowProps = {
+  todoId: string;
   title: string;
   isCompleted: boolean;
-  onToggle?: () => void;
-  onClick?: () => void;
+  onToggle?: (todoId: string) => void;
+  onClick?: (todoId: string) => void;
 };
 
-export default function TodoItemRow({ title, isCompleted, onToggle, onClick }: TodoItemRowProps) {
+export default function TodoItemRow({
+  todoId,
+  title,
+  isCompleted,
+  onToggle,
+  onClick,
+}: TodoItemRowProps) {
   return (
     <div className="flex items-center gap-3">
       <button
         type="button"
-        onClick={onToggle}
+        onClick={() => onToggle?.(todoId)}
         role="checkbox"
         aria-checked={isCompleted}
         className={cn(
@@ -28,7 +35,7 @@ export default function TodoItemRow({ title, isCompleted, onToggle, onClick }: T
       </button>
       <button
         type="button"
-        onClick={onClick}
+        onClick={() => onClick?.(todoId)}
         className={cn(
           'flex-1 text-left text-sm transition-colors',
           isCompleted ? 'text-neutral-400 line-through' : 'text-neutral-900',

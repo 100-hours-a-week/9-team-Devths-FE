@@ -20,3 +20,12 @@ export type TodoUpdateRequest = {
 export type TodoStatusUpdateRequest = {
   isCompleted: boolean;
 };
+
+export type TodoCreateResponse = {
+  todoId: string;
+};
+
+export type TodoStatusUpdateResponse = {
+  todoId: string;
+  isCompleted: boolean;
+};
