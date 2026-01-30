@@ -79,6 +79,7 @@ export type PostSignupResult = {
   ok: boolean;
   status: number;
   json: (ApiResponse<SignupData> | ApiErrorResponse) | null;
+  accessToken: string | null;
 };
 
 // 회원 탈퇴 (DELETE /api/users)
@@ -96,12 +97,15 @@ export async function postSignup(body: SignupRequest): Promise<PostSignupResult>
     ...(body.profileImageS3Key ? { profileImageS3Key: body.profileImageS3Key } : {}),
   };
 
-  const { ok, status, json } = await apiRequest<SignupData>({
+  const { ok, status, json, res } = await apiRequest<SignupData>({
     method: 'POST',
     path: '/api/users',
     body: payload,
     withAuth: false,
   });
 
-  return { ok, status, json };
+  const authHeader = res.headers.get('authorization');
+  const accessToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+  return { ok, status, json, accessToken };
 }
