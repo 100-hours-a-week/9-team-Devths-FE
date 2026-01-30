@@ -291,7 +291,7 @@ export default function TodoSummaryCard({
         aria-valuenow={percent}
       >
         <div
-          className="h-full rounded-full bg-neutral-300 transition-all"
+          className="h-full rounded-full bg-[#05C075] transition-all"
           style={{ width: `${percent}%` }}
         />
       </div>
