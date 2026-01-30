@@ -6,11 +6,12 @@ import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { listEvents } from '@/lib/api/calendar';
+import CalendarEventDetailModal from '@/components/calendar/CalendarEventDetailModal';
+import { getEvent, listEvents } from '@/lib/api/calendar';
 import { getSeoulDateRangeFromDatesSet } from '@/lib/datetime/seoul';
 
-import type { InterviewStage } from '@/types/calendar';
-import type { DatesSetArg, EventInput } from '@fullcalendar/core';
+import type { GoogleEventDetailResponse, InterviewStage } from '@/types/calendar';
+import type { DatesSetArg, EventClickArg, EventInput } from '@fullcalendar/core';
 
 type DateRange = ReturnType<typeof getSeoulDateRangeFromDatesSet>;
 
@@ -20,8 +21,13 @@ export default function CalendarPage() {
   const [error, setError] = useState<string | null>(null);
   const [stageFilter, setStageFilter] = useState<InterviewStage | ''>('');
   const [tagFilter, setTagFilter] = useState('');
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
+  const [detail, setDetail] = useState<GoogleEventDetailResponse | null>(null);
   const currentRangeRef = useRef<DateRange | null>(null);
   const requestIdRef = useRef(0);
+  const detailRequestIdRef = useRef(0);
 
   const fetchEvents = useCallback(
     async (range: DateRange, filters: { stage: InterviewStage | ''; tag: string }) => {
@@ -86,6 +92,54 @@ export default function CalendarPage() {
     fetchEvents(currentRangeRef.current, { stage: stageFilter, tag: tagFilter });
   }, [fetchEvents, stageFilter, tagFilter]);
 
+  const handleCloseDetail = useCallback(() => {
+    detailRequestIdRef.current += 1;
+    setDetailOpen(false);
+    setDetail(null);
+    setDetailError(null);
+    setDetailLoading(false);
+  }, []);
+
+  const handleEventClick = useCallback(async (arg: EventClickArg) => {
+    const eventId = String(arg.event.id ?? '');
+    if (!eventId) return;
+
+    const requestId = detailRequestIdRef.current + 1;
+    detailRequestIdRef.current = requestId;
+
+    setDetailOpen(true);
+    setDetailLoading(true);
+    setDetailError(null);
+    setDetail(null);
+
+    try {
+      const result = await getEvent(eventId);
+
+      if (detailRequestIdRef.current !== requestId) return;
+
+      if (!result.ok) {
+        const message =
+          result.status === 403 ? 'Devths에서 생성한 일정만 볼 수 있어요.' : null;
+        setDetailError(message ?? result.message ?? '일정 조회에 실패했습니다.');
+        setDetailLoading(false);
+        return;
+      }
+
+      if (!result.data) {
+        setDetailError('일정 정보를 불러올 수 없습니다.');
+        setDetailLoading(false);
+        return;
+      }
+
+      setDetail(result.data);
+      setDetailLoading(false);
+    } catch {
+      if (detailRequestIdRef.current !== requestId) return;
+      setDetailError('일정 조회에 실패했습니다.');
+      setDetailLoading(false);
+    }
+  }, []);
+
   return (
     <main className="calendar-shell p-6">
       <div className="mb-4 flex flex-wrap items-end gap-3">
@@ -128,6 +182,15 @@ export default function CalendarPage() {
         height="auto"
         events={events}
         datesSet={handleDatesSet}
+        eventClick={handleEventClick}
+      />
+
+      <CalendarEventDetailModal
+        open={detailOpen}
+        onClose={handleCloseDetail}
+        loading={detailLoading}
+        error={detailError}
+        detail={detail}
       />
     </main>
   );
