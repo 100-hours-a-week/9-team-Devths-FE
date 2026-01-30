@@ -1,8 +1,24 @@
+'use client';
+
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import FullCalendar from '@fullcalendar/react';
+import timeGridPlugin from '@fullcalendar/timegrid';
+
 export default function CalendarPage() {
   return (
-    <main style={{ padding: 24 }}>
-      <h1>Calendar</h1>
-      <p>캘린더 페이지 준비 중</p>
+    <main className="calendar-shell p-6">
+      <FullCalendar
+        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+        initialView="dayGridMonth"
+        headerToolbar={{
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,timeGridWeek,timeGridDay',
+        }}
+        height="auto"
+        events={[]}
+      />
     </main>
   );
 }

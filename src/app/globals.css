@@ -1,9 +1,7 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
-/* FullCalendar v6 base styles (package-level CSS imports) */
-@import '@fullcalendar/core/index.css';
-@import '@fullcalendar/daygrid/index.css';
-@import '@fullcalendar/timegrid/index.css';
+/* FullCalendar v6 base styles (vendored from global builds to avoid package export issues) */
+@import '../styles/fullcalendar.css';
 
 @custom-variant dark (&:is(.dark *));
 
