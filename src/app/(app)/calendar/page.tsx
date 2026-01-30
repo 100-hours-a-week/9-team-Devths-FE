@@ -115,8 +115,7 @@ export default function CalendarPage() {
       if (detailRequestIdRef.current !== requestId) return;
 
       if (!result.ok) {
-        const message =
-          result.status === 403 ? 'Devths에서 생성한 일정만 볼 수 있어요.' : null;
+        const message = result.status === 403 ? 'Devths에서 생성한 일정만 볼 수 있어요.' : null;
         setDetailError(message ?? result.message ?? '일정 조회에 실패했습니다.');
         setDetailLoading(false);
         return;

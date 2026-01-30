@@ -46,7 +46,7 @@ export default function CalendarFilters({
       </div>
       <button
         type="button"
-        className="h-9 rounded-md bg-primary px-4 text-sm text-primary-foreground"
+        className="bg-primary text-primary-foreground h-9 rounded-md px-4 text-sm"
         onClick={onCreate}
       >
         + 일정 추가

@@ -95,9 +95,13 @@ export async function updateEvent(
 ): Promise<CalendarApiResult<GoogleEventCreateResponse>> {
   const encodedEventId = encodeURIComponent(eventId);
 
-  const result = await api.put<GoogleEventCreateResponse>(`/api/calendars/${encodedEventId}`, body, {
-    credentials: 'include',
-  });
+  const result = await api.put<GoogleEventCreateResponse>(
+    `/api/calendars/${encodedEventId}`,
+    body,
+    {
+      credentials: 'include',
+    },
+  );
 
   return unwrapApiResult(result);
 }

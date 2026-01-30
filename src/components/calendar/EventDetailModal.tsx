@@ -2,11 +2,7 @@
 
 import BaseModal from '@/components/common/BaseModal';
 
-import type {
-  GoogleEventDetailResponse,
-  InterviewStage,
-  NotificationUnit,
-} from '@/types/calendar';
+import type { GoogleEventDetailResponse, InterviewStage, NotificationUnit } from '@/types/calendar';
 
 type EventDetailModalProps = {
   open: boolean;
@@ -131,7 +127,7 @@ export default function EventDetailModal({
           {showDeleteButton && (
             <button
               type="button"
-              className="h-9 rounded-md border border-destructive px-4 text-sm text-destructive disabled:opacity-50"
+              className="border-destructive text-destructive h-9 rounded-md border px-4 text-sm disabled:opacity-50"
               onClick={onDelete}
               disabled={actionsDisabled}
             >
@@ -141,7 +137,7 @@ export default function EventDetailModal({
           {showEditButton && (
             <button
               type="button"
-              className="h-9 rounded-md bg-primary px-4 text-sm text-primary-foreground disabled:opacity-50"
+              className="bg-primary text-primary-foreground h-9 rounded-md px-4 text-sm disabled:opacity-50"
               onClick={onEdit}
               disabled={actionsDisabled}
             >
