@@ -11,7 +11,16 @@ type TodoCreateModalProps = {
   open: boolean;
   onClose: () => void;
   defaultDueDate?: LocalDateString;
-  onSubmit?: (payload: { title: string; dueDate: LocalDateString }) => void;
+  onSubmit?: (payload: { title: string; dueDate: LocalDateString }) => Promise<
+    | {
+        ok: true;
+      }
+    | {
+        ok: false;
+        message?: string;
+      }
+    | void
+  >;
 };
 
 export default function TodoCreateModal({
@@ -25,19 +34,46 @@ export default function TodoCreateModal({
 
   const [title, setTitle] = useState('');
   const [dueDate, setDueDate] = useState<LocalDateString>(initialDueDate);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+
     setTitle('');
     setDueDate(initialDueDate);
+    setErrorMessage(null);
+    setIsSubmitting(false);
   }, [initialDueDate, open]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const trimmedTitle = title.trim();
-    if (!trimmedTitle) return;
-    onSubmit?.({ title: trimmedTitle, dueDate });
-    onClose();
+    if (!trimmedTitle) {
+      setErrorMessage('제목을 입력해 주세요');
+      return;
+    }
+
+    if (!onSubmit) {
+      onClose();
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      const result = await onSubmit({ title: trimmedTitle, dueDate });
+      if (result && 'ok' in result && result.ok === false) {
+        setErrorMessage(result.message ?? '추가에 실패했습니다.');
+        return;
+      }
+
+      onClose();
+    } catch {
+      setErrorMessage('추가에 실패했습니다.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -75,12 +111,14 @@ export default function TodoCreateModal({
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!title.trim()}
+            disabled={!title.trim() || isSubmitting}
             className="h-12 flex-1 rounded-xl bg-neutral-900 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            추가
+            {isSubmitting ? '추가 중...' : '추가'}
           </button>
         </div>
+
+        {errorMessage ? <p className="text-center text-xs text-red-500">{errorMessage}</p> : null}
       </div>
     </BaseModal>
   );

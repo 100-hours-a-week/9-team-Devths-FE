@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import TodoCreateModal from '@/components/todo/TodoCreateModal';
 import TodoItemRow from '@/components/todo/TodoItemRow';
-import { listTodos, updateTodoStatus } from '@/lib/api/todos';
+import { createTodo, listTodos, updateTodoStatus } from '@/lib/api/todos';
 import { toLocalDate } from '@/lib/datetime/seoul';
 import { calcProgress } from '@/lib/utils/todo';
 
@@ -36,7 +36,6 @@ export default function TodoSummaryCard({
 
   useEffect(() => {
     if (todosProp) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocalTodos(todosProp);
       setIsLoading(false);
       setErrorMessage(null);
@@ -45,39 +44,40 @@ export default function TodoSummaryCard({
 
   const targetDate = dateFilter ?? toLocalDate(new Date());
 
-  useEffect(() => {
+  const fetchTodos = useCallback(async () => {
     if (todosProp) return;
 
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true);
     setErrorMessage(null);
 
-    listTodos(targetDate)
-      .then((result) => {
-        if (requestIdRef.current !== requestId) return;
+    try {
+      const result = await listTodos(targetDate);
+      if (requestIdRef.current !== requestId) return;
 
-        if (!result.ok) {
-          setLocalTodos([]);
-          setErrorMessage('목록을 불러오지 못했어요');
-          return;
-        }
-
-        setLocalTodos(result.data ?? []);
-      })
-      .catch(() => {
-        if (requestIdRef.current !== requestId) return;
+      if (!result.ok) {
         setLocalTodos([]);
         setErrorMessage('목록을 불러오지 못했어요');
-      })
-      .finally(() => {
-        if (requestIdRef.current === requestId) {
-          setIsLoading(false);
-        }
-      });
+        return;
+      }
+
+      setLocalTodos(result.data ?? []);
+    } catch {
+      if (requestIdRef.current !== requestId) return;
+      setLocalTodos([]);
+      setErrorMessage('목록을 불러오지 못했어요');
+    } finally {
+      if (requestIdRef.current === requestId) {
+        setIsLoading(false);
+      }
+    }
   }, [targetDate, todosProp]);
+
+  useEffect(() => {
+    fetchTodos();
+  }, [fetchTodos]);
 
   const scheduledTodos = localTodos;
   const scheduledIncomplete = useMemo(
@@ -127,6 +127,23 @@ export default function TodoSummaryCard({
       }
     },
     [localTodos, onToggleTodo],
+  );
+
+  const handleCreateTodo = useCallback(
+    async (payload: { title: string; dueDate: LocalDateString }) => {
+      const result = await createTodo(payload);
+
+      if (!result.ok) {
+        return {
+          ok: false,
+          message: result.message ?? '추가에 실패했습니다.',
+        };
+      }
+
+      await fetchTodos();
+      return { ok: true };
+    },
+    [fetchTodos],
   );
 
   const handleOpenCreate = useCallback(() => {
@@ -218,6 +235,7 @@ export default function TodoSummaryCard({
         open={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
         defaultDueDate={targetDate}
+        onSubmit={handleCreateTodo}
       />
     </section>
   );
