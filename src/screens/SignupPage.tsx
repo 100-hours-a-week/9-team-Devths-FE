@@ -11,12 +11,7 @@ import FileTooLargeModal from '@/components/signup/FileTooLargeModal';
 import { INTEREST_OPTIONS, type InterestValue } from '@/constants/interests';
 import { postPresignedSignup } from '@/lib/api/files';
 import { postSignup } from '@/lib/api/users';
-import {
-  clearSignupContext,
-  getSignupEmail,
-  getTempToken,
-  setAccessToken,
-} from '@/lib/auth/token';
+import { clearSignupContext, getSignupEmail, getTempToken, setAccessToken } from '@/lib/auth/token';
 import { toast } from '@/lib/toast/store';
 import { uploadToPresignedUrl } from '@/lib/upload/s3Presigned';
 import { getNicknameErrorMessage } from '@/lib/validators/nickname';
