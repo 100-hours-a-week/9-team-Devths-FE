@@ -61,8 +61,8 @@ export default function AppFrame({
         const currentY = window.scrollY;
         const delta = currentY - lastScrollY;
 
-        if (Math.abs(delta) > 8) {
-          if (delta > 0 && currentY > 64) {
+        if (Math.abs(delta) > 4) {
+          if (delta > 0 && currentY > 24) {
             setIsBottomNavVisible(false);
           } else if (delta < 0) {
             setIsBottomNavVisible(true);
@@ -102,8 +102,7 @@ export default function AppFrame({
           className="min-h-dvh w-full bg-neutral-50"
           style={
             {
-              '--bottom-nav-h':
-                frameOptions.showBottomNav && isBottomNavVisible ? '64px' : '0px',
+              '--bottom-nav-h': frameOptions.showBottomNav ? '64px' : '0px',
             } as CSSProperties
           }
         >
