@@ -294,7 +294,14 @@ export default function CalendarPage() {
   }, []);
 
   const handleDateSelect = useCallback((arg: DateClickArg) => {
-    setSelectedDate(arg.date);
+    setSelectedDate((prev) => {
+      if (!prev) return arg.date;
+      const sameDay =
+        prev.getFullYear() === arg.date.getFullYear() &&
+        prev.getMonth() === arg.date.getMonth() &&
+        prev.getDate() === arg.date.getDate();
+      return sameDay ? null : arg.date;
+    });
   }, []);
 
   const handlePrev = useCallback(() => {
