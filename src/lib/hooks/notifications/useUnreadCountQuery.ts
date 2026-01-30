@@ -1,9 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { getUnreadCount } from '@/lib/api/notifications';
+import { getAccessToken } from '@/lib/auth/token';
 import { notificationKeys } from '@/lib/hooks/notifications/queryKeys';
 
 export function useUnreadCountQuery() {
+  const hasAccessToken = !!getAccessToken();
+
   return useQuery({
     queryKey: notificationKeys.unreadCount(),
     queryFn: async () => {
@@ -19,6 +22,7 @@ export function useUnreadCountQuery() {
 
       throw new Error('Invalid response format');
     },
+    enabled: hasAccessToken,
     staleTime: 20_000,
   });
 }

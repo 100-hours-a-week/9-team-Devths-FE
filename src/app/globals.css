@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
+/* FullCalendar v6 base styles (vendored from global builds to avoid package export issues) */
+@import '../styles/fullcalendar.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -121,5 +123,110 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .calendar-shell {
+    @apply w-full;
+  }
+
+  .calendar-grid .fc {
+    --fc-border-color: transparent;
+    --fc-page-bg-color: transparent;
+    --fc-today-bg-color: transparent;
+  }
+
+  .calendar-grid .fc .fc-scrollgrid {
+    border: none;
+  }
+
+  .calendar-grid .fc .fc-scrollgrid-section > * {
+    border: none;
+  }
+
+  .calendar-grid .fc .fc-col-header-cell-cushion {
+    @apply text-xs font-medium text-[#8A8A8A];
+  }
+
+  .calendar-grid .fc .fc-daygrid-day-top {
+    align-items: center;
+    justify-content: center;
+    inset: 0;
+    position: absolute;
+    z-index: 2;
+  }
+
+  .calendar-grid .fc .fc-daygrid-day-number {
+    @apply text-sm font-medium text-[#151515];
+    align-items: center;
+    border-radius: 9999px;
+    display: inline-flex;
+    height: 32px;
+    justify-content: center;
+    width: 32px;
+  }
+
+  .calendar-grid .fc .fc-daygrid-day-frame {
+    aspect-ratio: 1 / 1;
+    min-height: 0;
+    position: relative;
+  }
+
+  .calendar-grid .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+    background-color: #151515;
+    color: #fff;
+  }
+
+  .calendar-grid .fc .fc-daygrid-day.fc-day-today .calendar-day-number {
+    color: #fff;
+  }
+
+  .calendar-grid .fc .fc-daygrid-day.is-selected .fc-daygrid-day-number {
+    box-shadow: 0 0 0 2px #05c075;
+  }
+
+  .calendar-grid .fc .fc-daygrid-day.fc-day-today {
+    background-color: transparent;
+  }
+
+  .calendar-grid .fc .fc-daygrid-day-events {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    justify-content: flex-start;
+    margin-top: 2px;
+    position: absolute;
+    inset-inline: 0;
+    top: 44px;
+    z-index: 1;
+  }
+
+  .calendar-grid .fc .fc-daygrid-event {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+  }
+
+  .calendar-grid .fc .fc-daygrid-event .fc-event-main {
+    padding: 0;
+  }
+
+  .calendar-grid .fc .fc-daygrid-more-link {
+    display: none;
+  }
+
+  .calendar-grid .fc .calendar-event-bar {
+    width: 100%;
+    height: 8px;
+    border-radius: 9999px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  }
+
+  .calendar-grid .fc .calendar-day-number {
+    @apply text-sm font-medium text-[#151515];
   }
 }

@@ -2,6 +2,7 @@ import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
 import { getNotifications } from '@/lib/api/notifications';
+import { getAccessToken } from '@/lib/auth/token';
 import { notificationKeys } from '@/lib/hooks/notifications/queryKeys';
 
 type UseNotificationsInfiniteQueryParams = {
@@ -10,6 +11,7 @@ type UseNotificationsInfiniteQueryParams = {
 
 export function useNotificationsInfiniteQuery({ size }: UseNotificationsInfiniteQueryParams = {}) {
   const queryClient = useQueryClient();
+  const hasAccessToken = !!getAccessToken();
 
   const query = useInfiniteQuery({
     queryKey: notificationKeys.list({ size }),
@@ -44,6 +46,7 @@ export function useNotificationsInfiniteQuery({ size }: UseNotificationsInfinite
         })),
       })),
     }),
+    enabled: hasAccessToken,
   });
 
   useEffect(() => {
