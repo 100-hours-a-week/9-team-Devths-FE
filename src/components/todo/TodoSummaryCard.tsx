@@ -1,37 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import TodoItemRow from '@/components/todo/TodoItemRow';
-import { updateTodoStatus } from '@/lib/api/todos';
+import { listTodos, updateTodoStatus } from '@/lib/api/todos';
 import { toLocalDate } from '@/lib/datetime/seoul';
 import { calcProgress } from '@/lib/utils/todo';
 
 import type { LocalDateString } from '@/types/calendar';
 import type { Todo } from '@/types/todo';
-
-function buildMockTodos(today: LocalDateString): Todo[] {
-  return [
-    {
-      todoId: 'mock-1',
-      title: '포트폴리오 문서 정리',
-      isCompleted: true,
-      dueDate: today,
-    },
-    {
-      todoId: 'mock-2',
-      title: '면접 질문 리스트 보완',
-      isCompleted: false,
-      dueDate: today,
-    },
-    {
-      todoId: 'mock-3',
-      title: '프로젝트 회고 작성',
-      isCompleted: false,
-      dueDate: null,
-    },
-  ];
-}
 
 type TodoSummaryCardProps = {
   title?: string;
@@ -50,17 +27,55 @@ export default function TodoSummaryCard({
   onToggleTodo,
   onTodoClick,
 }: TodoSummaryCardProps) {
-  const initialTodos = useMemo(() => buildMockTodos(toLocalDate(new Date())), []);
-  const [localTodos, setLocalTodos] = useState<Todo[]>(todosProp ?? initialTodos);
+  const [localTodos, setLocalTodos] = useState<Todo[]>(todosProp ?? []);
+  const [isLoading, setIsLoading] = useState(!todosProp);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const requestIdRef = useRef(0);
 
   useEffect(() => {
     if (todosProp) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocalTodos(todosProp);
+      setIsLoading(false);
+      setErrorMessage(null);
     }
   }, [todosProp]);
 
   const targetDate = dateFilter ?? toLocalDate(new Date());
+
+  useEffect(() => {
+    if (todosProp) return;
+
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
+
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    listTodos(targetDate)
+      .then((result) => {
+        if (requestIdRef.current !== requestId) return;
+
+        if (!result.ok) {
+          setLocalTodos([]);
+          setErrorMessage('목록을 불러오지 못했어요');
+          return;
+        }
+
+        setLocalTodos(result.data ?? []);
+      })
+      .catch(() => {
+        if (requestIdRef.current !== requestId) return;
+        setLocalTodos([]);
+        setErrorMessage('목록을 불러오지 못했어요');
+      })
+      .finally(() => {
+        if (requestIdRef.current === requestId) {
+          setIsLoading(false);
+        }
+      });
+  }, [targetDate, todosProp]);
+
   const scheduledTodos = useMemo(
     () => localTodos.filter((todo) => todo.dueDate === targetDate),
     [localTodos, targetDate],
@@ -72,10 +87,6 @@ export default function TodoSummaryCard({
   const scheduledCompleted = useMemo(
     () => scheduledTodos.filter((todo) => todo.isCompleted),
     [scheduledTodos],
-  );
-  const unscheduledTodos = useMemo(
-    () => localTodos.filter((todo) => todo.dueDate === null),
-    [localTodos],
   );
   const { percent } = calcProgress(scheduledTodos);
 
@@ -152,7 +163,24 @@ export default function TodoSummaryCard({
       </div>
 
       <div className="mt-4 space-y-3">
-        {scheduledIncomplete.length > 0 ? (
+        {isLoading ? (
+          <>
+            {[0, 1, 2].map((idx) => (
+              <div
+                key={idx}
+                className="flex w-full items-center gap-3 rounded-lg border border-neutral-200 bg-white px-3 py-2"
+              >
+                <div className="h-5 w-5 animate-pulse rounded-full bg-neutral-200" />
+                <div className="h-4 w-2/3 animate-pulse rounded bg-neutral-200" />
+              </div>
+            ))}
+            <span className="text-xs text-neutral-400">불러오는 중...</span>
+          </>
+        ) : errorMessage ? (
+          <p className="text-sm text-neutral-500">{errorMessage}</p>
+        ) : scheduledTodos.length === 0 ? (
+          <p className="text-xs text-neutral-400">오늘 할 일이 없어요</p>
+        ) : (
           scheduledIncomplete.map((todo) => (
             <TodoItemRow
               key={todo.todoId}
@@ -163,12 +191,10 @@ export default function TodoSummaryCard({
               onClick={onTodoClick}
             />
           ))
-        ) : (
-          <p className="text-xs text-neutral-400">오늘 할 일이 없어요</p>
         )}
       </div>
 
-      {scheduledCompleted.length > 0 ? (
+      {!isLoading && !errorMessage && scheduledCompleted.length > 0 ? (
         <div className="mt-4 space-y-3">
           {scheduledCompleted.map((todo) => (
             <TodoItemRow
@@ -183,23 +209,6 @@ export default function TodoSummaryCard({
         </div>
       ) : null}
 
-      {unscheduledTodos.length > 0 ? (
-        <div className="mt-5 border-t border-neutral-100 pt-4">
-          <p className="mb-3 text-xs font-semibold text-neutral-500">날짜 미정</p>
-          <div className="space-y-3">
-            {unscheduledTodos.map((todo) => (
-              <TodoItemRow
-                key={todo.todoId}
-                todoId={todo.todoId}
-                title={todo.title}
-                isCompleted={todo.isCompleted}
-                onToggle={handleToggle}
-                onClick={onTodoClick}
-              />
-            ))}
-          </div>
-        </div>
-      ) : null}
     </section>
   );
 }
