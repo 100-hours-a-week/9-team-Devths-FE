@@ -34,6 +34,9 @@ export default function TodoSummaryCard({
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const requestIdRef = useRef(0);
 
+  const targetDate = dateFilter ?? toLocalDate(new Date());
+  const isDateFilterActive = Boolean(dateFilter);
+
   useEffect(() => {
     if (todosProp) {
       setLocalTodos(todosProp);
@@ -41,8 +44,6 @@ export default function TodoSummaryCard({
       setErrorMessage(null);
     }
   }, [todosProp]);
-
-  const targetDate = dateFilter ?? toLocalDate(new Date());
 
   const fetchTodos = useCallback(async () => {
     if (todosProp) return;
@@ -54,7 +55,7 @@ export default function TodoSummaryCard({
     setErrorMessage(null);
 
     try {
-      const result = await listTodos();
+      const result = await listTodos(isDateFilterActive ? targetDate : undefined);
       if (requestIdRef.current !== requestId) return;
 
       if (!result.ok) {
@@ -73,16 +74,19 @@ export default function TodoSummaryCard({
         setIsLoading(false);
       }
     }
-  }, [todosProp]);
+  }, [isDateFilterActive, targetDate, todosProp]);
 
   useEffect(() => {
     fetchTodos();
   }, [fetchTodos]);
 
-  const todayTodos = useMemo(
-    () => localTodos.filter((todo) => todo.dueDate === targetDate),
-    [localTodos, targetDate],
-  );
+  const todayTodos = useMemo(() => {
+    if (isDateFilterActive) {
+      return localTodos;
+    }
+
+    return localTodos.filter((todo) => todo.dueDate === targetDate);
+  }, [isDateFilterActive, localTodos, targetDate]);
   const scheduledIncomplete = useMemo(
     () => todayTodos.filter((todo) => !todo.isCompleted),
     [todayTodos],
@@ -91,10 +95,10 @@ export default function TodoSummaryCard({
     () => todayTodos.filter((todo) => todo.isCompleted),
     [todayTodos],
   );
-  const otherTodos = useMemo(
-    () => localTodos.filter((todo) => todo.dueDate && todo.dueDate !== targetDate),
-    [localTodos, targetDate],
-  );
+  const otherTodos = useMemo(() => {
+    if (isDateFilterActive) return [];
+    return localTodos.filter((todo) => todo.dueDate && todo.dueDate !== targetDate);
+  }, [isDateFilterActive, localTodos, targetDate]);
   const { percent } = calcProgress(todayTodos);
 
   const handleToggle = useCallback(

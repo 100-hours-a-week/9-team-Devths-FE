@@ -9,7 +9,7 @@ import EventFormModal, { type EventFormMode } from '@/components/calendar/EventF
 import TodoSummaryCard from '@/components/todo/TodoSummaryCard';
 import { createEvent, deleteEvent, getEvent, listEvents, updateEvent } from '@/lib/api/calendar';
 import { toFullCalendarEvent } from '@/lib/calendar/mappers';
-import { getSeoulDateRangeFromDatesSet } from '@/lib/datetime/seoul';
+import { getSeoulDateRangeFromDatesSet, toLocalDate } from '@/lib/datetime/seoul';
 
 import type { GoogleEventDetailResponse, InterviewStage } from '@/types/calendar';
 import type { CalendarApi, DatesSetArg, EventClickArg, EventInput } from '@fullcalendar/core';
@@ -325,6 +325,10 @@ export default function CalendarPage() {
     viewMode === 'week' && currentStart
       ? `${baseTitle} ${getWeekOfMonth(currentStart)}주차`
       : baseTitle;
+  const selectedDateFilter = useMemo(
+    () => (selectedDate ? toLocalDate(selectedDate) : undefined),
+    [selectedDate],
+  );
 
   return (
     <main className="calendar-shell pb-8">
@@ -493,7 +497,7 @@ export default function CalendarPage() {
       </section>
 
       <section className="pt-4">
-        <TodoSummaryCard />
+        <TodoSummaryCard dateFilter={selectedDateFilter} />
       </section>
 
       <EventDetailModal
