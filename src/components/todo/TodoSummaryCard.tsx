@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import TodoCreateModal from '@/components/todo/TodoCreateModal';
-import TodoItemRow from '@/components/todo/TodoItemRow';
 import BaseModal from '@/components/common/BaseModal';
-import { createTodo, deleteTodo, listTodos, updateTodoStatus } from '@/lib/api/todos';
+import TodoCreateModal from '@/components/todo/TodoCreateModal';
+import TodoEditModal from '@/components/todo/TodoEditModal';
+import TodoItemRow from '@/components/todo/TodoItemRow';
+import { createTodo, deleteTodo, listTodos, updateTodo, updateTodoStatus } from '@/lib/api/todos';
 import { toLocalDate } from '@/lib/datetime/seoul';
 import { calcProgress } from '@/lib/utils/todo';
 
@@ -33,6 +34,8 @@ export default function TodoSummaryCard({
   const [isLoading, setIsLoading] = useState(!todosProp);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<Todo | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Todo | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -162,6 +165,53 @@ export default function TodoSummaryCard({
     [fetchTodos],
   );
 
+  const handleRequestEdit = useCallback(
+    (todoId: string) => {
+      const target = localTodos.find((todo) => todo.todoId === todoId);
+      if (!target) return;
+      setEditTarget(target);
+      setIsEditOpen(true);
+    },
+    [localTodos],
+  );
+
+  const handleEditTodo = useCallback(
+    async (payload: { todoId: string; title: string; dueDate: LocalDateString }) => {
+      const result = await updateTodo(payload.todoId, {
+        title: payload.title,
+        dueDate: payload.dueDate,
+      });
+
+      if (!result.ok) {
+        return {
+          ok: false,
+          message: result.message ?? '수정에 실패했습니다.',
+        };
+      }
+
+      setLocalTodos((prev) => {
+        const updated = prev.map((todo) =>
+          todo.todoId === payload.todoId
+            ? { ...todo, title: payload.title, dueDate: payload.dueDate }
+            : todo,
+        );
+
+        if (isDateFilterActive && payload.dueDate !== targetDate) {
+          return updated.filter((todo) => todo.todoId !== payload.todoId);
+        }
+
+        return updated;
+      });
+
+      if (!todosProp) {
+        await fetchTodos();
+      }
+
+      return { ok: true };
+    },
+    [fetchTodos, isDateFilterActive, targetDate, todosProp],
+  );
+
   const handleRequestDelete = useCallback(
     (todoId: string) => {
       const target = localTodos.find((todo) => todo.todoId === todoId);
@@ -207,6 +257,11 @@ export default function TodoSummaryCard({
     onAddClick?.();
     setIsCreateOpen(true);
   }, [onAddClick]);
+
+  const handleCloseEdit = useCallback(() => {
+    setIsEditOpen(false);
+    setEditTarget(null);
+  }, []);
 
   return (
     <section className="bg-white py-4">
@@ -268,6 +323,7 @@ export default function TodoSummaryCard({
               isCompleted={todo.isCompleted}
               onToggle={handleToggle}
               onClick={onTodoClick}
+              onEdit={handleRequestEdit}
               onDelete={handleRequestDelete}
             />
           ))
@@ -284,6 +340,7 @@ export default function TodoSummaryCard({
               isCompleted={todo.isCompleted}
               onToggle={handleToggle}
               onClick={onTodoClick}
+              onEdit={handleRequestEdit}
               onDelete={handleRequestDelete}
             />
           ))}
@@ -302,6 +359,7 @@ export default function TodoSummaryCard({
                 isCompleted={todo.isCompleted}
                 onToggle={handleToggle}
                 onClick={onTodoClick}
+                onEdit={handleRequestEdit}
                 onDelete={handleRequestDelete}
               />
             ))}
@@ -314,6 +372,13 @@ export default function TodoSummaryCard({
         onClose={() => setIsCreateOpen(false)}
         defaultDueDate={targetDate}
         onSubmit={handleCreateTodo}
+      />
+
+      <TodoEditModal
+        open={isEditOpen}
+        onClose={handleCloseEdit}
+        todo={editTarget}
+        onSubmit={handleEditTodo}
       />
 
       <BaseModal open={isDeleteOpen} onClose={() => setIsDeleteOpen(false)} title="할 일 삭제">
