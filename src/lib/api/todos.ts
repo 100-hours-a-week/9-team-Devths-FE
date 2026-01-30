@@ -1,7 +1,6 @@
 import { api, apiRequest, type ApiClientResult } from '@/lib/api/client';
 
 import type { ApiResponse } from '@/types/api';
-import type { LocalDateString } from '@/types/calendar';
 import type {
   Todo,
   TodoCreateRequest,
@@ -37,17 +36,11 @@ function unwrapApiResult<T>(result: ApiClientResult<T>): TodoApiResult<T> {
   };
 }
 
-export type ListTodosParams = {
-  dueDate?: LocalDateString | null;
-};
-
-export async function listTodos(
-  params: ListTodosParams = {},
-): Promise<TodoApiResult<Todo[]>> {
+export async function listTodos(dueDate?: string): Promise<TodoApiResult<Todo[]>> {
   const queryParams = new URLSearchParams();
 
-  if (params.dueDate) {
-    queryParams.set('dueDate', params.dueDate);
+  if (dueDate) {
+    queryParams.set('dueDate', dueDate);
   }
 
   const path = queryParams.toString() ? `/api/todos?${queryParams.toString()}` : '/api/todos';
