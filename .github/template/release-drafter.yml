@@ -1,0 +1,38 @@
+name-template: 'v$RESOLVED_VERSION 🌈'
+tag-template: 'v$RESOLVED_VERSION'
+commitish: main
+categories:
+  - title: '🚀 새로운 기능 (Features)'
+    labels:
+      - 'feat'
+      - 'feature'
+  - title: '✨ 기능 개선 (Improvements)'
+    labels:
+      - 'enhancement'
+      - 'refactor'
+  - title: '🐛 버그 수정 (Bug Fixes)'
+    labels:
+      - 'fix'
+      - 'bugfix'
+      - 'bug'
+  - title: '🛠️ 인프라 및 유지보수'
+    labels:
+      - 'infra'
+      - 'chore'
+change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+change-title-escapes: '\<*_&' # You can add # and @ to disable mentions, and add ` to disable code blocks.
+version-resolver:
+  major:
+    labels:
+      - 'major'
+  minor:
+    labels:
+      - 'minor'
+  patch:
+    labels:
+      - 'patch'
+  default: patch
+template: |
+  ## Changes
+
+  $CHANGES
