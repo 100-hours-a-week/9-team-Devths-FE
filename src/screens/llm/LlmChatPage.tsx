@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useAppFrame } from '@/components/layout/AppFrameContext';
 import LlmComposer from '@/components/llm/chat/LlmComposer';
@@ -48,8 +48,16 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
     return () => resetOptions();
   }, [resetOptions, setOptions]);
 
-  const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useMessagesInfiniteQuery(numericRoomId);
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useMessagesInfiniteQuery(numericRoomId);
 
   const startInterviewMutation = useStartInterviewMutation(numericRoomId);
 
@@ -66,6 +74,17 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
   const [interviewSession, setInterviewSession] = useState<InterviewSession | null>(null);
   const [model] = useState<LlmModel>(() => parseModel(initialModel));
   const [isSending, setIsSending] = useState(false);
+  const notifiedDeletedRef = useRef(false);
+
+  const errorStatus = (error as Error & { status?: number })?.status;
+  const errorMessage = (error as Error | undefined)?.message ?? '';
+  const isDeletedRoom = isError && (errorStatus === 404 || errorMessage.includes('채팅방'));
+
+  useEffect(() => {
+    if (!isDeletedRoom || notifiedDeletedRef.current) return;
+    notifiedDeletedRef.current = true;
+    toast('삭제된 채팅방입니다.');
+  }, [isDeletedRoom]);
 
   const handleEndInterview = useCallback(async () => {
     if (!interviewSession) return;
@@ -444,6 +463,21 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
     return (
       <main className="-mx-4 flex h-[calc(100dvh-56px-var(--bottom-nav-h))] items-center justify-center sm:-mx-6">
         <p className="text-sm text-neutral-500">메시지를 불러오는 중...</p>
+      </main>
+    );
+  }
+
+  if (isDeletedRoom) {
+    return (
+      <main className="-mx-4 flex h-[calc(100dvh-56px-var(--bottom-nav-h))] flex-col items-center justify-center gap-3 sm:-mx-6">
+        <p className="text-sm text-neutral-500">삭제된 채팅방입니다.</p>
+        <button
+          type="button"
+          onClick={() => (window.history.length > 1 ? window.history.back() : refetch())}
+          className="rounded-lg border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 shadow-sm hover:bg-neutral-50"
+        >
+          이전 화면으로
+        </button>
       </main>
     );
   }
