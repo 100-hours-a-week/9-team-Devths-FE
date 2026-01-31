@@ -201,17 +201,17 @@ export default function EventFormModal({
 
   const title = mode === 'edit' ? '일정 수정' : '일정 추가';
 
-  const labelClass = 'text-xs font-semibold text-black/60';
+  const labelClass = 'text-[11px] font-semibold text-black/60';
   const requiredMark = <span className="ml-1 text-[#05C075]">*</span>;
   const fieldClass =
-    'h-11 w-full rounded-2xl border border-black/10 bg-white px-4 text-sm text-black placeholder:text-black/30 focus:border-[#05C075] focus:outline-none focus:ring-2 focus:ring-[#05C075]/20';
+    'h-10 w-full rounded-2xl border border-black/10 bg-white px-3 text-sm text-black placeholder:text-black/30 focus:border-[#05C075] focus:outline-none focus:ring-2 focus:ring-[#05C075]/20';
   const compactFieldClass =
-    'h-11 rounded-2xl border border-black/10 bg-white px-4 text-sm text-black focus:border-[#05C075] focus:outline-none focus:ring-2 focus:ring-[#05C075]/20';
+    'h-10 rounded-2xl border border-black/10 bg-white px-3 text-sm text-black focus:border-[#05C075] focus:outline-none focus:ring-2 focus:ring-[#05C075]/20';
   const dateFieldClass = fieldClass;
   const tagFieldClass =
-    'h-11 w-full rounded-2xl border border-black/10 bg-white px-4 text-sm text-black placeholder:text-black/30 focus:border-[#05C075] focus:outline-none focus:ring-2 focus:ring-[#05C075]/20';
+    'h-10 w-full rounded-2xl border border-black/10 bg-white px-3 text-sm text-black placeholder:text-black/30 focus:border-[#05C075] focus:outline-none focus:ring-2 focus:ring-[#05C075]/20';
   const textAreaClass =
-    'min-h-[96px] w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm text-black placeholder:text-black/30 focus:border-[#05C075] focus:outline-none focus:ring-2 focus:ring-[#05C075]/20';
+    'min-h-[80px] w-full rounded-2xl border border-black/10 bg-white px-3 py-2 text-sm text-black placeholder:text-black/30 focus:border-[#05C075] focus:outline-none focus:ring-2 focus:ring-[#05C075]/20';
 
   return (
     <BaseModal
@@ -219,13 +219,13 @@ export default function EventFormModal({
       onClose={onClose}
       title={title}
       variant="sheet"
-      contentClassName="max-w-[430px] pt-4"
+      contentClassName="max-w-[420px] pt-3"
     >
       {modeError ? (
         <p className="mt-3 text-sm text-red-600">{modeError}</p>
       ) : (
-        <form className="mt-4 space-y-5 text-sm" onSubmit={handleSubmit}>
-          <div className="flex flex-col gap-2">
+        <form className="mt-3 space-y-4 text-sm" onSubmit={handleSubmit}>
+          <div className="flex flex-col gap-1.5">
             <label className={labelClass}>
               전형 단계
               {requiredMark}
@@ -242,7 +242,7 @@ export default function EventFormModal({
                     onClick={() =>
                       setFormState((prev) => ({ ...prev, stage: option.value }))
                     }
-                    className={`h-11 flex-1 rounded-2xl border text-sm font-semibold transition-colors ${
+                    className={`h-10 flex-1 rounded-2xl border text-sm font-semibold transition-colors ${
                       isSelected
                         ? 'border-[#05C075] bg-[#05C075] text-white'
                         : 'border-black/10 bg-black/[0.02] text-black/70 hover:bg-black/5'
@@ -256,7 +256,7 @@ export default function EventFormModal({
             {errors.stage && <p className="text-xs text-red-600">{errors.stage}</p>}
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5">
             <label className={labelClass}>
               제목
               {requiredMark}
@@ -270,7 +270,7 @@ export default function EventFormModal({
             {errors.title && <p className="text-xs text-red-600">{errors.title}</p>}
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5">
             <label className={labelClass}>
               회사
               {requiredMark}
@@ -284,8 +284,8 @@ export default function EventFormModal({
             {errors.company && <p className="text-xs text-red-600">{errors.company}</p>}
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="flex flex-col gap-2">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
               <label className={labelClass}>
                 시작 시간
                 {requiredMark}
@@ -299,7 +299,7 @@ export default function EventFormModal({
               {errors.startTime && <p className="text-xs text-red-600">{errors.startTime}</p>}
             </div>
 
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1.5">
               <label className={labelClass}>
                 종료 시간
                 {requiredMark}
@@ -314,7 +314,7 @@ export default function EventFormModal({
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5">
             <label className={labelClass}>설명</label>
             <textarea
               className={textAreaClass}
@@ -324,7 +324,7 @@ export default function EventFormModal({
             />
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5">
             <label className={labelClass}>태그</label>
             <input
               className={tagFieldClass}
@@ -332,15 +332,15 @@ export default function EventFormModal({
               onChange={handleChange('tags')}
               placeholder="예: 프론트엔드, 인턴"
             />
-            <p className="text-xs text-black/40">콤마(,)로 구분해 입력하세요.</p>
+            <p className="text-[11px] text-black/40">콤마(,)로 구분해 입력하세요.</p>
           </div>
 
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
             <label className={labelClass}>
               알림 설정
               {requiredMark}
             </label>
-            <div className="rounded-2xl bg-white p-3">
+            <div className="rounded-2xl bg-white p-2">
               <div className="flex items-center gap-2">
                 <input
                   type="number"
@@ -371,10 +371,10 @@ export default function EventFormModal({
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3 pt-2">
+          <div className="grid grid-cols-2 gap-2 pt-1">
             <button
               type="button"
-              className="h-11 w-full rounded-full border border-black/10 bg-white px-6 text-sm font-semibold text-black/70 transition-colors hover:bg-black/5"
+              className="h-10 w-full rounded-full border border-black/10 bg-white px-4 text-sm font-semibold text-black/70 transition-colors hover:bg-black/5"
               onClick={onClose}
               disabled={submitting}
             >
@@ -382,7 +382,7 @@ export default function EventFormModal({
             </button>
             <button
               type="submit"
-              className="h-11 w-full rounded-full bg-[#05C075] px-8 text-sm font-semibold text-white transition-colors hover:bg-[#04A865] disabled:opacity-50"
+              className="h-10 w-full rounded-full bg-[#05C075] px-6 text-sm font-semibold text-white transition-colors hover:bg-[#04A865] disabled:opacity-50"
               disabled={isSubmitDisabled || submitting}
             >
               {submitting ? '저장 중...' : '저장'}
