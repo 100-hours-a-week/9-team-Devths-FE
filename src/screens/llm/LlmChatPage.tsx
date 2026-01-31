@@ -509,12 +509,12 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
           onDeleteFailed={handleDeleteFailed}
         />
 
-        <div className="border-t border-neutral-200 bg-white px-3 py-2">
+        <div className="bg-white px-3 py-2">
           {interviewUIState === 'idle' && (
             <button
               type="button"
               onClick={() => setInterviewUIState('select')}
-              className="w-full rounded-2xl bg-neutral-900 px-3 py-2.5 text-[12px] font-semibold text-white shadow-sm hover:bg-neutral-800"
+              className="w-full rounded-2xl border border-[#05C075] bg-white px-3 py-2.5 text-[12px] font-semibold text-[#05C075] shadow-sm hover:bg-[#05C075]/5"
             >
               면접 모드 시작
             </button>
