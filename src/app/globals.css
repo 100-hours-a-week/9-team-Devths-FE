@@ -152,7 +152,9 @@
   .calendar-grid .fc .fc-daygrid-day-top {
     align-items: center;
     justify-content: center;
-    inset: 0;
+    inset-inline: 0;
+    top: 6px;
+    height: 32px;
     position: absolute;
     z-index: 2;
   }
@@ -168,7 +170,7 @@
   }
 
   .calendar-grid .fc .fc-daygrid-day-frame {
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 1 / 1.2;
     min-height: 0;
     position: relative;
   }
