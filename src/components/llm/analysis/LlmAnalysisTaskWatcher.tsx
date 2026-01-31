@@ -44,7 +44,7 @@ export default function LlmAnalysisTaskWatcher() {
         if (data.status === 'COMPLETED') {
           toast('분석이 완료되었습니다. 대화 목록에서 확인하세요.');
           clearActiveTask();
-          queryClient.invalidateQueries({ queryKey: llmKeys.rooms() });
+          queryClient.invalidateQueries({ queryKey: llmKeys.rooms(), refetchType: 'all' });
           queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount() });
         } else if (data.status === 'FAILED') {
           toast('분석에 실패했습니다. 다시 시도해주세요.');
