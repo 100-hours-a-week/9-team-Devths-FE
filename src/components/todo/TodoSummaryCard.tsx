@@ -264,16 +264,18 @@ export default function TodoSummaryCard({
   }, []);
 
   return (
-    <section className="bg-white py-4">
+    <section className="rounded-2xl bg-white px-5 py-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h3 className="text-base font-bold text-[#151515]">{title}</h3>
-          <span className="text-xs font-medium text-neutral-500">{percent}% 완료</span>
+          <h3 className="text-lg font-semibold text-black">{title}</h3>
+          <span className="rounded-full bg-[#05C075]/10 px-2 py-1 text-xs font-semibold text-[#05C075]">
+            {percent}% 완료
+          </span>
         </div>
         <button
           type="button"
           onClick={handleOpenCreate}
-          className="flex h-9 items-center gap-1 rounded-lg bg-[#05C075] px-4 text-sm font-medium text-white transition-all hover:bg-[#04A865]"
+          className="flex h-9 items-center gap-1 rounded-full bg-[#05C075] px-4 text-sm font-semibold text-white shadow-[0_6px_14px_rgba(5,192,117,0.35)] transition-all hover:bg-[#04A865]"
           aria-label="할 일 추가"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -284,7 +286,7 @@ export default function TodoSummaryCard({
       </div>
 
       <div
-        className="mt-3 h-2 w-full rounded-full bg-neutral-100"
+        className="mt-4 h-2.5 w-full rounded-full bg-black/5"
         role="progressbar"
         aria-valuemin={0}
         aria-valuemax={100}
@@ -296,24 +298,24 @@ export default function TodoSummaryCard({
         />
       </div>
 
-      <div className="mt-4 space-y-3">
+      <div className="mt-5 space-y-3">
         {isLoading ? (
           <>
             {[0, 1, 2].map((idx) => (
               <div
                 key={idx}
-                className="flex w-full items-center gap-3 rounded-lg border border-neutral-200 bg-white px-3 py-2"
+                className="flex w-full items-center gap-3 rounded-xl border border-black/5 bg-white px-4 py-3"
               >
-                <div className="h-5 w-5 animate-pulse rounded-full bg-neutral-200" />
-                <div className="h-4 w-2/3 animate-pulse rounded bg-neutral-200" />
+                <div className="h-5 w-5 animate-pulse rounded-full bg-black/10" />
+                <div className="h-4 w-2/3 animate-pulse rounded bg-black/10" />
               </div>
             ))}
-            <span className="text-xs text-neutral-400">불러오는 중...</span>
+            <span className="text-xs text-black/40">불러오는 중...</span>
           </>
         ) : errorMessage ? (
-          <p className="text-sm text-neutral-500">{errorMessage}</p>
+          <p className="text-sm text-black/50">{errorMessage}</p>
         ) : todayTodos.length === 0 ? (
-          <p className="text-xs text-neutral-400">오늘 할 일이 없어요</p>
+          <p className="text-xs text-black/40">오늘 할 일이 없어요</p>
         ) : (
           scheduledIncomplete.map((todo) => (
             <TodoItemRow
@@ -331,7 +333,7 @@ export default function TodoSummaryCard({
       </div>
 
       {!isLoading && !errorMessage && scheduledCompleted.length > 0 ? (
-        <div className="mt-4 space-y-3">
+        <div className="mt-5 space-y-3">
           {scheduledCompleted.map((todo) => (
             <TodoItemRow
               key={todo.todoId}
@@ -348,8 +350,8 @@ export default function TodoSummaryCard({
       ) : null}
 
       {!isLoading && !errorMessage && otherTodos.length > 0 ? (
-        <div className="mt-5 border-t border-neutral-100 pt-4">
-          <p className="mb-3 text-xs font-semibold text-neutral-500">오늘 외 일정</p>
+        <div className="mt-6 border-t border-black/5 pt-4">
+          <p className="mb-3 text-xs font-semibold text-black/50">오늘 외 일정</p>
           <div className="space-y-3">
             {otherTodos.map((todo) => (
               <TodoItemRow

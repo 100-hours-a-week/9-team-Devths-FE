@@ -18,9 +18,9 @@ import type { DateClickArg } from '@fullcalendar/interaction';
 type DateRange = ReturnType<typeof getSeoulDateRangeFromDatesSet>;
 
 const stageDotClasses: Record<InterviewStage, string> = {
-  DOCUMENT: 'bg-blue-500',
-  CODING_TEST: 'bg-purple-500',
-  INTERVIEW: 'bg-green-500',
+  DOCUMENT: 'bg-[#05C075]',
+  CODING_TEST: 'bg-[#F4C430]',
+  INTERVIEW: 'bg-[#3B82F6]',
 };
 
 const formatDateLabel = (date: Date) =>
@@ -448,20 +448,20 @@ export default function CalendarPage() {
         />
       </section>
 
-      <section className="pt-4">
+      <section className="mt-4 rounded-2xl bg-white px-4 py-5">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-base font-bold text-[#151515]">
-            일정 목록
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-black">일정 목록</h2>
             {sortedEvents.length > 0 ? (
-              <span className="ml-2 text-sm font-normal text-[#8A8A8A]">
+              <span className="rounded-full bg-[#05C075]/10 px-2 py-1 text-xs font-semibold text-[#05C075]">
                 {sortedEvents.length}개
               </span>
             ) : null}
-          </h2>
+          </div>
           <button
             type="button"
             onClick={handleCreateOpen}
-            className="flex h-9 items-center gap-1 rounded-lg bg-[#05C075] px-4 text-sm font-medium text-white transition-all hover:bg-[#04A865]"
+            className="flex h-9 items-center gap-1 rounded-full bg-[#05C075] px-4 text-sm font-semibold text-white shadow-[0_6px_14px_rgba(5,192,117,0.35)] transition-all hover:bg-[#04A865]"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
@@ -475,15 +475,15 @@ export default function CalendarPage() {
           </button>
         </div>
 
-        {sortedEvents.length === 0 && !loading && !error ? (
-          <div className="rounded-2xl border border-[#E8E8E8] bg-white px-4 py-12 text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-[#E8E8E8] bg-[#FAFAFA]">
-              <svg
-                className="h-7 w-7 text-[#C8C8C8]"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+      {sortedEvents.length === 0 && !loading && !error ? (
+        <div className="rounded-2xl border border-black/5 bg-white px-4 py-12 text-center shadow-[0_8px_20px_rgba(0,0,0,0.05)]">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-black/5 bg-black/[0.02]">
+            <svg
+              className="h-7 w-7 text-black/20"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -491,18 +491,18 @@ export default function CalendarPage() {
                   d="M8 7V3m8 4V3M4 11h16M6 19h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2z"
                 />
               </svg>
-            </div>
-            <p className="text-sm text-[#8A8A8A]">
-              등록된 일정이 없습니다. 새 일정을 추가해보세요!
-            </p>
           </div>
-        ) : null}
+          <p className="text-sm text-black/40">
+            등록된 일정이 없습니다. 새 일정을 추가해보세요!
+          </p>
+        </div>
+      ) : null}
 
-        {sortedEvents.length > 0 ? (
-          <div className="space-y-2">
+      {sortedEvents.length > 0 ? (
+        <div className="space-y-2">
             {sortedEvents.map((event) => {
               const stage = event.extendedProps?.stage as InterviewStage | undefined;
-              const dotClass = stage ? stageDotClasses[stage] : 'bg-zinc-400';
+              const dotClass = stage ? stageDotClasses[stage] : 'bg-black/40';
               const startDate = event.start
                 ? new Date(event.start as string | number | Date)
                 : null;
@@ -515,12 +515,12 @@ export default function CalendarPage() {
                   key={String(event.id ?? title)}
                   type="button"
                   onClick={() => handleEventRowClick(String(event.id ?? ''))}
-                  className="flex w-full items-center gap-3 rounded-lg border border-[#E8E8E8] bg-white p-3 text-left shadow-sm transition-all hover:shadow-md"
+                  className="flex w-full items-center gap-3 rounded-xl border border-black/5 bg-white p-4 text-left transition-all hover:-translate-y-0.5"
                 >
                   <span className={`h-2.5 w-2.5 rounded-full ${dotClass}`} />
                   <div className="flex-1 overflow-hidden">
-                    <p className="truncate text-sm font-medium text-[#151515]">{displayTitle}</p>
-                    <p className="text-xs text-[#8A8A8A]">{formatEventTime(startDate, endDate)}</p>
+                    <p className="truncate text-sm font-semibold text-black">{displayTitle}</p>
+                    <p className="text-xs text-black/45">{formatEventTime(startDate, endDate)}</p>
                   </div>
                 </button>
               );
@@ -529,7 +529,7 @@ export default function CalendarPage() {
         ) : null}
       </section>
 
-      <section className="pt-4 pb-8">
+      <section className="mt-6 border-t border-black/5 pt-6 pb-8">
         <TodoSummaryCard dateFilter={selectedDateFilter} />
       </section>
 
