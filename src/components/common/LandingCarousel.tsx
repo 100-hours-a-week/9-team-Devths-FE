@@ -1,5 +1,6 @@
 'use client';
 
+import { Bot, Briefcase, CalendarDays, MessageSquare } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 import { LANDING_SLIDES } from '@/constants/landing';
@@ -80,14 +81,33 @@ export default function LandingCarousel() {
       <div
         role="region"
         aria-label="서비스 소개 캐러셀"
-        className="touch-pan-y select-none"
+        className="flex min-h-[150px] flex-col items-center justify-center touch-pan-y select-none"
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerCancel}
       >
-        <p className="text-xs font-semibold text-[#05C075]">FEATURE</p>
+        {slide.id === 'slide-1' ? (
+          <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-[#05C075]/10 text-[#05C075]">
+            <Briefcase className="h-4 w-4" />
+          </div>
+        ) : null}
+        {slide.id === 'slide-2' ? (
+          <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-[#05C075]/10 text-[#05C075]">
+            <Bot className="h-4 w-4" />
+          </div>
+        ) : null}
+        {slide.id === 'slide-3' ? (
+          <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-[#05C075]/10 text-[#05C075]">
+            <MessageSquare className="h-4 w-4" />
+          </div>
+        ) : null}
+        {slide.id === 'slide-4' ? (
+          <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-[#05C075]/10 text-[#05C075]">
+            <CalendarDays className="h-4 w-4" />
+          </div>
+        ) : null}
         <h2 className="mt-2 text-lg font-semibold text-black">{slide.title}</h2>
-        <p className="mt-2 text-sm text-black/45">{slide.description}</p>
+        <p className="mt-2 whitespace-pre-line text-sm text-black/45">{slide.description}</p>
       </div>
 
       <div className="mt-4 flex items-center justify-center gap-2">

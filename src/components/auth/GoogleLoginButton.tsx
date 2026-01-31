@@ -54,10 +54,10 @@ export default function GoogleLoginButton({
       className={[
         fullWidth ? 'w-full' : 'w-auto',
         'max-w-sm',
-        'rounded-xl border border-neutral-200',
+        'rounded-xl border border-transparent',
         'px-4 py-3',
-        'text-sm font-medium',
-        'bg-white hover:bg-neutral-50 active:bg-neutral-100',
+        'text-sm font-semibold',
+        'bg-[#05C075] text-white hover:bg-[#04A865] active:bg-[#039F62]',
         'disabled:cursor-not-allowed disabled:opacity-60',
         className ?? '',
       ].join(' ')}
@@ -65,7 +65,7 @@ export default function GoogleLoginButton({
     >
       <span className="flex items-center justify-center gap-2">
         <Image src="/icons/google.png" alt="Google" width={18} height={18} priority />
-        <span>Sign in with Google</span>
+        <span>Google 계정으로 계속하기</span>
       </span>
     </button>
   );

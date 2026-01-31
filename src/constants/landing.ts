@@ -13,7 +13,7 @@ export const LANDING_SLIDES: LandingSlide[] = [
   {
     id: 'slide-2',
     title: 'AI가 짚어주는 피드백',
-    description: '이력서와 포트폴리오를 분석하고 구체적인 피드백을 제공합니다',
+    description: '이력서와 포트폴리오를 분석하고\n구체적인 피드백을 제공합니다',
   },
   {
     id: 'slide-3',
