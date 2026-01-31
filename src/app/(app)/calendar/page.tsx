@@ -483,7 +483,7 @@ export default function CalendarPage() {
         </div>
 
       {sortedEvents.length === 0 && !loading && !error ? (
-        <div className="rounded-2xl bg-white px-4 py-12 text-center">
+        <div className="rounded-2xl bg-white px-4 py-8 text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-black/5 bg-black/[0.02]">
             <svg
               className="h-7 w-7 text-black/20"
