@@ -2,6 +2,8 @@
 
 import clsx from 'clsx';
 
+import { toast } from '@/lib/toast/store';
+
 import type { LlmModel } from '@/types/llm';
 
 type Props = {
@@ -30,15 +32,16 @@ export default function LlmModelSwitch({ value, onChange }: Props) {
 
         <button
           type="button"
-          onClick={() => onChange('VLLM')}
+          onClick={() => toast('vLLM은 다음 버전에 출시 예정입니다.')}
           className={clsx(
-            'rounded-2xl px-3 py-2 text-sm font-semibold transition',
-            value === 'VLLM'
-              ? 'bg-white text-neutral-900 shadow-sm'
-              : 'text-neutral-600 hover:text-neutral-900',
+            'relative rounded-2xl px-3 py-2 text-sm font-semibold text-neutral-400',
+            'bg-neutral-100',
           )}
         >
           vLLM
+          <span className="absolute -top-2 right-2 rounded-full bg-neutral-900 px-2 py-0.5 text-[9px] font-semibold text-white">
+            예정
+          </span>
         </button>
       </div>
     </section>
