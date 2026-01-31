@@ -97,7 +97,7 @@ export default function CalendarView({
         locale="ko"
         headerToolbar={false}
         firstDay={1}
-        showNonCurrentDates={false}
+        showNonCurrentDates={true}
         fixedWeekCount={false}
         dayMaxEvents={3}
         dayHeaderFormat={{ weekday: 'short' }}

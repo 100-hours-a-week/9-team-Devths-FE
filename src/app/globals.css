@@ -182,6 +182,11 @@
     color: #fff;
   }
 
+  .calendar-grid .fc .fc-daygrid-day.fc-day-other .fc-daygrid-day-number,
+  .calendar-grid .fc .fc-daygrid-day.fc-day-other .calendar-day-number {
+    color: #b1b1b1;
+  }
+
   .calendar-grid .fc .fc-daygrid-day.is-selected .fc-daygrid-day-number {
     box-shadow: 0 0 0 2px #05c075;
   }
