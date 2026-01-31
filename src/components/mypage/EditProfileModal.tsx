@@ -211,7 +211,7 @@ function EditForm({ initialData, onClose, onWithdraw, onLogout }: EditFormProps)
               key={option.value}
               type="button"
               onClick={() => handleToggleInterest(option.value)}
-              className="inline-flex items-center gap-1 rounded-full bg-[#05C075] px-2.5 py-1 text-xs font-semibold text-white shadow-sm"
+              className="inline-flex items-center gap-1 rounded-full border border-[#05C075] bg-white px-2.5 py-1 text-xs font-semibold text-[#05C075] shadow-sm"
             >
               {option.label}
               <X className="h-3.5 w-3.5" />
@@ -235,7 +235,7 @@ function EditForm({ initialData, onClose, onWithdraw, onLogout }: EditFormProps)
           type="button"
           onClick={handleSubmit}
           disabled={!nicknameValidation.isValid || isPending}
-          className="h-10 w-full rounded-xl bg-neutral-900 text-sm font-semibold text-white shadow-sm hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-10 w-full rounded-xl bg-[#05C075] text-sm font-semibold text-white shadow-sm hover:bg-[#04A865] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isPending ? '변경 중...' : '변경하기'}
         </button>
