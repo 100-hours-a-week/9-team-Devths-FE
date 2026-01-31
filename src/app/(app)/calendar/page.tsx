@@ -319,14 +319,6 @@ export default function CalendarPage() {
     [fetchDetail],
   );
 
-  const sortedEvents = useMemo(() => {
-    return [...events].sort((a, b) => {
-      const startA = a.start ? new Date(a.start as string | number | Date).getTime() : 0;
-      const startB = b.start ? new Date(b.start as string | number | Date).getTime() : 0;
-      return startA - startB;
-    });
-  }, [events]);
-
   const baseTitle = formatDateLabel(currentStart ?? new Date());
   const currentTitle =
     viewMode === 'week' && currentStart
@@ -336,6 +328,35 @@ export default function CalendarPage() {
     () => (selectedDate ? toLocalDate(selectedDate) : undefined),
     [selectedDate],
   );
+  const filteredEvents = useMemo(() => {
+    if (!selectedDateFilter) return events;
+
+    const targetKey = selectedDateFilter.replace(/-/g, '');
+
+    return events.filter((event) => {
+      if (!event.start) return false;
+
+      const startDate = toLocalDate(new Date(event.start as string | number | Date));
+      const endDate = event.end
+        ? toLocalDate(new Date(event.end as string | number | Date))
+        : startDate;
+
+      const startKey = startDate.replace(/-/g, '');
+      const endKey = endDate.replace(/-/g, '');
+
+      const rangeStart = startKey <= endKey ? startKey : endKey;
+      const rangeEnd = startKey <= endKey ? endKey : startKey;
+
+      return targetKey >= rangeStart && targetKey <= rangeEnd;
+    });
+  }, [events, selectedDateFilter]);
+  const sortedEvents = useMemo(() => {
+    return [...filteredEvents].sort((a, b) => {
+      const startA = a.start ? new Date(a.start as string | number | Date).getTime() : 0;
+      const startB = b.start ? new Date(b.start as string | number | Date).getTime() : 0;
+      return startA - startB;
+    });
+  }, [filteredEvents]);
 
   return (
     <main className="calendar-shell pb-8">
