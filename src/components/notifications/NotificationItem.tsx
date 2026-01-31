@@ -48,24 +48,25 @@ export default function NotificationItem({ notification }: NotificationItemProps
   const router = useRouter();
   const senderName = notification.sender?.senderName ?? '시스템';
   const formattedDate = formatNotificationDate(notification.createdAt);
+  const isUnread = !notification.isRead;
 
   return (
     <button
       type="button"
       onClick={() => router.push(resolveNotificationPath(notification))}
       className={
-        notification.isRead
-          ? 'w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-left text-neutral-500'
-          : 'w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-left text-neutral-900'
+        isUnread
+          ? 'w-full rounded-2xl border border-[#05C075] bg-white px-4 py-3 text-left text-neutral-900'
+          : 'w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-left text-neutral-500'
       }
       aria-label="알림 상세 이동"
     >
       <div className="flex items-center justify-between gap-3">
         <span
           className={
-            notification.isRead
-              ? 'text-xs font-semibold text-neutral-400'
-              : 'text-xs font-semibold text-neutral-500'
+            isUnread
+              ? 'text-xs font-semibold text-neutral-600'
+              : 'text-xs font-semibold text-neutral-400'
           }
         >
           {senderName}

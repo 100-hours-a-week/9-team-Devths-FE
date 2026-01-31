@@ -1,13 +1,14 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import NotificationList from '@/components/notifications/NotificationList';
 import { notificationKeys } from '@/lib/hooks/notifications/queryKeys';
 import { useNotificationsInfiniteQuery } from '@/lib/hooks/notifications/useNotificationsInfiniteQuery';
 
 export default function NotificationsPage() {
+  const [isHydrated, setIsHydrated] = useState(false);
   const queryClient = useQueryClient();
   const {
     data,
@@ -24,6 +25,7 @@ export default function NotificationsPage() {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setIsHydrated(true);
     queryClient.setQueryData(notificationKeys.unreadCount(), 0);
   }, [queryClient]);
 
@@ -50,7 +52,7 @@ export default function NotificationsPage() {
     <main className="px-3 pt-4 pb-3">
       <NotificationList
         notifications={notifications}
-        isLoading={isLoading}
+        isLoading={!isHydrated || isLoading}
         isError={isError}
         errorMessage={error instanceof Error ? error.message : '알림을 불러오지 못했습니다.'}
       />
