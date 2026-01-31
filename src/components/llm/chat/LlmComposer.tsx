@@ -1,6 +1,6 @@
 'use client';
 
-import { FileText, Paperclip, SendHorizonal, X } from 'lucide-react';
+import { FileText, SendHorizonal, X } from 'lucide-react';
 import Image from 'next/image';
 import { type ClipboardEvent, useMemo, useState } from 'react';
 
@@ -16,15 +16,15 @@ type Props = {
   onRemovePdf?: () => void;
 };
 
-export default function LlmComposer({
-  onSend,
-  disabled = false,
-  onAttach,
-  attachedImages = [],
-  attachedPdf,
-  onRemoveImage,
-  onRemovePdf,
-}: Props) {
+export default function LlmComposer(props: Props) {
+  const {
+    onSend,
+    disabled = false,
+    attachedImages = [],
+    attachedPdf,
+    onRemoveImage,
+    onRemovePdf,
+  } = props;
   const [text, setText] = useState('');
 
   const hasAttachments = attachedImages.length > 0 || attachedPdf !== null;
@@ -86,14 +86,16 @@ export default function LlmComposer({
       )}
 
       <div className="flex items-end gap-2">
+        {/*
         <button
           type="button"
-          onClick={onAttach}
+          onClick={props.onAttach}
           className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-neutral-200 bg-white text-neutral-700 shadow-sm hover:bg-neutral-50"
           aria-label="파일 첨부"
         >
           <Paperclip className="h-5 w-5" />
         </button>
+        */}
         <textarea
           className="h-11 flex-1 resize-none rounded-2xl border bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-neutral-400"
           placeholder="메시지를 입력하세요"
