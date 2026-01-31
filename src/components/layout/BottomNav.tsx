@@ -46,7 +46,7 @@ export default function BottomNav({ hidden = false }: BottomNavProps) {
                   href={tab.href}
                   className="flex flex-col items-center justify-center"
                 >
-                  <div className="-mt-6 flex h-14 w-14 items-center justify-center rounded-full bg-neutral-900 shadow-lg">
+                  <div className="-mt-6 flex h-14 w-14 items-center justify-center rounded-full bg-[#05C075] shadow-lg">
                     <Icon className="h-6 w-6 text-white" />
                   </div>
                   <span

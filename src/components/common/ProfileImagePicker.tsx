@@ -16,6 +16,9 @@ type ProfileImagePickerProps = {
   onFileTooLarge?: () => void;
 
   onInvalidType?: () => void;
+
+  size?: 'sm' | 'md';
+  compact?: boolean;
 };
 
 export default function ProfileImagePicker({
@@ -23,9 +26,15 @@ export default function ProfileImagePicker({
   onSelect,
   onFileTooLarge,
   onInvalidType,
+  size = 'md',
+  compact = false,
 }: ProfileImagePickerProps) {
   const hasPreview = Boolean(previewUrl);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const buttonSizeClass = size === 'sm' ? 'h-32 w-32' : 'h-44 w-44';
+  const iconWrapClass = size === 'sm' ? 'h-10 w-10' : 'h-12 w-12';
+  const iconClass = size === 'sm' ? 'h-5 w-5' : 'h-6 w-6';
+  const marginTopClass = compact ? 'mt-0' : 'mt-4';
 
   const openPicker = () => {
     inputRef.current?.click();
@@ -58,7 +67,9 @@ export default function ProfileImagePicker({
         type="button"
         onClick={openPicker}
         className={cn(
-          'relative mt-4 grid h-44 w-44 place-items-center overflow-hidden rounded-full shadow-sm transition',
+          'relative grid place-items-center overflow-hidden rounded-full shadow-sm transition',
+          buttonSizeClass,
+          marginTopClass,
           hasPreview ? 'bg-zinc-900 hover:bg-zinc-800' : 'bg-zinc-200 hover:bg-zinc-300',
         )}
         aria-label="프로필 사진 추가"
@@ -77,11 +88,12 @@ export default function ProfileImagePicker({
         <span className="absolute inset-0 grid place-items-center">
           <span
             className={cn(
-              'grid h-12 w-12 place-items-center rounded-full',
+              'grid place-items-center rounded-full',
+              iconWrapClass,
               hasPreview ? 'bg-black/30' : 'bg-white/60',
             )}
           >
-            <Plus className={cn('h-6 w-6', hasPreview ? 'text-white' : 'text-zinc-700')} />
+            <Plus className={cn(iconClass, hasPreview ? 'text-white' : 'text-zinc-700')} />
           </span>
         </span>
       </button>
