@@ -52,7 +52,7 @@ export default function Header({
             >
               <Bell className="h-5 w-5" />
               {showBadge ? (
-                <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500" />
+                <span className="absolute top-[0.5px] right-[0.5px] h-2.5 w-2.5 rounded-full bg-red-500" />
               ) : null}
             </button>
           )}
