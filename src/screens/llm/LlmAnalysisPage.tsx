@@ -355,7 +355,7 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
   ]);
 
   return (
-    <main className="flex min-h-[calc(100dvh-56px-64px)] flex-col bg-white px-4 pt-5 pb-4 text-black">
+    <main className="flex min-h-[calc(100dvh-56px-64px)] flex-col bg-white px-5 pt-6 pb-5">
       <input
         ref={imageInputRef}
         type="file"
@@ -374,8 +374,8 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
 
       <div className="space-y-4">
         <LlmTextAreaCard
-          label="이력서 및 포트폴리오 입력"
-          placeholder="이력서/포트폴리오 내용을 붙여 넣거나 직접 입력하세요."
+          label="이력서 및 포트폴리오"
+          placeholder="이력서/포트폴리오 내용을 붙여 넣거나 직접 입력하세요"
           value={form.resume.text}
           onChange={(text) => updateResume({ text })}
           onPasteBlocked={handlePasteBlocked}
@@ -392,21 +392,21 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
               }}
               disabled={form.resume.text.trim().length > 0}
               className={[
-                'inline-flex items-center gap-1.5 rounded-full border border-neutral-200 px-3 py-1.5 text-xs font-semibold',
+                'inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-semibold transition-colors',
                 form.resume.text.trim().length > 0
-                  ? 'cursor-not-allowed bg-neutral-100 text-neutral-400'
-                  : 'bg-white text-neutral-800 hover:bg-neutral-50',
+                  ? 'cursor-not-allowed bg-[#E5E8EB] text-[#ADB5BD]'
+                  : 'bg-[#00C473]/10 text-[#00C473] active:bg-[#00C473]/20',
               ].join(' ')}
             >
-              <Paperclip className="h-4 w-4" />
+              <Paperclip className="h-4 w-4" strokeWidth={2} />
               첨부
             </button>
           }
         />
 
         <LlmTextAreaCard
-          label="채용 공고 입력"
-          placeholder="채용 공고 내용을 붙여 넣거나 직접 입력하세요."
+          label="채용 공고"
+          placeholder="채용 공고 내용을 붙여 넣거나 직접 입력하세요"
           value={form.jobPosting.text}
           onChange={(text) => updateJobPosting({ text })}
           onPasteBlocked={handlePasteBlocked}
@@ -423,13 +423,13 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
               }}
               disabled={form.jobPosting.text.trim().length > 0}
               className={[
-                'inline-flex items-center gap-1.5 rounded-full border border-neutral-200 px-3 py-1.5 text-xs font-semibold',
+                'inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-semibold transition-colors',
                 form.jobPosting.text.trim().length > 0
-                  ? 'cursor-not-allowed bg-neutral-100 text-neutral-400'
-                  : 'bg-white text-neutral-800 hover:bg-neutral-50',
+                  ? 'cursor-not-allowed bg-[#E5E8EB] text-[#ADB5BD]'
+                  : 'bg-[#00C473]/10 text-[#00C473] active:bg-[#00C473]/20',
               ].join(' ')}
             >
-              <Paperclip className="h-4 w-4" />
+              <Paperclip className="h-4 w-4" strokeWidth={2} />
               첨부
             </button>
           }
@@ -439,19 +439,19 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
         <LlmModelNotice model={form.model} />
       </div>
 
-      <div className="mt-auto pt-6 pb-2">
+      <div className="mt-auto pt-8 pb-8">
         {disabledReason && (
-          <p className="mb-2 text-center text-xs text-neutral-500">{disabledReason}</p>
+          <p className="mb-3 text-center text-[13px] text-[#8B95A1]">{disabledReason}</p>
         )}
         <button
           type="button"
           disabled={isSubmitDisabled}
           onClick={handleSubmit}
           className={[
-            'w-full rounded-2xl py-4 text-sm font-semibold transition',
+            'w-full rounded-2xl py-4 text-[17px] font-semibold transition-colors',
             isSubmitDisabled
-              ? 'cursor-not-allowed bg-neutral-200 text-neutral-500'
-              : 'bg-neutral-900 text-white hover:bg-neutral-800',
+              ? 'cursor-not-allowed bg-[#E5E8EB] text-[#ADB5BD]'
+              : 'bg-[#00C473] text-white active:bg-[#00A85F]',
           ].join(' ')}
         >
           종합 분석하기
