@@ -482,15 +482,15 @@ export default function CalendarPage() {
           </button>
         </div>
 
-      {sortedEvents.length === 0 && !loading && !error ? (
-        <div className="rounded-2xl bg-white px-4 py-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-black/5 bg-black/[0.02]">
-            <svg
-              className="h-7 w-7 text-black/20"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+        {sortedEvents.length === 0 && !loading && !error ? (
+          <div className="rounded-2xl bg-white px-4 py-8 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-black/5 bg-black/[0.02]">
+              <svg
+                className="h-7 w-7 text-black/20"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -498,15 +498,13 @@ export default function CalendarPage() {
                   d="M8 7V3m8 4V3M4 11h16M6 19h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2z"
                 />
               </svg>
+            </div>
+            <p className="text-sm text-black/40">등록된 일정이 없습니다. 새 일정을 추가해보세요!</p>
           </div>
-          <p className="text-sm text-black/40">
-            등록된 일정이 없습니다. 새 일정을 추가해보세요!
-          </p>
-        </div>
-      ) : null}
+        ) : null}
 
-      {sortedEvents.length > 0 ? (
-        <div className="space-y-2">
+        {sortedEvents.length > 0 ? (
+          <div className="space-y-2">
             {sortedEvents.map((event) => {
               const stage = event.extendedProps?.stage as InterviewStage | undefined;
               const dotClass = stage ? stageDotClasses[stage] : 'bg-black/40';
@@ -551,7 +549,11 @@ export default function CalendarPage() {
         detail={detail}
       />
 
-      <BaseModal open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)} title="일정 삭제">
+      <BaseModal
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        title="일정 삭제"
+      >
         <div className="mt-3 space-y-4">
           <p className="text-sm text-black/70">이 일정을 삭제할까요?</p>
           <div className="flex gap-2">

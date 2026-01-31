@@ -239,9 +239,7 @@ export default function EventFormModal({
                     type="button"
                     role="radio"
                     aria-checked={isSelected}
-                    onClick={() =>
-                      setFormState((prev) => ({ ...prev, stage: option.value }))
-                    }
+                    onClick={() => setFormState((prev) => ({ ...prev, stage: option.value }))}
                     className={`h-10 flex-1 rounded-2xl border text-sm font-semibold transition-colors ${
                       isSelected
                         ? 'border-[#05C075] bg-[#05C075] text-white'

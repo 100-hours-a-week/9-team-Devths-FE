@@ -58,7 +58,7 @@ export default function MyPageScreen() {
 
   return (
     <main className="flex flex-col px-6 py-4">
-      <section className="mt-2 -mx-6 bg-white px-6 py-4">
+      <section className="-mx-6 mt-2 bg-white px-6 py-4">
         {isLoading ? (
           <div className="flex items-center gap-4">
             <div className="h-16 w-16 animate-pulse rounded-full bg-neutral-200" />

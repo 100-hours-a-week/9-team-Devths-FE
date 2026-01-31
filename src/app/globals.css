@@ -140,7 +140,8 @@
     --calendar-dot-row-gap: -23px;
     --calendar-dot-row-offset: -16px;
     --calendar-day-event-top: calc(
-      var(--calendar-day-number-top) + var(--calendar-day-number-size) + var(--calendar-day-event-gap)
+      var(--calendar-day-number-top) + var(--calendar-day-number-size) +
+        var(--calendar-day-event-gap)
     );
   }
 
@@ -263,7 +264,10 @@
   .calendar-grid .fc .fc-daygrid-event-harness-abs {
     flex: 0 0 100%;
     transform: translateY(
-      calc(var(--calendar-dot-row-height) + var(--calendar-dot-row-gap) - var(--calendar-dot-row-offset))
+      calc(
+        var(--calendar-dot-row-height) + var(--calendar-dot-row-gap) -
+          var(--calendar-dot-row-offset)
+      )
     );
   }
 
