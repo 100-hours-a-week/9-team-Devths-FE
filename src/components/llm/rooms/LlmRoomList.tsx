@@ -20,7 +20,7 @@ export default function LlmRoomList({
   onAnalyzingRoomClick,
 }: Props) {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="divide-y divide-neutral-200">
       {rooms.map((room) => (
         <LlmRoomListItem
           key={room.id}
