@@ -160,26 +160,38 @@ function EditForm({ initialData, onClose, onWithdraw, onLogout }: EditFormProps)
     (submitMessage?.type === 'error' ? submitMessage.text : null);
 
   return (
-    <div className="mt-4 flex flex-col gap-6">
-      <div className="flex flex-col items-center">
-        <ProfileImagePicker
-          previewUrl={previewUrl}
-          onSelect={handleSelectImage}
-          onFileTooLarge={() => setIsFileTooLargeOpen(true)}
-        />
-        {hasProfileImage && (
-          <button
-            type="button"
-            onClick={handleDeleteImage}
-            disabled={deleteProfileImageMutation.isPending}
-            className="mt-2 rounded-lg bg-neutral-200 px-4 py-1.5 text-sm text-neutral-600 hover:bg-neutral-300 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {deleteProfileImageMutation.isPending ? '삭제 중...' : '삭제'}
-          </button>
-        )}
-      </div>
+    <div className="mt-1 flex flex-col gap-0">
+      <header className="space-y-2">
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-[#05C075]" />
+          <span className="text-[11px] font-semibold text-neutral-500">PROFILE</span>
+        </div>
+        <h2 className="text-xl font-bold text-neutral-900">프로필 수정</h2>
+        <p className="text-xs text-neutral-500">변경사항은 저장 후 즉시 마이페이지에 반영됩니다.</p>
+      </header>
 
-      <div>
+      <section className="rounded-2xl bg-white p-2.5">
+        <p className="text-sm font-semibold text-neutral-900">프로필 사진</p>
+        <div className="mt-4 flex flex-col items-center">
+          <ProfileImagePicker
+            previewUrl={previewUrl}
+            onSelect={handleSelectImage}
+            onFileTooLarge={() => setIsFileTooLargeOpen(true)}
+          />
+          {hasProfileImage && (
+            <button
+              type="button"
+              onClick={handleDeleteImage}
+              disabled={deleteProfileImageMutation.isPending}
+              className="mt-3 rounded-full border border-neutral-300 px-4 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {deleteProfileImageMutation.isPending ? '삭제 중...' : '사진 삭제'}
+            </button>
+          )}
+        </div>
+      </section>
+
+      <section className="rounded-2xl bg-white p-2.5">
         <NicknameField
           value={nickname}
           onChange={handleNicknameChange}
@@ -188,17 +200,17 @@ function EditForm({ initialData, onClose, onWithdraw, onLogout }: EditFormProps)
         {submitMessage?.type === 'success' && (
           <p className="-mt-3 text-xs text-green-600">{submitMessage.text}</p>
         )}
-      </div>
+      </section>
 
-      <div>
-        <p className="text-sm font-semibold">관심 분야 수정</p>
+      <section className="rounded-2xl bg-white p-2.5">
+        <p className="text-sm font-semibold text-neutral-900">관심 분야</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {INTEREST_OPTIONS.filter((o) => interests.includes(o.value)).map((option) => (
             <button
               key={option.value}
               type="button"
               onClick={() => handleToggleInterest(option.value)}
-              className="inline-flex items-center gap-1 rounded-full bg-neutral-900 px-3 py-1.5 text-sm text-white"
+              className="inline-flex items-center gap-1 rounded-full bg-[#05C075] px-3 py-1.5 text-sm font-semibold text-white shadow-sm"
             >
               {option.label}
               <X className="h-3.5 w-3.5" />
@@ -209,20 +221,20 @@ function EditForm({ initialData, onClose, onWithdraw, onLogout }: EditFormProps)
               key={option.value}
               type="button"
               onClick={() => handleToggleInterest(option.value)}
-              className="rounded-full border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-50"
+              className="rounded-full border border-neutral-300 px-3 py-1.5 text-sm font-semibold text-neutral-800 hover:bg-white"
             >
               {option.label}
             </button>
           ))}
         </div>
-      </div>
+      </section>
 
-      <div className="flex flex-col items-center gap-3 pt-2">
+      <div className="flex flex-col items-center gap-3 pt-4">
         <button
           type="button"
           onClick={handleSubmit}
           disabled={!nicknameValidation.isValid || isPending}
-          className="h-12 w-full rounded-xl bg-neutral-900 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-12 w-full rounded-xl bg-neutral-900 text-sm font-semibold text-white shadow-sm hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isPending ? '변경 중...' : '변경하기'}
         </button>
@@ -230,7 +242,7 @@ function EditForm({ initialData, onClose, onWithdraw, onLogout }: EditFormProps)
         <button
           type="button"
           onClick={onLogout}
-          className="text-sm text-neutral-400 hover:text-neutral-600"
+          className="text-sm font-semibold text-neutral-500 hover:text-neutral-700"
         >
           로그아웃
         </button>
@@ -238,7 +250,7 @@ function EditForm({ initialData, onClose, onWithdraw, onLogout }: EditFormProps)
         <button
           type="button"
           onClick={onWithdraw}
-          className="text-sm text-red-500 hover:text-red-600"
+          className="text-sm font-semibold text-red-500 hover:text-red-600"
         >
           탈퇴하기
         </button>
@@ -259,7 +271,7 @@ export default function EditProfileModal({
   if (!open) return null;
 
   return (
-    <BaseModal open={open} onClose={onClose} title="프로필 수정">
+    <BaseModal open={open} onClose={onClose} contentClassName="max-w-[360px] p-5">
       <EditForm
         key={open ? 'open' : 'closed'}
         initialData={initialData}

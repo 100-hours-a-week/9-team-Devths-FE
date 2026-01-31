@@ -37,7 +37,7 @@ export default function NicknameField({
 
       <p
         className={cn(
-          'mt-2 min-h-[20px] text-xs',
+          'mt-2 min-h-[16px] text-[11px] leading-4',
           hasError ? 'text-destructive' : 'text-muted-foreground',
         )}
       >
