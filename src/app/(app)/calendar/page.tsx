@@ -312,6 +312,11 @@ export default function CalendarPage() {
     calendarApiRef.current?.next();
   }, []);
 
+  const handleWeekView = useCallback(() => {
+    setViewMode('week');
+    calendarApiRef.current?.today();
+  }, []);
+
   const handleEventRowClick = useCallback(
     async (eventId: string) => {
       await fetchDetail(eventId, { open: true });
@@ -373,7 +378,7 @@ export default function CalendarPage() {
           </button>
           <button
             type="button"
-            onClick={() => setViewMode('week')}
+            onClick={handleWeekView}
             className={`flex-1 py-3 text-sm font-medium transition-all ${
               viewMode === 'week' ? 'border-b-2 border-[#05C075] text-[#151515]' : 'text-[#8A8A8A]'
             }`}
