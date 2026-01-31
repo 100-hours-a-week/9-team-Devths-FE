@@ -1,15 +1,93 @@
-import type { ReactNode } from 'react';
+'use client';
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
+import { AppFrameContext, type AppFrameOptions } from '@/components/layout/AppFrameContext';
+import BottomNav from '@/components/layout/BottomNav';
+import Header from '@/components/layout/Header';
+import { HeaderContext, type HeaderOptions } from '@/components/layout/HeaderContext';
+import LlmAnalysisTaskWatcher from '@/components/llm/analysis/LlmAnalysisTaskWatcher';
+
+import type { CSSProperties, ReactNode } from 'react';
 
 type AppFrameProps = {
   children: ReactNode;
+  headerTitle?: string;
+  showBackButton?: boolean;
+  onBackClick?: () => void;
+  rightSlot?: ReactNode;
 };
 
-export default function AppFrame({ children }: AppFrameProps) {
+export default function AppFrame({
+  children,
+  headerTitle = 'Devths',
+  showBackButton = false,
+  onBackClick,
+  rightSlot,
+}: AppFrameProps) {
+  const defaultOptions = useMemo<HeaderOptions>(
+    () => ({
+      title: headerTitle,
+      showBackButton,
+      onBackClick,
+      rightSlot,
+    }),
+    [headerTitle, onBackClick, rightSlot, showBackButton],
+  );
+
+  const [options, setOptions] = useState<HeaderOptions>(defaultOptions);
+  const defaultFrameOptions = useMemo<AppFrameOptions>(() => ({ showBottomNav: true }), []);
+  const [frameOptions, setFrameOptions] = useState<AppFrameOptions>(defaultFrameOptions);
+  const isBottomNavVisible = true;
+
+  useEffect(() => {
+    setOptions(defaultOptions);
+  }, [defaultOptions]);
+  useEffect(() => {
+    setFrameOptions(defaultFrameOptions);
+  }, [defaultFrameOptions]);
+
+  // Bottom nav stays visible even when scrolling.
+
+  const resetOptions = useCallback(() => {
+    setOptions(defaultOptions);
+  }, [defaultOptions]);
+  const resetFrameOptions = useCallback(() => {
+    setFrameOptions(defaultFrameOptions);
+  }, [defaultFrameOptions]);
+
   return (
-    <div className="min-h-dvh w-full bg-neutral-50">
-      <div className="mx-auto min-h-dvh w-full bg-white px-4 sm:max-w-[430px] sm:px-6">
-        {children}
-      </div>
-    </div>
+    <AppFrameContext.Provider
+      value={{
+        options: frameOptions,
+        setOptions: setFrameOptions,
+        resetOptions: resetFrameOptions,
+        defaultOptions: defaultFrameOptions,
+      }}
+    >
+      <HeaderContext.Provider value={{ options, setOptions, resetOptions, defaultOptions }}>
+        <div
+          className="min-h-dvh w-full bg-neutral-50"
+          style={
+            {
+              '--bottom-nav-h': frameOptions.showBottomNav ? '64px' : '0px',
+            } as CSSProperties
+          }
+        >
+          <LlmAnalysisTaskWatcher />
+          <div className="mx-auto min-h-dvh w-full bg-white sm:max-w-[430px]">
+            <Header
+              title={options.title}
+              showBackButton={options.showBackButton}
+              onBackClick={options.onBackClick}
+              rightSlot={options.rightSlot}
+            />
+            <div className="px-4 pb-[var(--bottom-nav-h)] sm:px-6">{children}</div>
+          </div>
+
+          {frameOptions.showBottomNav ? <BottomNav hidden={!isBottomNavVisible} /> : null}
+        </div>
+      </HeaderContext.Provider>
+    </AppFrameContext.Provider>
   );
 }
