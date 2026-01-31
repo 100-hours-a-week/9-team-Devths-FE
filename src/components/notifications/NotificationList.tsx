@@ -1,5 +1,7 @@
 'use client';
 
+import { Check } from 'lucide-react';
+
 import NotificationItem from '@/components/notifications/NotificationItem';
 
 import type { NotificationResponse } from '@/types/notifications';
@@ -50,8 +52,12 @@ export default function NotificationList({
 
   if (!notifications || notifications.length === 0) {
     return (
-      <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-6 text-center text-sm text-neutral-500">
-        알림이 없어요
+      <div className="rounded-2xl bg-white px-5 py-7 text-center">
+        <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-[#05C075]/10">
+          <Check className="h-5 w-5 text-[#05C075]" />
+        </div>
+        <p className="mt-3 text-sm font-semibold text-neutral-900">알림이 없어요</p>
+        <p className="mt-1 text-xs text-neutral-500">새 소식이 도착하면 바로 알려드릴게요.</p>
       </div>
     );
   }
