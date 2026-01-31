@@ -37,8 +37,7 @@ export default function Page() {
     setOptions({
       title: resolvedTitle,
       showBackButton: true,
-      onBackClick: () =>
-        from === 'notifications' ? router.push('/notifications') : router.push('/llm'),
+      onBackClick: () => (from === 'notifications' ? router.back() : router.push('/llm')),
     });
 
     return () => resetOptions();
