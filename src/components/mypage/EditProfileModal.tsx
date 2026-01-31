@@ -12,6 +12,7 @@ import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { useDeleteProfileImageMutation } from '@/lib/hooks/users/useDeleteProfileImageMutation';
 import { useUpdateMeMutation } from '@/lib/hooks/users/useUpdateMeMutation';
 import { useUploadProfileImageMutation } from '@/lib/hooks/users/useUpdateProfileImageMutation';
+import { toast } from '@/lib/toast/store';
 import { validateNickname } from '@/lib/utils/validateNickname';
 
 import type { MeData } from '@/lib/api/users';
@@ -26,11 +27,12 @@ type EditProfileModalProps = {
 
 type EditFormProps = {
   initialData?: MeData | null;
+  onClose: () => void;
   onWithdraw: () => void;
   onLogout: () => void;
 };
 
-function EditForm({ initialData, onWithdraw, onLogout }: EditFormProps) {
+function EditForm({ initialData, onClose, onWithdraw, onLogout }: EditFormProps) {
   const [nickname, setNickname] = useState(initialData?.nickname ?? '');
   const [interests, setInterests] = useState<string[]>(
     normalizeInterests(initialData?.interests ?? []),
@@ -136,7 +138,8 @@ function EditForm({ initialData, onWithdraw, onLogout }: EditFormProps) {
         interests: hasInterestsChange ? interests : undefined,
       });
 
-      setSubmitMessage({ type: 'success', text: '회원 정보가 성공적으로 변경되었습니다.' });
+      toast('회원 정보가 성공적으로 변경되었습니다.');
+      onClose();
     } catch (error) {
       const err = error as Error & { status?: number; serverMessage?: string };
       if (err.status === 409) {
@@ -260,6 +263,7 @@ export default function EditProfileModal({
       <EditForm
         key={open ? 'open' : 'closed'}
         initialData={initialData}
+        onClose={onClose}
         onWithdraw={onWithdraw}
         onLogout={onLogout}
       />
