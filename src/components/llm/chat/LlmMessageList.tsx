@@ -201,6 +201,7 @@ export default function LlmMessageList({
   const containerRef = useRef<HTMLDivElement>(null);
   const prevScrollHeightRef = useRef<number>(0);
   const isLoadingRef = useRef(false);
+  const prevMessageCountRef = useRef(0);
 
   useLayoutEffect(() => {
     const container = containerRef.current;
@@ -243,6 +244,22 @@ export default function LlmMessageList({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    if (isLoadingRef.current) {
+      prevMessageCountRef.current = messages.length;
+      return;
+    }
+
+    if (messages.length > prevMessageCountRef.current) {
+      container.scrollTop = container.scrollHeight;
+    }
+
+    prevMessageCountRef.current = messages.length;
+  }, [messages.length]);
 
   return (
     <div ref={containerRef} className="flex-1 overflow-y-auto px-3 py-4">
