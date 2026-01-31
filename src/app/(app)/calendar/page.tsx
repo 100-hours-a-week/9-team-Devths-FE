@@ -360,13 +360,13 @@ export default function CalendarPage() {
 
   return (
     <main className="calendar-shell pb-8">
-      <div className="-mx-4 border-b border-[#E8E8E8] bg-white">
+      <div className="-mx-4 bg-white">
         <div className="flex">
           <button
             type="button"
             onClick={() => setViewMode('month')}
             className={`flex-1 py-3 text-sm font-medium transition-all ${
-              viewMode === 'month' ? 'border-b-2 border-[#151515] text-[#151515]' : 'text-[#8A8A8A]'
+              viewMode === 'month' ? 'border-b-2 border-[#05C075] text-[#151515]' : 'text-[#8A8A8A]'
             }`}
           >
             월간
@@ -375,7 +375,7 @@ export default function CalendarPage() {
             type="button"
             onClick={() => setViewMode('week')}
             className={`flex-1 py-3 text-sm font-medium transition-all ${
-              viewMode === 'week' ? 'border-b-2 border-[#151515] text-[#151515]' : 'text-[#8A8A8A]'
+              viewMode === 'week' ? 'border-b-2 border-[#05C075] text-[#151515]' : 'text-[#8A8A8A]'
             }`}
           >
             주간
