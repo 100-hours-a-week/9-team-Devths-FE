@@ -76,7 +76,7 @@ export default function LandingCarousel() {
   };
 
   return (
-    <section className="bg-muted w-full max-w-sm rounded-2xl p-6 text-center">
+    <section className="w-full rounded-3xl border border-black/5 bg-white p-6 text-center shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
       <div
         role="region"
         aria-label="서비스 소개 캐러셀"
@@ -85,8 +85,9 @@ export default function LandingCarousel() {
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerCancel}
       >
-        <h2 className="text-base font-semibold">{slide.title}</h2>
-        <p className="text-muted-foreground mt-2 text-sm">{slide.description}</p>
+        <p className="text-xs font-semibold text-[#05C075]">FEATURE</p>
+        <h2 className="mt-2 text-lg font-semibold text-black">{slide.title}</h2>
+        <p className="mt-2 text-sm text-black/45">{slide.description}</p>
       </div>
 
       <div className="mt-4 flex items-center justify-center gap-2">
@@ -102,7 +103,7 @@ export default function LandingCarousel() {
               aria-current={isActive ? 'true' : undefined}
               className={[
                 'h-2 w-2 rounded-full transition',
-                isActive ? 'bg-foreground' : 'bg-foreground/30',
+                isActive ? 'bg-[#05C075]' : 'bg-black/20',
               ].join(' ')}
             />
           );
