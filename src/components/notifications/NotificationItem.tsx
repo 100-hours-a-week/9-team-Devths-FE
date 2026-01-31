@@ -19,11 +19,20 @@ function normalizeTargetPath(path: string) {
 
 function resolveNotificationPath(notification: NotificationResponse) {
   const normalized = normalizeTargetPath(notification.targetPath);
+  const appendQuery = (path: string, params: Record<string, string>) => {
+    const [base, query = ''] = path.split('?');
+    const searchParams = new URLSearchParams(query);
+    Object.entries(params).forEach(([key, value]) => {
+      searchParams.set(key, value);
+    });
+    const queryString = searchParams.toString();
+    return queryString ? `${base}?${queryString}` : base;
+  };
 
   // backend → frontend route mapping
   if (normalized.startsWith('/ai/chat/')) {
     const roomId = normalized.replace('/ai/chat/', '').split('?')[0];
-    return `/llm/${roomId}?rid=${roomId}`;
+    return appendQuery(`/llm/${roomId}?rid=${roomId}`, { from: 'notifications' });
   }
 
   if (normalized.startsWith('/llm/result/')) {
@@ -38,7 +47,7 @@ function resolveNotificationPath(notification: NotificationResponse) {
 
   if (normalized.startsWith('/llm/room/')) {
     const roomId = normalized.replace('/llm/room/', '').split('?')[0];
-    return `/llm/${roomId}`;
+    return appendQuery(`/llm/${roomId}`, { from: 'notifications' });
   }
 
   return normalized;
@@ -48,24 +57,25 @@ export default function NotificationItem({ notification }: NotificationItemProps
   const router = useRouter();
   const senderName = notification.sender?.senderName ?? '시스템';
   const formattedDate = formatNotificationDate(notification.createdAt);
+  const isUnread = !notification.isRead;
 
   return (
     <button
       type="button"
       onClick={() => router.push(resolveNotificationPath(notification))}
       className={
-        notification.isRead
-          ? 'w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-left text-neutral-500'
-          : 'w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-left text-neutral-900'
+        isUnread
+          ? 'w-full rounded-2xl border border-[#05C075] bg-white px-4 py-3 text-left text-neutral-900'
+          : 'w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-left text-neutral-500'
       }
       aria-label="알림 상세 이동"
     >
       <div className="flex items-center justify-between gap-3">
         <span
           className={
-            notification.isRead
-              ? 'text-xs font-semibold text-neutral-400'
-              : 'text-xs font-semibold text-neutral-500'
+            isUnread
+              ? 'text-xs font-semibold text-neutral-600'
+              : 'text-xs font-semibold text-neutral-400'
           }
         >
           {senderName}

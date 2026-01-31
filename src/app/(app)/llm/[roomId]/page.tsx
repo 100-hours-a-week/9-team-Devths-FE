@@ -15,6 +15,7 @@ export default function Page() {
   const roomId = params.roomId as string;
   const numericRoomId = Number(searchParams.get('rid')) || 0;
   const model = searchParams.get('model');
+  const from = searchParams.get('from');
   const { setOptions, resetOptions } = useHeader();
   const { data } = useRoomsInfiniteQuery();
   const activeTask = useAnalysisTaskStore((state) => state.activeTask);
@@ -36,11 +37,12 @@ export default function Page() {
     setOptions({
       title: resolvedTitle,
       showBackButton: true,
-      onBackClick: () => router.push('/llm'),
+      onBackClick: () =>
+        from === 'notifications' ? router.push('/notifications') : router.push('/llm'),
     });
 
     return () => resetOptions();
-  }, [resetOptions, resolvedTitle, router, setOptions]);
+  }, [from, resetOptions, resolvedTitle, router, setOptions]);
 
   return <LlmChatPage roomId={roomId} numericRoomId={numericRoomId} initialModel={model} />;
 }
