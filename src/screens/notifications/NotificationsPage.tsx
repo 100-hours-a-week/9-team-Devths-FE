@@ -128,7 +128,10 @@ export default function NotificationsPage() {
           ) : hasNextPage ? (
             <span className="text-xs text-neutral-400">스크롤로 더 보기</span>
           ) : notifications.length > 0 ? (
-            <span className="text-xs text-neutral-300">모든 알림을 확인했어요</span>
+            <div className="flex items-center gap-2 rounded-full bg-neutral-100 px-3 py-1 text-[11px] font-semibold text-neutral-600">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#05C075]" />
+              모든 알림을 확인했어요
+            </div>
           ) : null}
         </div>
       ) : null}
