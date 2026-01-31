@@ -499,7 +499,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
 
   return (
     <main className="-mx-4 flex h-[calc(100dvh-56px-var(--bottom-nav-h))] flex-col sm:-mx-6">
-      <div className="flex min-h-0 flex-1 flex-col bg-neutral-50">
+      <div className="flex min-h-0 flex-1 flex-col bg-white">
         <LlmMessageList
           messages={messages}
           onLoadMore={() => fetchNextPage()}
@@ -509,12 +509,12 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
           onDeleteFailed={handleDeleteFailed}
         />
 
-        <div className="border-t bg-white px-3 py-2">
+        <div className="border-t border-neutral-200 bg-white px-3 py-2">
           {interviewUIState === 'idle' && (
             <button
               type="button"
               onClick={() => setInterviewUIState('select')}
-              className="w-full rounded-2xl border border-neutral-200 bg-white px-3 py-2.5 text-[12px] font-semibold text-neutral-900 shadow-sm hover:bg-neutral-50"
+              className="w-full rounded-2xl bg-neutral-900 px-3 py-2.5 text-[12px] font-semibold text-white shadow-sm hover:bg-neutral-800"
             >
               면접 모드 시작
             </button>
@@ -522,20 +522,20 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
 
           {interviewUIState === 'select' && (
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-[11px] font-semibold text-neutral-600">
+              <span className="rounded-full border border-[#05C075]/30 bg-[#05C075]/10 px-3 py-1 text-[11px] font-semibold text-[#05C075]">
                 면접 모드
               </span>
               <button
                 type="button"
                 onClick={() => handleStartInterview('BEHAVIOR')}
-                className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-neutral-900 shadow-sm hover:bg-neutral-50"
+                className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-neutral-900 shadow-sm hover:border-[#05C075]/40 hover:bg-[#05C075]/5"
               >
                 인성 면접
               </button>
               <button
                 type="button"
                 onClick={() => handleStartInterview('TECH')}
-                className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-neutral-900 shadow-sm hover:bg-neutral-50"
+                className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-neutral-900 shadow-sm hover:border-[#05C075]/40 hover:bg-[#05C075]/5"
               >
                 기술 면접
               </button>
@@ -557,7 +557,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
 
           {interviewUIState === 'active' && interviewSession && (
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-[11px] font-semibold text-neutral-600">
+              <span className="rounded-full border border-[#05C075]/30 bg-[#05C075]/10 px-3 py-1 text-[11px] font-semibold text-[#05C075]">
                 면접 모드 진행중
               </span>
               <span className="rounded-full border border-neutral-200 bg-white px-3 py-1 text-[11px] font-semibold text-neutral-800 shadow-sm">
