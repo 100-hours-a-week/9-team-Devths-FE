@@ -58,7 +58,7 @@ export default function MyPageScreen() {
 
   return (
     <main className="flex flex-col px-6 py-4">
-      <section className="mt-2 rounded-2xl bg-white p-4">
+      <section className="mt-2 -mx-6 bg-white px-6 py-4">
         {isLoading ? (
           <div className="flex items-center gap-4">
             <div className="h-16 w-16 animate-pulse rounded-full bg-neutral-200" />
@@ -71,11 +71,6 @@ export default function MyPageScreen() {
           <p className="text-sm text-red-500">프로필을 불러오지 못했습니다.</p>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-[11px] font-semibold text-neutral-500">
-              <span className="h-2 w-2 rounded-full bg-[#05C075]" />
-              PROFILE
-            </div>
-
             <div className="flex items-center gap-4">
               {data?.profileImage?.url ? (
                 <Image

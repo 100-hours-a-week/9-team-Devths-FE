@@ -162,10 +162,7 @@ function EditForm({ initialData, onClose, onWithdraw, onLogout }: EditFormProps)
   return (
     <div className="mt-1 flex flex-col gap-0">
       <header className="space-y-1">
-        <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-[#05C075]" />
-          <span className="text-[11px] font-semibold text-neutral-500">PROFILE</span>
-        </div>
+        <div className="flex items-center gap-2" />
         <h2 className="text-lg font-bold text-neutral-900">프로필 수정</h2>
         <p className="text-[11px] text-neutral-500">
           변경사항은 저장 후 즉시 마이페이지에 반영됩니다.
