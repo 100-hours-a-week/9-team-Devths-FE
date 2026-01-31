@@ -2,7 +2,7 @@
 
 import { FileText, SendHorizonal, X } from 'lucide-react';
 import Image from 'next/image';
-import { type ClipboardEvent, useEffect, useMemo, useState } from 'react';
+import { type ClipboardEvent, useMemo, useState } from 'react';
 
 import { toast } from '@/lib/toast/store';
 
@@ -26,13 +26,11 @@ export default function LlmComposer(props: Props) {
     onRemovePdf,
   } = props;
   const [text, setText] = useState('');
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    if (typeof navigator === 'undefined') return;
+  const [isMobile] = useState(() => {
+    if (typeof navigator === 'undefined') return false;
     const ua = navigator.userAgent.toLowerCase();
-    setIsMobile(/iphone|ipad|ipod|android|mobile/.test(ua));
-  }, []);
+    return /iphone|ipad|ipod|android|mobile/.test(ua);
+  });
 
   const hasAttachments = attachedImages.length > 0 || attachedPdf !== null;
   const canSend = (text.trim().length > 0 || hasAttachments) && !disabled;
