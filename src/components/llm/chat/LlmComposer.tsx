@@ -1,6 +1,6 @@
 'use client';
 
-import { FileText, Paperclip, SendHorizonal, X } from 'lucide-react';
+import { FileText, SendHorizonal, X } from 'lucide-react';
 import Image from 'next/image';
 import { type ClipboardEvent, useMemo, useState } from 'react';
 
@@ -16,16 +16,21 @@ type Props = {
   onRemovePdf?: () => void;
 };
 
-export default function LlmComposer({
-  onSend,
-  disabled = false,
-  onAttach,
-  attachedImages = [],
-  attachedPdf,
-  onRemoveImage,
-  onRemovePdf,
-}: Props) {
+export default function LlmComposer(props: Props) {
+  const {
+    onSend,
+    disabled = false,
+    attachedImages = [],
+    attachedPdf,
+    onRemoveImage,
+    onRemovePdf,
+  } = props;
   const [text, setText] = useState('');
+  const [isMobile] = useState(() => {
+    if (typeof navigator === 'undefined') return false;
+    const ua = navigator.userAgent.toLowerCase();
+    return /iphone|ipad|ipod|android|mobile/.test(ua);
+  });
 
   const hasAttachments = attachedImages.length > 0 || attachedPdf !== null;
   const canSend = (text.trim().length > 0 || hasAttachments) && !disabled;
@@ -41,6 +46,12 @@ export default function LlmComposer({
       e.preventDefault();
       toast('이미지/파일은 첨부 버튼으로만 업로드할 수 있어요.');
     }
+  };
+
+  const handleSend = () => {
+    if (!canSend) return;
+    onSend?.(text.trim());
+    setText('');
   };
 
   return (
@@ -86,30 +97,34 @@ export default function LlmComposer({
       )}
 
       <div className="flex items-end gap-2">
+        {/*
         <button
           type="button"
-          onClick={onAttach}
+          onClick={props.onAttach}
           className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-neutral-200 bg-white text-neutral-700 shadow-sm hover:bg-neutral-50"
           aria-label="파일 첨부"
         >
           <Paperclip className="h-5 w-5" />
         </button>
+        */}
         <textarea
           className="h-11 flex-1 resize-none rounded-2xl border bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-neutral-400"
           placeholder="메시지를 입력하세요"
           value={text}
           onChange={(e) => setText(e.target.value)}
           onPaste={handlePaste}
+          onKeyDown={(e) => {
+            if (!isMobile && e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
         />
 
         <button
           type="button"
           disabled={!canSend}
-          onClick={() => {
-            if (!canSend) return;
-            onSend?.(text.trim());
-            setText('');
-          }}
+          onClick={handleSend}
           className={[
             'inline-flex h-11 w-11 items-center justify-center rounded-2xl transition',
             canSend

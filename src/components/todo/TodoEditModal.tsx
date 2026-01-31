@@ -36,11 +36,13 @@ export default function TodoEditModal({ open, onClose, todo, onSubmit }: TodoEdi
 
   useEffect(() => {
     if (!open) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setTitle(initialTitle);
-    setDueDate(initialDueDate);
-    setErrorMessage(null);
-    setIsSubmitting(false);
+    const syncId = window.setTimeout(() => {
+      setTitle(initialTitle);
+      setDueDate(initialDueDate);
+      setErrorMessage(null);
+      setIsSubmitting(false);
+    }, 0);
+    return () => window.clearTimeout(syncId);
   }, [initialDueDate, initialTitle, open]);
 
   const handleSubmit = async () => {

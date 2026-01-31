@@ -38,7 +38,7 @@ export default function AppFrame({
   const [options, setOptions] = useState<HeaderOptions>(defaultOptions);
   const defaultFrameOptions = useMemo<AppFrameOptions>(() => ({ showBottomNav: true }), []);
   const [frameOptions, setFrameOptions] = useState<AppFrameOptions>(defaultFrameOptions);
-  const [isBottomNavVisible, setIsBottomNavVisible] = useState(true);
+  const isBottomNavVisible = true;
 
   useEffect(() => {
     setOptions(defaultOptions);
@@ -47,39 +47,7 @@ export default function AppFrame({
     setFrameOptions(defaultFrameOptions);
   }, [defaultFrameOptions]);
 
-  useEffect(() => {
-    if (!frameOptions.showBottomNav) return;
-
-    let lastScrollY = window.scrollY;
-    let ticking = false;
-
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-
-      window.requestAnimationFrame(() => {
-        const currentY = window.scrollY;
-        const delta = currentY - lastScrollY;
-
-        if (Math.abs(delta) > 4) {
-          if (delta > 0 && currentY > 24) {
-            setIsBottomNavVisible(false);
-          } else if (delta < 0) {
-            setIsBottomNavVisible(true);
-          }
-        }
-
-        lastScrollY = currentY;
-        ticking = false;
-      });
-    };
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-    };
-  }, [frameOptions.showBottomNav]);
+  // Bottom nav stays visible even when scrolling.
 
   const resetOptions = useCallback(() => {
     setOptions(defaultOptions);
