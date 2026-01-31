@@ -81,7 +81,7 @@ export default function LandingCarousel() {
       <div
         role="region"
         aria-label="서비스 소개 캐러셀"
-        className="flex min-h-[150px] flex-col items-center justify-center touch-pan-y select-none"
+        className="flex min-h-[150px] touch-pan-y flex-col items-center justify-center select-none"
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerCancel}
@@ -107,7 +107,7 @@ export default function LandingCarousel() {
           </div>
         ) : null}
         <h2 className="mt-2 text-lg font-semibold text-black">{slide.title}</h2>
-        <p className="mt-2 whitespace-pre-line text-sm text-black/45">{slide.description}</p>
+        <p className="mt-2 text-sm whitespace-pre-line text-black/45">{slide.description}</p>
       </div>
 
       <div className="mt-4 flex items-center justify-center gap-2">
