@@ -65,7 +65,7 @@ export default function NotificationItem({ notification }: NotificationItemProps
       onClick={() => router.push(resolveNotificationPath(notification))}
       className={
         isUnread
-          ? 'relative w-full rounded-2xl border border-neutral-200 border-l-[6px] border-l-[#05C075] bg-white px-4 py-3 text-left text-neutral-900'
+          ? 'relative w-full rounded-2xl border border-l-[6px] border-neutral-200 border-l-[#05C075] bg-white px-4 py-3 text-left text-neutral-900'
           : 'relative w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-left text-neutral-500'
       }
       aria-label="알림 상세 이동"
@@ -82,7 +82,9 @@ export default function NotificationItem({ notification }: NotificationItemProps
         </span>
         <span className="text-[11px] text-neutral-400">{formattedDate}</span>
       </div>
-      <p className={isUnread ? 'mt-2 text-sm leading-5 text-neutral-900' : 'mt-2 text-sm leading-5'}>
+      <p
+        className={isUnread ? 'mt-2 text-sm leading-5 text-neutral-900' : 'mt-2 text-sm leading-5'}
+      >
         {notification.content}
       </p>
     </button>
