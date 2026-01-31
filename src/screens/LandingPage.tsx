@@ -20,7 +20,7 @@ export default function LandingPage() {
             />
           </h1>
           <p className="text-sm font-medium text-black/45">
-            일정과 협업을 더 간단하게, 필요한 순간엔 AI까지.
+            취업 준비를 한 곳에서 관리하는, AI로 취준 올인원!
           </p>
         </header>
 
