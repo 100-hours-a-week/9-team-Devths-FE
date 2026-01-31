@@ -372,7 +372,20 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
         onChange={handleFileChange}
       />
 
-      <div className="space-y-4">
+      <div className="divide-y divide-neutral-200">
+        <div className="pb-5">
+          <div className="flex items-center gap-2 text-[11px] font-semibold text-neutral-500">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#05C075]" />
+            AI ANALYSIS
+          </div>
+          <h1 className="mt-2 text-[22px] font-bold text-neutral-900">AI 분석</h1>
+          <p className="mt-2 text-sm text-neutral-500">
+            이력서와 채용 공고를 입력하면
+            <br />
+            핵심 요약과 개선 포인트를 알려드려요.
+          </p>
+        </div>
+
         <LlmTextAreaCard
           label="이력서 및 포트폴리오"
           placeholder="이력서/포트폴리오 내용을 붙여 넣거나 직접 입력하세요"
@@ -395,7 +408,7 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
                 'inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-semibold transition-colors',
                 form.resume.text.trim().length > 0
                   ? 'cursor-not-allowed bg-[#E5E8EB] text-[#ADB5BD]'
-                  : 'bg-[#00C473]/10 text-[#00C473] active:bg-[#00C473]/20',
+                  : 'bg-[#05C075]/10 text-[#05C075] active:bg-[#05C075]/20',
               ].join(' ')}
             >
               <Paperclip className="h-4 w-4" strokeWidth={2} />
@@ -426,7 +439,7 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
                 'inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-semibold transition-colors',
                 form.jobPosting.text.trim().length > 0
                   ? 'cursor-not-allowed bg-[#E5E8EB] text-[#ADB5BD]'
-                  : 'bg-[#00C473]/10 text-[#00C473] active:bg-[#00C473]/20',
+                  : 'bg-[#05C075]/10 text-[#05C075] active:bg-[#05C075]/20',
               ].join(' ')}
             >
               <Paperclip className="h-4 w-4" strokeWidth={2} />
@@ -436,6 +449,9 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
         />
 
         <LlmModelSwitch value={form.model} onChange={updateModel} />
+      </div>
+
+      <div className="pt-4">
         <LlmModelNotice model={form.model} />
       </div>
 
@@ -451,7 +467,7 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
             'w-full rounded-2xl py-4 text-[17px] font-semibold transition-colors',
             isSubmitDisabled
               ? 'cursor-not-allowed bg-[#E5E8EB] text-[#ADB5BD]'
-              : 'bg-[#00C473] text-white active:bg-[#00A85F]',
+              : 'bg-[#05C075] text-white active:bg-[#049e61]',
           ].join(' ')}
         >
           종합 분석하기

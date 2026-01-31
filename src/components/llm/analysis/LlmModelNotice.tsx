@@ -10,8 +10,8 @@ export default function LlmModelNotice({ model }: Props) {
   const isGemini = model === 'GEMINI';
 
   return (
-    <section className="rounded-2xl bg-[#00C473]/5 p-4">
-      <p className="text-[14px] font-bold text-[#00C473]">{isGemini ? 'Gemini' : 'vLLM'} 모델</p>
+    <section className="rounded-2xl border border-[#05C075]/20 bg-[#05C075]/5 p-4">
+      <p className="text-[14px] font-bold text-[#05C075]">{isGemini ? 'Gemini' : 'vLLM'} 모델</p>
 
       <div className="mt-2 space-y-1 text-[13px] leading-5 text-[#4E5968]">
         {isGemini ? (

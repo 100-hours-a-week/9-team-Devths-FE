@@ -47,7 +47,7 @@ export default function LlmTextAreaCard({
   const hasAttachments = attachments && (attachments.images.length > 0 || attachments.pdf !== null);
 
   return (
-    <section className="rounded-2xl bg-white p-5">
+    <section className="py-5">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-[15px] font-bold text-[#191F28]">{label}</h2>
         {headerRight}
@@ -55,7 +55,7 @@ export default function LlmTextAreaCard({
 
       <textarea
         className={[
-          'mt-4 min-h-[120px] w-full resize-none rounded-xl border border-neutral-200 bg-white px-4 py-3.5 text-[15px] text-[#191F28] placeholder:text-[#ADB5BD] shadow-sm outline-none transition focus:border-[#05C075] focus:ring-2 focus:ring-[#05C075]/20',
+          'mt-4 min-h-[120px] w-full resize-none rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3.5 text-[15px] font-medium leading-6 text-neutral-900 placeholder:text-neutral-400 outline-none transition focus:border-[#05C075] focus:ring-2 focus:ring-[#05C075]/20',
           textDisabled ? 'cursor-not-allowed opacity-50' : '',
         ].join(' ')}
         placeholder={
