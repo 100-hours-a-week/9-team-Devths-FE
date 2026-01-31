@@ -29,19 +29,13 @@ export default function LlmRoomCreateCard({ href, disabled, onDisabledClick }: P
     >
       <div className="flex flex-col gap-0.5">
         <span
-          className={[
-            'text-[17px] font-bold',
-            disabled ? 'text-[#ADB5BD]' : 'text-white',
-          ].join(' ')}
+          className={['text-[17px] font-bold', disabled ? 'text-[#ADB5BD]' : 'text-white'].join(
+            ' ',
+          )}
         >
           새 대화 시작
         </span>
-        <span
-          className={[
-            'text-[13px]',
-            disabled ? 'text-[#ADB5BD]' : 'text-white/80',
-          ].join(' ')}
-        >
+        <span className={['text-[13px]', disabled ? 'text-[#ADB5BD]' : 'text-white/80'].join(' ')}>
           AI와 함께 분석해보세요
         </span>
       </div>

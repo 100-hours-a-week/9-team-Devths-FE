@@ -329,7 +329,9 @@ export default function LlmMessageList({
                             <span
                               className={[
                                 'inline-flex h-5 w-5 items-center justify-center rounded-md text-[10px]',
-                                isUser ? 'bg-white/20 text-white' : 'bg-neutral-300 text-neutral-600',
+                                isUser
+                                  ? 'bg-white/20 text-white'
+                                  : 'bg-neutral-300 text-neutral-600',
                               ].join(' ')}
                             >
                               {att.type === 'image' ? 'IMG' : 'PDF'}
