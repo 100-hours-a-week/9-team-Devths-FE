@@ -2,7 +2,7 @@
 
 import { FileText, SendHorizonal, X } from 'lucide-react';
 import Image from 'next/image';
-import { type ClipboardEvent, useMemo, useState } from 'react';
+import { type ClipboardEvent, useEffect, useMemo, useState } from 'react';
 
 import { toast } from '@/lib/toast/store';
 
@@ -26,6 +26,13 @@ export default function LlmComposer(props: Props) {
     onRemovePdf,
   } = props;
   const [text, setText] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    if (typeof navigator === 'undefined') return;
+    const ua = navigator.userAgent.toLowerCase();
+    setIsMobile(/iphone|ipad|ipod|android|mobile/.test(ua));
+  }, []);
 
   const hasAttachments = attachedImages.length > 0 || attachedPdf !== null;
   const canSend = (text.trim().length > 0 || hasAttachments) && !disabled;
@@ -41,6 +48,12 @@ export default function LlmComposer(props: Props) {
       e.preventDefault();
       toast('이미지/파일은 첨부 버튼으로만 업로드할 수 있어요.');
     }
+  };
+
+  const handleSend = () => {
+    if (!canSend) return;
+    onSend?.(text.trim());
+    setText('');
   };
 
   return (
@@ -102,16 +115,18 @@ export default function LlmComposer(props: Props) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           onPaste={handlePaste}
+          onKeyDown={(e) => {
+            if (!isMobile && e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
         />
 
         <button
           type="button"
           disabled={!canSend}
-          onClick={() => {
-            if (!canSend) return;
-            onSend?.(text.trim());
-            setText('');
-          }}
+          onClick={handleSend}
           className={[
             'inline-flex h-11 w-11 items-center justify-center rounded-2xl transition',
             canSend
