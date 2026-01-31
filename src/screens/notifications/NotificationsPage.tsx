@@ -25,8 +25,11 @@ export default function NotificationsPage() {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setIsHydrated(true);
+    const syncId = window.setTimeout(() => {
+      setIsHydrated(true);
+    }, 0);
     queryClient.setQueryData(notificationKeys.unreadCount(), 0);
+    return () => window.clearTimeout(syncId);
   }, [queryClient]);
 
   useEffect(() => {
