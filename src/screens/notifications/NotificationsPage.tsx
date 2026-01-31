@@ -1,7 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import NotificationList from '@/components/notifications/NotificationList';
 import { notificationKeys } from '@/lib/hooks/notifications/queryKeys';
@@ -9,6 +9,7 @@ import { useNotificationsInfiniteQuery } from '@/lib/hooks/notifications/useNoti
 
 export default function NotificationsPage() {
   const [isHydrated, setIsHydrated] = useState(false);
+  const [seenIds, setSeenIds] = useState<number[]>([]);
   const queryClient = useQueryClient();
   const {
     data,
@@ -21,15 +22,54 @@ export default function NotificationsPage() {
     refetch,
   } = useNotificationsInfiniteQuery({ size: 10 });
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const notifications = data?.pages.flatMap((page) => page.notifications) ?? [];
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const pendingSeenRef = useRef<Set<number>>(new Set());
+
+  const seenIdSet = useMemo(() => new Set(seenIds), [seenIds]);
 
   useEffect(() => {
     const syncId = window.setTimeout(() => {
       setIsHydrated(true);
+      try {
+        const stored = window.localStorage.getItem('devths_seen_notifications');
+        const parsed = stored ? (JSON.parse(stored) as number[]) : [];
+        setSeenIds(Array.isArray(parsed) ? parsed : []);
+      } catch {
+        setSeenIds([]);
+      }
     }, 0);
-    queryClient.setQueryData(notificationKeys.unreadCount(), 0);
     return () => window.clearTimeout(syncId);
+  }, []);
+
+  useEffect(() => {
+    if (!isHydrated || notifications.length === 0) return;
+    for (const notification of notifications) {
+      if (!notification.isRead && !seenIdSet.has(notification.notificationId)) {
+        pendingSeenRef.current.add(notification.notificationId);
+      }
+    }
+  }, [isHydrated, notifications, seenIdSet]);
+
+  useEffect(() => {
+    return () => {
+      if (pendingSeenRef.current.size === 0) return;
+      try {
+        const stored = window.localStorage.getItem('devths_seen_notifications');
+        const parsed = stored ? (JSON.parse(stored) as number[]) : [];
+        const existing = new Set(Array.isArray(parsed) ? parsed : []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        pendingSeenRef.current.forEach((id) => existing.add(id));
+        window.localStorage.setItem('devths_seen_notifications', JSON.stringify([...existing]));
+      } catch {}
+
+      const currentUnread = queryClient.getQueryData<number>(notificationKeys.unreadCount());
+      if (typeof currentUnread === 'number') {
+        queryClient.setQueryData(notificationKeys.unreadCount(), 0);
+      }
+      pendingSeenRef.current.clear();
+    };
   }, [queryClient]);
 
   useEffect(() => {
@@ -51,10 +91,19 @@ export default function NotificationsPage() {
     return () => observer.disconnect();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
+  const displayNotifications = useMemo(
+    () =>
+      notifications.map((notification) => ({
+        ...notification,
+        isRead: notification.isRead || seenIdSet.has(notification.notificationId),
+      })),
+    [notifications, seenIdSet],
+  );
+
   return (
     <main className="px-3 pt-4 pb-3">
       <NotificationList
-        notifications={notifications}
+        notifications={displayNotifications}
         isLoading={!isHydrated || isLoading}
         isError={isError}
         errorMessage={error instanceof Error ? error.message : '알림을 불러오지 못했습니다.'}
