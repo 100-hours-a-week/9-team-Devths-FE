@@ -303,8 +303,10 @@ export default function LlmMessageList({
                 >
                   <div
                     className={[
-                      'relative rounded-2xl px-3 py-2 text-sm leading-5 shadow-sm',
-                      isUser ? 'bg-[#05C075] text-white' : 'bg-neutral-200 text-neutral-900',
+                      'relative rounded-2xl px-3 py-2 text-sm leading-5',
+                      isUser
+                        ? 'bg-[#05C075] text-white'
+                        : 'border border-[#05C075] bg-white text-neutral-900',
                       m.status === 'sending' ? 'opacity-60' : '',
                       m.status === 'failed' ? 'border-red-300 bg-red-50' : '',
                     ].join(' ')}
