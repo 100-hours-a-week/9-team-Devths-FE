@@ -14,7 +14,7 @@ export default function Page() {
     setOptions({
       title: '알림',
       showBackButton: true,
-      onBackClick: () => router.back(),
+      onBackClick: () => router.push('/llm'),
     });
 
     return () => resetOptions();
