@@ -6,6 +6,7 @@ import CalendarFilters from '@/components/calendar/CalendarFilters';
 import CalendarView from '@/components/calendar/CalendarView';
 import EventDetailModal from '@/components/calendar/EventDetailModal';
 import EventFormModal, { type EventFormMode } from '@/components/calendar/EventFormModal';
+import BaseModal from '@/components/common/BaseModal';
 import TodoSummaryCard from '@/components/todo/TodoSummaryCard';
 import { createEvent, deleteEvent, getEvent, listEvents, updateEvent } from '@/lib/api/calendar';
 import { toFullCalendarEvent } from '@/lib/calendar/mappers';
@@ -70,6 +71,7 @@ export default function CalendarPage() {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [detail, setDetail] = useState<GoogleEventDetailResponse | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<EventFormMode>('create');
   const [formSubmitting, setFormSubmitting] = useState(false);
@@ -262,12 +264,15 @@ export default function CalendarPage() {
     [detail, fetchDetail, fetchEvents, formMode, handleCreated, stageFilter, tagFilter],
   );
 
-  const handleDelete = useCallback(async () => {
+  const handleDeleteRequest = useCallback(() => {
     if (!detail || deleteLoading) return;
-    const confirmed = window.confirm('이 일정을 삭제할까요?');
-    if (!confirmed) return;
+    setDeleteConfirmOpen(true);
+  }, [deleteLoading, detail]);
 
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!detail || deleteLoading) return;
     setDeleteLoading(true);
+    setDetailError(null);
 
     try {
       const result = await deleteEvent(detail.eventId);
@@ -277,6 +282,7 @@ export default function CalendarPage() {
         return;
       }
 
+      setDeleteConfirmOpen(false);
       handleCloseDetail();
 
       if (currentRangeRef.current) {
@@ -537,12 +543,36 @@ export default function CalendarPage() {
         open={detailOpen}
         onClose={handleCloseDetail}
         onEdit={handleEditOpen}
-        onDelete={handleDelete}
+        onDelete={handleDeleteRequest}
         deleteLoading={deleteLoading}
         loading={detailLoading}
         error={detailError}
         detail={detail}
       />
+
+      <BaseModal open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)} title="일정 삭제">
+        <div className="mt-3 space-y-4">
+          <p className="text-sm text-black/70">이 일정을 삭제할까요?</p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setDeleteConfirmOpen(false)}
+              className="h-10 flex-1 rounded-full border border-black/10 text-sm font-semibold text-black/70 hover:bg-black/5"
+              disabled={deleteLoading}
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteConfirm}
+              className="h-10 flex-1 rounded-full bg-red-600 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+              disabled={deleteLoading}
+            >
+              {deleteLoading ? '삭제 중...' : '삭제'}
+            </button>
+          </div>
+        </div>
+      </BaseModal>
 
       <EventFormModal
         open={formOpen}
