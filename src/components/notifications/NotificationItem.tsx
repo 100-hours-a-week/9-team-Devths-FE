@@ -19,11 +19,20 @@ function normalizeTargetPath(path: string) {
 
 function resolveNotificationPath(notification: NotificationResponse) {
   const normalized = normalizeTargetPath(notification.targetPath);
+  const appendQuery = (path: string, params: Record<string, string>) => {
+    const [base, query = ''] = path.split('?');
+    const searchParams = new URLSearchParams(query);
+    Object.entries(params).forEach(([key, value]) => {
+      searchParams.set(key, value);
+    });
+    const queryString = searchParams.toString();
+    return queryString ? `${base}?${queryString}` : base;
+  };
 
   // backend → frontend route mapping
   if (normalized.startsWith('/ai/chat/')) {
     const roomId = normalized.replace('/ai/chat/', '').split('?')[0];
-    return `/llm/${roomId}?rid=${roomId}`;
+    return appendQuery(`/llm/${roomId}?rid=${roomId}`, { from: 'notifications' });
   }
 
   if (normalized.startsWith('/llm/result/')) {
@@ -38,7 +47,7 @@ function resolveNotificationPath(notification: NotificationResponse) {
 
   if (normalized.startsWith('/llm/room/')) {
     const roomId = normalized.replace('/llm/room/', '').split('?')[0];
-    return `/llm/${roomId}`;
+    return appendQuery(`/llm/${roomId}`, { from: 'notifications' });
   }
 
   return normalized;
