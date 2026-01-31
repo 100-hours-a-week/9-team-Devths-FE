@@ -234,4 +234,5 @@
   .calendar-grid .fc .calendar-day-number {
     @apply text-sm font-medium text-[#151515];
   }
+
 }

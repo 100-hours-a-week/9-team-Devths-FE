@@ -201,15 +201,17 @@ export default function EventFormModal({
 
   const title = mode === 'edit' ? '일정 수정' : '일정 추가';
 
-  const labelClass = 'text-xs font-semibold text-[#6B6B6B]';
-  const requiredMark = <span className="ml-1 text-[#F04D4D]">*</span>;
+  const labelClass = 'text-xs font-semibold text-black/60';
+  const requiredMark = <span className="ml-1 text-[#05C075]">*</span>;
   const fieldClass =
-    'h-11 w-full rounded-2xl border border-[#E5E7EB] bg-white px-4 text-sm text-[#151515] placeholder:text-[#B6B6B6] focus:border-[#05C075] focus:outline-none';
+    'h-11 w-full rounded-2xl border border-black/10 bg-white px-4 text-sm text-black placeholder:text-black/30 focus:border-[#05C075] focus:outline-none focus:ring-2 focus:ring-[#05C075]/20';
   const compactFieldClass =
-    'h-11 rounded-2xl border border-[#E5E7EB] bg-white px-4 text-sm text-[#151515] focus:border-[#05C075] focus:outline-none';
+    'h-11 rounded-2xl border border-black/10 bg-white px-4 text-sm text-black focus:border-[#05C075] focus:outline-none focus:ring-2 focus:ring-[#05C075]/20';
   const dateFieldClass = fieldClass;
+  const tagFieldClass =
+    'h-11 w-full rounded-2xl border border-black/10 bg-white px-4 text-sm text-black placeholder:text-black/30 focus:border-[#05C075] focus:outline-none focus:ring-2 focus:ring-[#05C075]/20';
   const textAreaClass =
-    'min-h-[96px] w-full rounded-2xl border border-[#E5E7EB] bg-white px-4 py-3 text-sm text-[#151515] placeholder:text-[#B6B6B6] focus:border-[#05C075] focus:outline-none';
+    'min-h-[96px] w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm text-black placeholder:text-black/30 focus:border-[#05C075] focus:outline-none focus:ring-2 focus:ring-[#05C075]/20';
 
   return (
     <BaseModal
@@ -228,14 +230,29 @@ export default function EventFormModal({
               전형 단계
               {requiredMark}
             </label>
-            <select className={fieldClass} value={formState.stage} onChange={handleChange('stage')}>
-              <option value="">선택</option>
-              {stageOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <div className="flex gap-2" role="radiogroup" aria-label="전형 단계">
+              {stageOptions.map((option) => {
+                const isSelected = formState.stage === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    onClick={() =>
+                      setFormState((prev) => ({ ...prev, stage: option.value }))
+                    }
+                    className={`h-11 flex-1 rounded-2xl border text-sm font-semibold transition-colors ${
+                      isSelected
+                        ? 'border-[#05C075] bg-[#05C075] text-white'
+                        : 'border-black/10 bg-black/[0.02] text-black/70 hover:bg-black/5'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
             {errors.stage && <p className="text-xs text-red-600">{errors.stage}</p>}
           </div>
 
@@ -267,32 +284,34 @@ export default function EventFormModal({
             {errors.company && <p className="text-xs text-red-600">{errors.company}</p>}
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label className={labelClass}>
-              시작 시간
-              {requiredMark}
-            </label>
-            <input
-              type="datetime-local"
-              className={dateFieldClass}
-              value={formState.startTime}
-              onChange={handleChange('startTime')}
-            />
-            {errors.startTime && <p className="text-xs text-red-600">{errors.startTime}</p>}
-          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <label className={labelClass}>
+                시작 시간
+                {requiredMark}
+              </label>
+              <input
+                type="datetime-local"
+                className={dateFieldClass}
+                value={formState.startTime}
+                onChange={handleChange('startTime')}
+              />
+              {errors.startTime && <p className="text-xs text-red-600">{errors.startTime}</p>}
+            </div>
 
-          <div className="flex flex-col gap-2">
-            <label className={labelClass}>
-              종료 시간
-              {requiredMark}
-            </label>
-            <input
-              type="datetime-local"
-              className={dateFieldClass}
-              value={formState.endTime}
-              onChange={handleChange('endTime')}
-            />
-            {errors.endTime && <p className="text-xs text-red-600">{errors.endTime}</p>}
+            <div className="flex flex-col gap-2">
+              <label className={labelClass}>
+                종료 시간
+                {requiredMark}
+              </label>
+              <input
+                type="datetime-local"
+                className={dateFieldClass}
+                value={formState.endTime}
+                onChange={handleChange('endTime')}
+              />
+              {errors.endTime && <p className="text-xs text-red-600">{errors.endTime}</p>}
+            </div>
           </div>
 
           <div className="flex flex-col gap-2">
@@ -308,12 +327,12 @@ export default function EventFormModal({
           <div className="flex flex-col gap-2">
             <label className={labelClass}>태그</label>
             <input
-              className={fieldClass}
+              className={tagFieldClass}
               value={formState.tags}
               onChange={handleChange('tags')}
               placeholder="예: 프론트엔드, 인턴"
             />
-            <p className="text-xs text-zinc-400">콤마(,)로 구분해 입력하세요.</p>
+            <p className="text-xs text-black/40">콤마(,)로 구분해 입력하세요.</p>
           </div>
 
           <div className="flex flex-col gap-3">
@@ -321,27 +340,29 @@ export default function EventFormModal({
               알림 설정
               {requiredMark}
             </label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                min={1}
-                className={`${compactFieldClass} w-20 text-center`}
-                value={formState.notificationTime}
-                onChange={handleChange('notificationTime')}
-              />
-              <select
-                className={`${compactFieldClass} w-24 pr-8`}
-                value={formState.notificationUnit}
-                onChange={handleChange('notificationUnit')}
-              >
-                <option value="">선택</option>
-                {notificationUnitOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <span className="text-sm text-[#6B6B6B]">전 알림</span>
+            <div className="rounded-2xl bg-white p-3">
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  className={`${compactFieldClass} w-20 text-center`}
+                  value={formState.notificationTime}
+                  onChange={handleChange('notificationTime')}
+                />
+                <select
+                  className={`${compactFieldClass} w-24 pr-8`}
+                  value={formState.notificationUnit}
+                  onChange={handleChange('notificationUnit')}
+                >
+                  <option value="">선택</option>
+                  {notificationUnitOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-sm font-semibold text-black/60">전 알림</span>
+              </div>
             </div>
             {(errors.notificationTime || errors.notificationUnit) && (
               <p className="text-xs text-red-600">
@@ -353,7 +374,7 @@ export default function EventFormModal({
           <div className="grid grid-cols-2 gap-3 pt-2">
             <button
               type="button"
-              className="h-11 w-full rounded-full border border-[#E5E7EB] bg-white px-6 text-sm font-semibold text-[#4B4B4B] shadow-sm"
+              className="h-11 w-full rounded-full border border-black/10 bg-white px-6 text-sm font-semibold text-black/70 transition-colors hover:bg-black/5"
               onClick={onClose}
               disabled={submitting}
             >
@@ -361,7 +382,7 @@ export default function EventFormModal({
             </button>
             <button
               type="submit"
-              className="h-11 w-full rounded-full bg-gradient-to-r from-[#45C97B] to-[#74D9A7] px-8 text-sm font-semibold text-white shadow-sm disabled:opacity-50"
+              className="h-11 w-full rounded-full bg-[#05C075] px-8 text-sm font-semibold text-white transition-colors hover:bg-[#04A865] disabled:opacity-50"
               disabled={isSubmitDisabled || submitting}
             >
               {submitting ? '저장 중...' : '저장'}
