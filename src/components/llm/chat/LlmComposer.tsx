@@ -55,7 +55,7 @@ export default function LlmComposer(props: Props) {
   };
 
   return (
-    <div className="border-t bg-white px-3 py-2">
+    <div className="border-t border-neutral-200 bg-white px-3 py-2">
       {hasAttachments && (
         <div className="mb-2 flex flex-wrap gap-2">
           {imagePreviewUrls.map((url, index) => (
@@ -78,9 +78,9 @@ export default function LlmComposer(props: Props) {
             </div>
           ))}
           {attachedPdf && (
-            <div className="group relative flex h-16 items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3">
-              <FileText className="h-5 w-5 text-blue-600" />
-              <span className="max-w-[100px] truncate text-xs text-blue-800">
+            <div className="group relative flex h-16 items-center gap-2 rounded-lg border border-[#05C075]/30 bg-[#05C075]/10 px-3">
+              <FileText className="h-5 w-5 text-[#05C075]" />
+              <span className="max-w-[100px] truncate text-xs text-neutral-800">
                 {attachedPdf.name}
               </span>
               <button
@@ -108,7 +108,7 @@ export default function LlmComposer(props: Props) {
         </button>
         */}
         <textarea
-          className="h-11 flex-1 resize-none rounded-2xl border bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-neutral-400"
+          className="h-11 flex-1 resize-none rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-900 transition outline-none placeholder:text-neutral-400 focus:border-[#05C075] focus:ring-2 focus:ring-[#05C075]/20"
           placeholder="메시지를 입력하세요"
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -128,7 +128,7 @@ export default function LlmComposer(props: Props) {
           className={[
             'inline-flex h-11 w-11 items-center justify-center rounded-2xl transition',
             canSend
-              ? 'bg-neutral-900 text-white hover:bg-neutral-800'
+              ? 'bg-[#05C075] text-white hover:bg-[#049e61]'
               : 'bg-neutral-200 text-neutral-500',
           ].join(' ')}
           aria-label="전송"

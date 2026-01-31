@@ -1,5 +1,6 @@
 'use client';
 
+import { Bot } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 
 import type { UIMessage } from '@/lib/utils/llm';
@@ -19,9 +20,9 @@ function TypingIndicator() {
     <div className="flex items-center gap-1 text-[12px] text-neutral-500">
       <span>답변 생성 중</span>
       <span className="flex items-center gap-0.5">
-        <span className="h-1 w-1 animate-bounce rounded-full bg-neutral-400 [animation-delay:-0.2s]" />
-        <span className="h-1 w-1 animate-bounce rounded-full bg-neutral-400 [animation-delay:-0.1s]" />
-        <span className="h-1 w-1 animate-bounce rounded-full bg-neutral-400" />
+        <span className="h-1 w-1 animate-bounce rounded-full bg-[#05C075] [animation-delay:-0.2s]" />
+        <span className="h-1 w-1 animate-bounce rounded-full bg-[#05C075] [animation-delay:-0.1s]" />
+        <span className="h-1 w-1 animate-bounce rounded-full bg-[#05C075]" />
       </span>
     </div>
   );
@@ -262,7 +263,7 @@ export default function LlmMessageList({
   }, [messages.length]);
 
   return (
-    <div ref={containerRef} className="flex-1 overflow-y-auto px-3 py-4">
+    <div ref={containerRef} className="flex-1 overflow-y-auto bg-white px-4 py-4">
       {isLoadingMore && (
         <div className="mb-3 flex justify-center">
           <span className="text-xs text-neutral-400">이전 메시지 불러오는 중...</span>
@@ -273,7 +274,7 @@ export default function LlmMessageList({
           if (m.role === 'SYSTEM') {
             return (
               <div key={m.id} className="flex justify-center">
-                <span className="rounded-full bg-neutral-200 px-3 py-1 text-[11px] text-neutral-600">
+                <span className="rounded-full bg-neutral-100 px-3 py-1 text-[11px] text-neutral-600">
                   {m.text}
                 </span>
               </div>
@@ -290,10 +291,9 @@ export default function LlmMessageList({
                 }
               >
                 {!isUser ? (
-                  <div
-                    className="h-8 w-8 shrink-0 rounded-full bg-neutral-200"
-                    aria-hidden="true"
-                  />
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#05C075]/30 bg-[#05C075]/10">
+                    <Bot className="h-4 w-4 text-[#05C075]" aria-hidden="true" />
+                  </div>
                 ) : null}
 
                 <div
@@ -303,8 +303,8 @@ export default function LlmMessageList({
                 >
                   <div
                     className={[
-                      'relative rounded-2xl px-3 py-2 text-sm leading-5',
-                      isUser ? 'bg-neutral-900 text-white' : 'border bg-white text-neutral-900',
+                      'relative rounded-2xl px-3 py-2 text-sm leading-5 shadow-sm',
+                      isUser ? 'bg-[#05C075] text-white' : 'bg-neutral-200 text-neutral-900',
                       m.status === 'sending' ? 'opacity-60' : '',
                       m.status === 'failed' ? 'border-red-300 bg-red-50' : '',
                     ].join(' ')}
@@ -323,10 +323,17 @@ export default function LlmMessageList({
                               'flex items-center gap-2 rounded-lg border px-2 py-1 text-[11px]',
                               isUser
                                 ? 'border-white/20 text-white/90'
-                                : 'border-neutral-200 text-neutral-700',
+                                : 'border-neutral-300 text-neutral-700',
                             ].join(' ')}
                           >
-                            <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-neutral-200 text-[10px] text-neutral-600">
+                            <span
+                              className={[
+                                'inline-flex h-5 w-5 items-center justify-center rounded-md text-[10px]',
+                                isUser
+                                  ? 'bg-white/20 text-white'
+                                  : 'bg-neutral-300 text-neutral-600',
+                              ].join(' ')}
+                            >
                               {att.type === 'image' ? 'IMG' : 'PDF'}
                             </span>
                             <span className="truncate">{att.name}</span>

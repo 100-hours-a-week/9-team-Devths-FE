@@ -21,28 +21,35 @@ export default function LlmRoomCreateCard({ href, disabled, onDisabledClick }: P
       }}
       aria-disabled={disabled}
       className={[
-        'flex items-center justify-between rounded-2xl border bg-white px-4 py-4 shadow-sm transition',
+        'flex items-center justify-between rounded-2xl px-5 py-4 transition-colors',
         disabled
-          ? 'cursor-not-allowed border-neutral-200 bg-neutral-50 text-neutral-400 opacity-70'
-          : 'hover:border-neutral-300 hover:bg-neutral-50 active:bg-neutral-100',
+          ? 'cursor-not-allowed bg-[#F4F5F7] opacity-60'
+          : 'bg-[#05C075] active:bg-[#049e61]',
       ].join(' ')}
     >
-      <div
-        className={[
-          'text-sm font-semibold',
-          disabled ? 'text-neutral-400' : 'text-neutral-900',
-        ].join(' ')}
-      >
-        새 대화 시작
+      <div className="flex flex-col gap-0.5">
+        <span
+          className={['text-[17px] font-bold', disabled ? 'text-[#ADB5BD]' : 'text-white'].join(
+            ' ',
+          )}
+        >
+          새 대화 시작
+        </span>
+        <span className={['text-[13px]', disabled ? 'text-[#ADB5BD]' : 'text-white/80'].join(' ')}>
+          AI와 함께 분석해보세요
+        </span>
       </div>
 
       <div
         className={[
-          'inline-flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 bg-white',
-          disabled ? 'bg-neutral-100' : 'bg-white',
+          'inline-flex h-11 w-11 items-center justify-center rounded-full',
+          disabled ? 'bg-[#E5E8EB]' : 'bg-white/20',
         ].join(' ')}
       >
-        <Plus className={disabled ? 'h-5 w-5 text-neutral-400' : 'h-5 w-5 text-neutral-900'} />
+        <Plus
+          className={disabled ? 'h-6 w-6 text-[#ADB5BD]' : 'h-6 w-6 text-white'}
+          strokeWidth={2.5}
+        />
       </div>
     </Link>
   );
