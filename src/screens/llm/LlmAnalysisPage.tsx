@@ -466,7 +466,7 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
         onPickFile={handlePickFile}
       />
 
-      <LlmLoadingModal open={isLoading} onClose={handleCloseLoading} />
+      {isLoading ? <LlmLoadingModal onClose={handleCloseLoading} /> : null}
     </main>
   );
 }
