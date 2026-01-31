@@ -14,6 +14,19 @@ type Props = {
   onDeleteFailed?: (messageId: string) => void;
 };
 
+function TypingIndicator() {
+  return (
+    <div className="flex items-center gap-1 text-[12px] text-neutral-500">
+      <span>답변 생성 중</span>
+      <span className="flex items-center gap-0.5">
+        <span className="h-1 w-1 animate-bounce rounded-full bg-neutral-400 [animation-delay:-0.2s]" />
+        <span className="h-1 w-1 animate-bounce rounded-full bg-neutral-400 [animation-delay:-0.1s]" />
+        <span className="h-1 w-1 animate-bounce rounded-full bg-neutral-400" />
+      </span>
+    </div>
+  );
+}
+
 function renderInline(text: string): ReactNode[] {
   const parts = text.split(/(`[^`]*`)/g);
   const nodes: ReactNode[] = [];
@@ -279,7 +292,11 @@ export default function LlmMessageList({
                       m.status === 'failed' ? 'border-red-300 bg-red-50' : '',
                     ].join(' ')}
                   >
-                    <div className="space-y-2">{renderMarkdown(m.text)}</div>
+                    {m.role === 'AI' && m.text.trim().length === 0 ? (
+                      <TypingIndicator />
+                    ) : (
+                      <div className="space-y-2">{renderMarkdown(m.text)}</div>
+                    )}
                     {m.attachments && m.attachments.length > 0 ? (
                       <div className="mt-2 space-y-1">
                         {m.attachments.map((att, index) => (
