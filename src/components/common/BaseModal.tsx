@@ -28,7 +28,7 @@ export default function BaseModal({
   const baseClass =
     variant === 'sheet'
       ? 'fixed bottom-0 left-1/2 z-[51] w-full max-w-[430px] -translate-x-1/2 rounded-t-2xl bg-white p-5 shadow-lg'
-      : 'fixed top-1/2 left-1/2 z-[51] w-[calc(100%-40px)] max-w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-5 shadow-lg';
+      : 'fixed top-1/2 left-1/2 z-[51] w-[calc(100%-40px)] sm:w-[calc(100%-80px)] max-w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-5 shadow-lg';
 
   return createPortal(
     <div className="fixed inset-0 z-50">
