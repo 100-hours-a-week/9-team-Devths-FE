@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import ConfirmModal from '@/components/common/ConfirmModal';
 import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
@@ -16,8 +16,13 @@ import { formatUpdatedAt, mapAiChatRoomToLlmRoom } from '@/lib/utils/llm';
 
 export default function LlmRoomsPage() {
   const router = useRouter();
-  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
+  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } =
     useRoomsInfiniteQuery();
+
+  useEffect(() => {
+    // Ensure latest room titles are loaded when entering the list page.
+    void refetch();
+  }, [refetch]);
 
   const deleteMutation = useDeleteRoomMutation();
   const activeTask = useAnalysisTaskStore((state) => state.activeTask);
