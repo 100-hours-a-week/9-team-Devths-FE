@@ -1,5 +1,6 @@
 'use client';
 
+import { Bot } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 
 import type { UIMessage } from '@/lib/utils/llm';
@@ -290,10 +291,9 @@ export default function LlmMessageList({
                 }
               >
                 {!isUser ? (
-                  <div
-                    className="h-8 w-8 shrink-0 rounded-full border border-[#05C075]/30 bg-[#05C075]/10"
-                    aria-hidden="true"
-                  />
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#05C075]/30 bg-[#05C075]/10">
+                    <Bot className="h-4 w-4 text-[#05C075]" aria-hidden="true" />
+                  </div>
                 ) : null}
 
                 <div
