@@ -35,8 +35,9 @@ const getWeekOfMonth = (date: Date) => {
 
 const formatEventTime = (start: Date | null, end: Date | null) => {
   if (!start) return '';
+  const dateLabel = start.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
   if (!end) {
-    return start.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+    return `${dateLabel} ${start.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`;
   }
 
   const sameDay =
@@ -45,7 +46,7 @@ const formatEventTime = (start: Date | null, end: Date | null) => {
     start.getDate() === end.getDate();
 
   if (sameDay) {
-    return `${start.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString(
+    return `${dateLabel} ${start.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString(
       'ko-KR',
       { hour: '2-digit', minute: '2-digit' },
     )}`;
