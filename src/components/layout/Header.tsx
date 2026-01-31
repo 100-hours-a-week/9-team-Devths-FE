@@ -49,9 +49,9 @@ export default function Header({
               <Image
                 src="/icons/Devths.png"
                 alt="Devths"
-                width={104}
-                height={32}
-                className="h-8 w-auto"
+                width={156}
+                height={48}
+                className="h-12 w-auto"
                 priority
               />
             </button>

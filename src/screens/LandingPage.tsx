@@ -13,9 +13,9 @@ export default function LandingPage() {
             <Image
               src="/icons/Devths.png"
               alt="Devths"
-              width={220}
-              height={56}
-              className="h-12 w-auto"
+              width={420}
+              height={108}
+              className="h-[108px] w-auto"
               priority
             />
           </h1>
