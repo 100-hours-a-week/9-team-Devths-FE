@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 
 import type { UIMessage } from '@/lib/utils/llm';
+import type { ReactNode } from 'react';
 
 type Props = {
   messages: UIMessage[];
@@ -12,6 +13,169 @@ type Props = {
   onRetry?: (messageId: string) => void;
   onDeleteFailed?: (messageId: string) => void;
 };
+
+function renderInline(text: string): ReactNode[] {
+  const parts = text.split(/(`[^`]*`)/g);
+  const nodes: ReactNode[] = [];
+
+  parts.forEach((part, index) => {
+    if (part.startsWith('`') && part.endsWith('`')) {
+      nodes.push(
+        <code
+          key={`code-${index}`}
+          className="rounded bg-neutral-100 px-1 font-mono text-[11px] text-neutral-800"
+        >
+          {part.slice(1, -1)}
+        </code>,
+      );
+      return;
+    }
+
+    const boldParts = part.split(/(\*\*[^*]+\*\*)/g);
+    boldParts.forEach((boldPart, boldIndex) => {
+      if (boldPart.startsWith('**') && boldPart.endsWith('**') && boldPart.length > 4) {
+        nodes.push(
+          <strong key={`bold-${index}-${boldIndex}`} className="font-semibold">
+            {boldPart.slice(2, -2)}
+          </strong>,
+        );
+      } else if (boldPart) {
+        nodes.push(<span key={`text-${index}-${boldIndex}`}>{boldPart}</span>);
+      }
+    });
+  });
+
+  return nodes;
+}
+
+function renderMarkdown(text: string): ReactNode[] {
+  const blocks: ReactNode[] = [];
+  const lines = text.split('\n');
+  let paragraphLines: string[] = [];
+  let listItems: string[] = [];
+  let inCodeBlock = false;
+  let codeLines: string[] = [];
+
+  const flushParagraph = () => {
+    if (paragraphLines.length === 0) return;
+    const paragraph = paragraphLines.join(' ');
+    blocks.push(
+      <p key={`p-${blocks.length}`} className="leading-5">
+        {renderInline(paragraph)}
+      </p>,
+    );
+    paragraphLines = [];
+  };
+
+  const flushList = () => {
+    if (listItems.length === 0) return;
+    blocks.push(
+      <ul key={`ul-${blocks.length}`} className="list-disc space-y-1 pl-5">
+        {listItems.map((item, index) => (
+          <li key={`li-${blocks.length}-${index}`} className="leading-5">
+            {renderInline(item)}
+          </li>
+        ))}
+      </ul>,
+    );
+    listItems = [];
+  };
+
+  for (const rawLine of lines) {
+    const fenceLine = rawLine.trimStart();
+    if (fenceLine.startsWith('```')) {
+      if (inCodeBlock) {
+        blocks.push(
+          <pre
+            key={`pre-${blocks.length}`}
+            className="overflow-x-auto rounded-lg bg-neutral-900 px-3 py-2 text-[11px] text-neutral-100"
+          >
+            <code className="font-mono whitespace-pre-wrap">{codeLines.join('\n')}</code>
+          </pre>,
+        );
+        codeLines = [];
+        inCodeBlock = false;
+      } else {
+        flushParagraph();
+        flushList();
+        inCodeBlock = true;
+        codeLines = [];
+      }
+      continue;
+    }
+
+    if (inCodeBlock) {
+      codeLines.push(rawLine);
+      continue;
+    }
+
+    const line = rawLine.trim();
+
+    if (!line) {
+      flushParagraph();
+      flushList();
+      continue;
+    }
+
+    if (line.startsWith('### ')) {
+      flushParagraph();
+      flushList();
+      blocks.push(
+        <h3 key={`h3-${blocks.length}`} className="text-sm font-semibold">
+          {renderInline(line.slice(4))}
+        </h3>,
+      );
+      continue;
+    }
+
+    if (line.startsWith('## ')) {
+      flushParagraph();
+      flushList();
+      blocks.push(
+        <h2 key={`h2-${blocks.length}`} className="text-sm font-semibold">
+          {renderInline(line.slice(3))}
+        </h2>,
+      );
+      continue;
+    }
+
+    if (line.startsWith('# ')) {
+      flushParagraph();
+      flushList();
+      blocks.push(
+        <h1 key={`h1-${blocks.length}`} className="text-base font-semibold">
+          {renderInline(line.slice(2))}
+        </h1>,
+      );
+      continue;
+    }
+
+    if (line.startsWith('- ')) {
+      flushParagraph();
+      listItems.push(line.slice(2));
+      continue;
+    }
+
+    flushList();
+    paragraphLines.push(line);
+  }
+
+  if (inCodeBlock) {
+    blocks.push(
+      <pre
+        key={`pre-${blocks.length}`}
+        className="overflow-x-auto rounded-lg bg-neutral-900 px-3 py-2 text-[11px] text-neutral-100"
+      >
+        <code className="font-mono whitespace-pre-wrap">{codeLines.join('\n')}</code>
+      </pre>,
+    );
+  }
+
+  flushParagraph();
+  flushList();
+
+  return blocks;
+}
 
 export default function LlmMessageList({
   messages,
@@ -115,7 +279,7 @@ export default function LlmMessageList({
                       m.status === 'failed' ? 'border-red-300 bg-red-50' : '',
                     ].join(' ')}
                   >
-                    <p>{m.text}</p>
+                    <div className="space-y-2">{renderMarkdown(m.text)}</div>
                     {m.attachments && m.attachments.length > 0 ? (
                       <div className="mt-2 space-y-1">
                         {m.attachments.map((att, index) => (
