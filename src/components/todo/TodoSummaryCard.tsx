@@ -275,7 +275,7 @@ export default function TodoSummaryCard({
         <button
           type="button"
           onClick={handleOpenCreate}
-          className="flex h-9 items-center gap-1 rounded-full bg-[#05C075] px-4 text-sm font-semibold text-white shadow-[0_6px_14px_rgba(5,192,117,0.35)] transition-all hover:bg-[#04A865]"
+          className="flex h-9 items-center gap-1 rounded-full bg-[#05C075] px-4 text-sm font-semibold text-white transition-all hover:bg-[#04A865]"
           aria-label="할 일 추가"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
