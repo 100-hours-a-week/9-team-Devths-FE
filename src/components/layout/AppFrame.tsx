@@ -67,7 +67,7 @@ export default function AppFrame({
     >
       <HeaderContext.Provider value={{ options, setOptions, resetOptions, defaultOptions }}>
         <div
-          className="min-h-dvh w-full bg-neutral-50"
+          className="min-h-dvh w-full bg-transparent"
           style={
             {
               '--bottom-nav-h': frameOptions.showBottomNav ? '64px' : '0px',
@@ -75,7 +75,7 @@ export default function AppFrame({
           }
         >
           <LlmAnalysisTaskWatcher />
-          <div className="mx-auto min-h-dvh w-full bg-white sm:max-w-[430px]">
+          <div className="mx-auto min-h-dvh w-full bg-white sm:max-w-[430px] sm:shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
             <Header
               title={options.title}
               showBackButton={options.showBackButton}

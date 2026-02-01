@@ -57,7 +57,7 @@ export default function LlmResultPage({ roomId, numericRoomId, taskId, model }: 
 
   if (isLoading) {
     return (
-      <main className="flex min-h-[calc(100dvh-56px-64px)] items-center justify-center bg-white">
+      <main className="flex min-h-[calc(100dvh-56px-64px)] items-center justify-center bg-transparent">
         <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
       </main>
     );
@@ -65,7 +65,7 @@ export default function LlmResultPage({ roomId, numericRoomId, taskId, model }: 
 
   if (error) {
     return (
-      <main className="flex min-h-[calc(100dvh-56px-64px)] flex-col items-center justify-center bg-white px-4">
+      <main className="flex min-h-[calc(100dvh-56px-64px)] flex-col items-center justify-center bg-transparent px-4">
         <p className="text-sm text-neutral-600">{error}</p>
         <Link
           href="/llm"
@@ -82,7 +82,7 @@ export default function LlmResultPage({ roomId, numericRoomId, taskId, model }: 
   const metadata = analysisResult?.metadata;
 
   return (
-    <main className="min-h-[calc(100dvh-56px-64px)] bg-white px-4 pt-6 pb-6 text-black">
+    <main className="min-h-[calc(100dvh-56px-64px)] bg-transparent px-4 pt-6 pb-6 text-black">
       <section className="space-y-5">
         <div>
           <p className="text-xs font-semibold tracking-[0.2em] text-neutral-400 uppercase">

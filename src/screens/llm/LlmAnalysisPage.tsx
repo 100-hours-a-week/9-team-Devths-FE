@@ -355,7 +355,7 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
   ]);
 
   return (
-    <main className="flex min-h-[calc(100dvh-56px-64px)] flex-col bg-white px-5 pt-6 pb-5">
+    <main className="flex min-h-[calc(100dvh-56px-64px)] flex-col bg-transparent px-5 pt-6 pb-5">
       <input
         ref={imageInputRef}
         type="file"
