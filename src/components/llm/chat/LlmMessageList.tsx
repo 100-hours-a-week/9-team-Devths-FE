@@ -249,7 +249,10 @@ export default function LlmMessageList({
   const containerRef = useRef<HTMLDivElement>(null);
   const prevScrollHeightRef = useRef<number>(0);
   const isLoadingRef = useRef(false);
+  const ignoreNextAutoScrollRef = useRef(false);
+  const isNearBottomRef = useRef(true);
   const prevMessageCountRef = useRef(0);
+  const [showJumpToLatest, setShowJumpToLatest] = useState(false);
 
   useLayoutEffect(() => {
     const container = containerRef.current;
@@ -267,12 +270,22 @@ export default function LlmMessageList({
 
   const handleScroll = useCallback(() => {
     const container = containerRef.current;
-    if (!container || !onLoadMore || !hasMore || isLoadingMore) return;
+    if (!container) return;
+
+    const bottomThreshold = 120;
+    const distanceFromBottom =
+      container.scrollHeight - (container.scrollTop + container.clientHeight);
+    const isNearBottom = distanceFromBottom <= bottomThreshold;
+    isNearBottomRef.current = isNearBottom;
+    setShowJumpToLatest((prev) => (isNearBottom ? false : prev));
+
+    if (!onLoadMore || !hasMore || isLoadingMore) return;
 
     const threshold = 100; // 상단에서 100px 이내
     if (container.scrollTop < threshold) {
       prevScrollHeightRef.current = container.scrollHeight;
       isLoadingRef.current = true;
+      ignoreNextAutoScrollRef.current = true;
       onLoadMore();
     }
   }, [onLoadMore, hasMore, isLoadingMore]);
@@ -297,137 +310,170 @@ export default function LlmMessageList({
     const container = containerRef.current;
     if (!container) return;
 
+    const bottomThreshold = 120;
+    const distanceFromBottom =
+      container.scrollHeight - (container.scrollTop + container.clientHeight);
+    isNearBottomRef.current = distanceFromBottom <= bottomThreshold;
+
+    if (ignoreNextAutoScrollRef.current) {
+      ignoreNextAutoScrollRef.current = false;
+      prevMessageCountRef.current = messages.length;
+      return;
+    }
+
     if (isLoadingRef.current) {
       prevMessageCountRef.current = messages.length;
       return;
     }
 
     if (messages.length > prevMessageCountRef.current) {
-      container.scrollTop = container.scrollHeight;
+      if (isNearBottomRef.current) {
+        container.scrollTop = container.scrollHeight;
+      } else {
+        setShowJumpToLatest(true);
+      }
     }
 
     prevMessageCountRef.current = messages.length;
   }, [messages.length]);
 
   return (
-    <div ref={containerRef} className="flex-1 overflow-y-auto bg-white px-4 py-4">
-      {isLoadingMore && (
-        <div className="mb-3 flex justify-center">
-          <span className="text-xs text-neutral-400">이전 메시지 불러오는 중...</span>
-        </div>
-      )}
-      <div className="space-y-3">
-        {messages.map((m) => {
-          if (m.role === 'SYSTEM') {
+    <div className="relative flex-1">
+      <div ref={containerRef} className="h-full overflow-y-auto bg-white px-4 py-4">
+        {isLoadingMore && (
+          <div className="mb-3 flex justify-center">
+            <span className="text-xs text-neutral-400">이전 메시지 불러오는 중...</span>
+          </div>
+        )}
+        <div className="space-y-3">
+          {messages.map((m) => {
+            if (m.role === 'SYSTEM') {
+              return (
+                <div key={m.id} className="flex justify-center">
+                  <span className="rounded-full bg-neutral-100 px-3 py-1 text-[11px] text-neutral-600">
+                    {m.text}
+                  </span>
+                </div>
+              );
+            }
+
+            const isUser = m.role === 'USER';
+            const isStreaming = m.id === streamingMessageId;
+
             return (
-              <div key={m.id} className="flex justify-center">
-                <span className="rounded-full bg-neutral-100 px-3 py-1 text-[11px] text-neutral-600">
-                  {m.text}
-                </span>
-              </div>
-            );
-          }
-
-          const isUser = m.role === 'USER';
-          const isStreaming = m.id === streamingMessageId;
-
-          return (
-            <div key={m.id} className={isUser ? 'flex justify-end' : 'flex justify-start'}>
-              <div
-                className={
-                  isUser ? 'flex max-w-[85%] items-end gap-2' : 'flex max-w-[85%] items-end gap-2'
-                }
-              >
-                {!isUser ? (
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#05C075]/30 bg-[#05C075]/10">
-                    <Bot className="h-4 w-4 text-[#05C075]" aria-hidden="true" />
-                  </div>
-                ) : null}
-
+              <div key={m.id} className={isUser ? 'flex justify-end' : 'flex justify-start'}>
                 <div
                   className={
-                    isUser ? 'order-2 flex flex-col items-end' : 'order-1 flex flex-col items-start'
+                    isUser ? 'flex max-w-[85%] items-end gap-2' : 'flex max-w-[85%] items-end gap-2'
                   }
                 >
+                  {!isUser ? (
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#05C075]/30 bg-[#05C075]/10">
+                      <Bot className="h-4 w-4 text-[#05C075]" aria-hidden="true" />
+                    </div>
+                  ) : null}
+
                   <div
-                    className={[
-                      'relative rounded-2xl px-3 py-2 text-sm leading-5',
+                    className={
                       isUser
-                        ? 'bg-[#05C075] text-white'
-                        : 'border border-[#05C075] bg-white text-neutral-900',
-                      m.status === 'sending' ? 'opacity-60' : '',
-                      m.status === 'failed' ? 'border-red-300 bg-red-50' : '',
-                    ].join(' ')}
+                        ? 'order-2 flex flex-col items-end'
+                        : 'order-1 flex flex-col items-start'
+                    }
                   >
-                    {m.role === 'AI' && m.text.trim().length === 0 ? (
-                      <TypingIndicator />
-                    ) : (
-                      <div className="space-y-2">
-                        {!isUser && isStreaming ? (
-                          <>
-                            <TypewriterText text={m.text} />
-                            <TypingCursor />
-                          </>
-                        ) : (
-                          <>{renderMarkdown(m.text)}</>
-                        )}
-                      </div>
-                    )}
-                    {m.attachments && m.attachments.length > 0 ? (
-                      <div className="mt-2 space-y-1">
-                        {m.attachments.map((att, index) => (
-                          <div
-                            key={`${m.id}-att-${index}`}
-                            className={[
-                              'flex items-center gap-2 rounded-lg border px-2 py-1 text-[11px]',
-                              isUser
-                                ? 'border-white/20 text-white/90'
-                                : 'border-neutral-300 text-neutral-700',
-                            ].join(' ')}
-                          >
-                            <span
+                    <div
+                      className={[
+                        'relative rounded-2xl px-3 py-2 text-sm leading-5',
+                        isUser
+                          ? 'bg-[#05C075] text-white'
+                          : 'border border-[#05C075] bg-white text-neutral-900',
+                        m.status === 'sending' ? 'opacity-60' : '',
+                        m.status === 'failed' ? 'border-red-300 bg-red-50' : '',
+                      ].join(' ')}
+                    >
+                      {m.role === 'AI' && m.text.trim().length === 0 ? (
+                        <TypingIndicator />
+                      ) : (
+                        <div className="space-y-2">
+                          {!isUser && isStreaming ? (
+                            <>
+                              <TypewriterText text={m.text} />
+                              <TypingCursor />
+                            </>
+                          ) : (
+                            <>{renderMarkdown(m.text)}</>
+                          )}
+                        </div>
+                      )}
+                      {m.attachments && m.attachments.length > 0 ? (
+                        <div className="mt-2 space-y-1">
+                          {m.attachments.map((att, index) => (
+                            <div
+                              key={`${m.id}-att-${index}`}
                               className={[
-                                'inline-flex h-5 w-5 items-center justify-center rounded-md text-[10px]',
+                                'flex items-center gap-2 rounded-lg border px-2 py-1 text-[11px]',
                                 isUser
-                                  ? 'bg-white/20 text-white'
-                                  : 'bg-neutral-300 text-neutral-600',
+                                  ? 'border-white/20 text-white/90'
+                                  : 'border-neutral-300 text-neutral-700',
                               ].join(' ')}
                             >
-                              {att.type === 'image' ? 'IMG' : 'PDF'}
-                            </span>
-                            <span className="truncate">{att.name}</span>
-                          </div>
-                        ))}
+                              <span
+                                className={[
+                                  'inline-flex h-5 w-5 items-center justify-center rounded-md text-[10px]',
+                                  isUser
+                                    ? 'bg-white/20 text-white'
+                                    : 'bg-neutral-300 text-neutral-600',
+                                ].join(' ')}
+                              >
+                                {att.type === 'image' ? 'IMG' : 'PDF'}
+                              </span>
+                              <span className="truncate">{att.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                    {m.status === 'failed' ? (
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className="text-[10px] text-red-500">전송 실패</span>
+                        <button
+                          type="button"
+                          onClick={() => onRetry?.(m.id)}
+                          className="text-[10px] text-neutral-500 underline hover:text-neutral-700"
+                        >
+                          재전송
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onDeleteFailed?.(m.id)}
+                          className="text-[10px] text-neutral-500 underline hover:text-neutral-700"
+                        >
+                          삭제
+                        </button>
                       </div>
+                    ) : m.time ? (
+                      <span className="mt-1 text-[10px] text-neutral-400">{m.time}</span>
                     ) : null}
                   </div>
-                  {m.status === 'failed' ? (
-                    <div className="mt-1 flex items-center gap-2">
-                      <span className="text-[10px] text-red-500">전송 실패</span>
-                      <button
-                        type="button"
-                        onClick={() => onRetry?.(m.id)}
-                        className="text-[10px] text-neutral-500 underline hover:text-neutral-700"
-                      >
-                        재전송
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onDeleteFailed?.(m.id)}
-                        className="text-[10px] text-neutral-500 underline hover:text-neutral-700"
-                      >
-                        삭제
-                      </button>
-                    </div>
-                  ) : m.time ? (
-                    <span className="mt-1 text-[10px] text-neutral-400">{m.time}</span>
-                  ) : null}
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
+      {showJumpToLatest ? (
+        <button
+          type="button"
+          onClick={() => {
+            const container = containerRef.current;
+            if (!container) return;
+            container.scrollTop = container.scrollHeight;
+            setShowJumpToLatest(false);
+          }}
+          className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-[#05C075] px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-[#04A865]"
+        >
+          최근 메시지로 이동
+        </button>
+      ) : null}
     </div>
   );
 }
