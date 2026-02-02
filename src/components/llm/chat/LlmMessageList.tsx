@@ -273,7 +273,8 @@ export default function LlmMessageList({
     if (!container) return;
 
     const bottomThreshold = 120;
-    const distanceFromBottom = container.scrollHeight - (container.scrollTop + container.clientHeight);
+    const distanceFromBottom =
+      container.scrollHeight - (container.scrollTop + container.clientHeight);
     const isNearBottom = distanceFromBottom <= bottomThreshold;
     isNearBottomRef.current = isNearBottom;
     setShowJumpToLatest((prev) => (isNearBottom ? false : prev));
@@ -310,7 +311,8 @@ export default function LlmMessageList({
     if (!container) return;
 
     const bottomThreshold = 120;
-    const distanceFromBottom = container.scrollHeight - (container.scrollTop + container.clientHeight);
+    const distanceFromBottom =
+      container.scrollHeight - (container.scrollTop + container.clientHeight);
     isNearBottomRef.current = distanceFromBottom <= bottomThreshold;
 
     if (ignoreNextAutoScrollRef.current) {
