@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAppFrame } from '@/components/layout/AppFrameContext';
 import LlmComposer from '@/components/llm/chat/LlmComposer';
 import LlmMessageList from '@/components/llm/chat/LlmMessageList';
-import { endInterviewStream, sendMessageStream } from '@/lib/api/llmRooms';
+import { endInterviewStream, getCurrentInterview, sendMessageStream } from '@/lib/api/llmRooms';
 import { useMessagesInfiniteQuery } from '@/lib/hooks/llm/useMessagesInfiniteQuery';
 import { useStartInterviewMutation } from '@/lib/hooks/llm/useStartInterviewMutation';
 import { toast } from '@/lib/toast/store';
@@ -80,6 +80,36 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
   const errorStatus = (error as Error & { status?: number })?.status;
   const errorMessage = (error as Error | undefined)?.message ?? '';
   const isDeletedRoom = isError && (errorStatus === 404 || errorMessage.includes('채팅방'));
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchCurrentInterview = async () => {
+      if (numericRoomId <= 0) return;
+      try {
+        const result = await getCurrentInterview(numericRoomId);
+        if (!isMounted || !result.ok || !result.json) return;
+
+        if ('data' in result.json) {
+          const data = result.json.data;
+          if (!data) return;
+
+          setInterviewSession({
+            interviewId: data.interviewId,
+            type: data.interviewType,
+            questionCount: data.currentQuestionCount ?? 0,
+          });
+          setInterviewUIState('active');
+        }
+      } catch {}
+    };
+
+    fetchCurrentInterview();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [numericRoomId]);
 
   useEffect(() => {
     if (!isDeletedRoom || notifiedDeletedRef.current) return;
@@ -396,10 +426,14 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
 
             setInterviewSession({
               interviewId: response.interviewId,
-              type,
-              questionCount: 0,
+              type: response.interviewType ?? type,
+              questionCount: response.currentQuestionCount ?? 0,
             });
             setInterviewUIState('active');
+
+            if (response.isResumed) {
+              return;
+            }
 
             const tempAiId = `temp-ai-interview-${Date.now()}`;
             setStreamingAiId(tempAiId);

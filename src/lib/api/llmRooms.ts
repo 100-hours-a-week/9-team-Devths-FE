@@ -7,6 +7,7 @@ import type {
   FetchMessagesResponse,
   FetchRoomsParams,
   FetchRoomsResponse,
+  CurrentInterviewResponse,
   SendMessageRequest,
   StartAnalysisRequest,
   StartAnalysisResponse,
@@ -91,6 +92,14 @@ export async function startInterview(
   const path = `/api/ai-chatrooms/${roomId}/interview`;
 
   return api.post<StartInterviewResponse>(path, body);
+}
+
+export async function getCurrentInterview(
+  roomId: number,
+): Promise<ApiClientResult<CurrentInterviewResponse | null>> {
+  const path = `/api/ai-chatrooms/${roomId}/interview/current`;
+
+  return api.get<CurrentInterviewResponse | null>(path);
 }
 
 export async function endInterviewStream(roomId: number, body: EndInterviewRequest) {
