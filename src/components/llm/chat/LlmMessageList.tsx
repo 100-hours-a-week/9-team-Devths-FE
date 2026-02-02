@@ -337,15 +337,19 @@ export default function LlmMessageList({
     }
 
     if (messages.length > prevMessageCountRef.current) {
-      if (isNearBottomRef.current) {
-        container.scrollTop = container.scrollHeight;
+      const newMessages = messages.slice(prevMessageCountRef.current);
+      const hasUserMessage = newMessages.some((m) => m.role === 'USER');
+      if (hasUserMessage || isNearBottomRef.current) {
+        requestAnimationFrame(() => {
+          container.scrollTop = container.scrollHeight;
+        });
       } else {
         queueMicrotask(() => setShowJumpToLatest(true));
       }
     }
 
     prevMessageCountRef.current = messages.length;
-  }, [messages.length]);
+  }, [messages]);
 
   return (
     <div className="relative min-h-0 flex-1">
