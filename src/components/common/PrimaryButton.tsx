@@ -16,7 +16,7 @@ export default function PrimaryButton({ className, disabled, ...props }: Primary
         'h-14 w-full rounded-full text-base font-semibold',
         disabled
           ? 'bg-zinc-300 text-white hover:bg-zinc-300'
-          : 'bg-zinc-900 text-white hover:bg-zinc-800',
+          : 'bg-[#05C075] text-white hover:bg-[#05C075]/90',
         className,
       )}
     />
