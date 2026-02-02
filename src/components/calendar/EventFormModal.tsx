@@ -262,9 +262,18 @@ export default function EventFormModal({
             <input
               className={fieldClass}
               value={formState.title}
-              onChange={handleChange('title')}
+              onChange={(event) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  title: event.target.value.slice(0, 100),
+                }))
+              }
+              maxLength={100}
               placeholder="예: 1차 면접"
             />
+            <div className="text-right text-[11px] text-black/40">
+              {formState.title.length}/100
+            </div>
             {errors.title && <p className="text-xs text-red-600">{errors.title}</p>}
           </div>
 
