@@ -94,7 +94,8 @@ export default function CalendarFilters({
               type="text"
               placeholder="태그 입력..."
               value={tag}
-              onChange={(event) => onTagChange(event.target.value)}
+              maxLength={10}
+              onChange={(event) => onTagChange(event.target.value.slice(0, 10))}
             />
           </div>
         </div>
