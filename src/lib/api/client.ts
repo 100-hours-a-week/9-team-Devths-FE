@@ -68,7 +68,10 @@ export function buildApiUrl(path: string) {
   return buildUrl(path);
 }
 
-export async function apiStreamRequest(options: RequestOptions & { accept?: string }) {
+export async function apiStreamRequest(
+  options: RequestOptions & { accept?: string },
+  isRetry = false,
+) {
   const {
     method,
     path,
@@ -103,12 +106,30 @@ export async function apiStreamRequest(options: RequestOptions & { accept?: stri
     }
   }
 
-  return fetch(url, {
+  const res = await fetch(url, {
     method,
     headers: finalHeaders,
     credentials,
     body: requestBody,
   });
+
+  if (res.status === 401 && withAuth && !isRetry) {
+    if (!isRefreshing) {
+      isRefreshing = true;
+      refreshPromise = refreshAccessToken().finally(() => {
+        isRefreshing = false;
+        refreshPromise = null;
+      });
+    }
+
+    const refreshed = await (refreshPromise ?? Promise.resolve(false));
+
+    if (refreshed) {
+      return apiStreamRequest(options, true);
+    }
+  }
+
+  return res;
 }
 
 export async function apiRequest<T>(

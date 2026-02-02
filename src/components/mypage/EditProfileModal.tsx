@@ -21,7 +21,6 @@ type EditProfileModalProps = {
   open: boolean;
   onClose: () => void;
   onWithdraw: () => void;
-  onLogout: () => void;
   initialData?: MeData | null;
 };
 
@@ -29,10 +28,9 @@ type EditFormProps = {
   initialData?: MeData | null;
   onClose: () => void;
   onWithdraw: () => void;
-  onLogout: () => void;
 };
 
-function EditForm({ initialData, onClose, onWithdraw, onLogout }: EditFormProps) {
+function EditForm({ initialData, onClose, onWithdraw }: EditFormProps) {
   const [nickname, setNickname] = useState(initialData?.nickname ?? '');
   const [interests, setInterests] = useState<string[]>(
     normalizeInterests(initialData?.interests ?? []),
@@ -121,7 +119,6 @@ function EditForm({ initialData, onClose, onWithdraw, onLogout }: EditFormProps)
     }
 
     try {
-      // 1) 프로필 이미지 업로드 (새 파일이 있는 경우)
       if (hasImageChange) {
         if (!userId) {
           setSubmitMessage({ type: 'error', text: '유저 정보를 확인할 수 없습니다.' });
@@ -132,7 +129,6 @@ function EditForm({ initialData, onClose, onWithdraw, onLogout }: EditFormProps)
         setSelectedFile(null);
       }
 
-      // 2) 프로필 업데이트 (PUT /api/users/me)
       await updateMutation.mutateAsync({
         nickname,
         interests: hasInterestsChange ? interests : undefined,
@@ -242,14 +238,6 @@ function EditForm({ initialData, onClose, onWithdraw, onLogout }: EditFormProps)
 
         <button
           type="button"
-          onClick={onLogout}
-          className="text-sm font-semibold text-neutral-500 hover:text-neutral-700"
-        >
-          로그아웃
-        </button>
-
-        <button
-          type="button"
           onClick={onWithdraw}
           className="text-sm font-semibold text-red-500 hover:text-red-600"
         >
@@ -266,7 +254,6 @@ export default function EditProfileModal({
   open,
   onClose,
   onWithdraw,
-  onLogout,
   initialData,
 }: EditProfileModalProps) {
   if (!open) return null;
@@ -278,7 +265,6 @@ export default function EditProfileModal({
         initialData={initialData}
         onClose={onClose}
         onWithdraw={onWithdraw}
-        onLogout={onLogout}
       />
     </BaseModal>
   );

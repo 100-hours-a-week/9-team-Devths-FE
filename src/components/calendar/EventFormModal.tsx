@@ -262,9 +262,16 @@ export default function EventFormModal({
             <input
               className={fieldClass}
               value={formState.title}
-              onChange={handleChange('title')}
+              onChange={(event) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  title: event.target.value.slice(0, 100),
+                }))
+              }
+              maxLength={100}
               placeholder="예: 1차 면접"
             />
+            <div className="text-right text-[11px] text-black/40">{formState.title.length}/100</div>
             {errors.title && <p className="text-xs text-red-600">{errors.title}</p>}
           </div>
 
@@ -276,7 +283,13 @@ export default function EventFormModal({
             <input
               className={fieldClass}
               value={formState.company}
-              onChange={handleChange('company')}
+              onChange={(event) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  company: event.target.value.slice(0, 50),
+                }))
+              }
+              maxLength={50}
               placeholder="예: Devths"
             />
             {errors.company && <p className="text-xs text-red-600">{errors.company}</p>}
@@ -317,9 +330,18 @@ export default function EventFormModal({
             <textarea
               className={textAreaClass}
               value={formState.description}
-              onChange={handleChange('description')}
+              onChange={(event) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  description: event.target.value.slice(0, 500),
+                }))
+              }
+              maxLength={500}
               placeholder="일정에 대한 설명을 입력하세요"
             />
+            <div className="text-right text-[11px] text-black/40">
+              {formState.description.length}/500
+            </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -327,9 +349,16 @@ export default function EventFormModal({
             <input
               className={tagFieldClass}
               value={formState.tags}
-              onChange={handleChange('tags')}
+              onChange={(event) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  tags: event.target.value.slice(0, 100),
+                }))
+              }
+              maxLength={100}
               placeholder="예: 프론트엔드, 인턴"
             />
+            <div className="text-right text-[11px] text-black/40">{formState.tags.length}/100</div>
             <p className="text-[11px] text-black/40">콤마(,)로 구분해 입력하세요.</p>
           </div>
 
@@ -341,11 +370,17 @@ export default function EventFormModal({
             <div className="rounded-2xl bg-white p-2">
               <div className="flex items-center gap-2">
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   min={1}
                   className={`${compactFieldClass} w-20 text-center`}
                   value={formState.notificationTime}
-                  onChange={handleChange('notificationTime')}
+                  maxLength={2}
+                  onChange={(event) => {
+                    const digitsOnly = event.target.value.replace(/\D/g, '').slice(0, 2);
+                    setFormState((prev) => ({ ...prev, notificationTime: digitsOnly }));
+                  }}
                 />
                 <select
                   className={`${compactFieldClass} w-24 pr-8`}

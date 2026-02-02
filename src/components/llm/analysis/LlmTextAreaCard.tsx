@@ -15,7 +15,7 @@ type Props = {
   value: string;
   onChange: (v: string) => void;
   onPasteBlocked?: () => void;
-  helperText?: string;
+  helperText?: ReactNode;
   headerRight?: ReactNode;
   attachments?: AttachmentFile;
   onRemoveImage?: (index: number) => void;

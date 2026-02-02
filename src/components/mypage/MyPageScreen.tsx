@@ -120,14 +120,23 @@ export default function MyPageScreen() {
                 )}
               </div>
 
-              <button
-                type="button"
-                onClick={() => setIsEditOpen(true)}
-                className="flex items-center gap-1 rounded-full bg-[#05C075] px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-[#04A865]"
-              >
-                <Pencil className="h-4 w-4" />
-                수정
-              </button>
+              <div className="flex flex-col items-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditOpen(true)}
+                  className="flex items-center gap-1 rounded-full bg-[#05C075] px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-[#04A865]"
+                >
+                  <Pencil className="h-4 w-4" />
+                  수정
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLogoutOpen}
+                  className="rounded-full border border-[#05C075] bg-white px-3 py-1.5 text-xs font-semibold text-[#05C075] shadow-sm hover:bg-[#E9F9F1]"
+                >
+                  로그아웃
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -145,7 +154,6 @@ export default function MyPageScreen() {
         open={isEditOpen}
         onClose={() => setIsEditOpen(false)}
         onWithdraw={handleWithdraw}
-        onLogout={handleLogoutOpen}
         initialData={data}
       />
 

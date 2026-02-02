@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAppFrame } from '@/components/layout/AppFrameContext';
 import LlmComposer from '@/components/llm/chat/LlmComposer';
 import LlmMessageList from '@/components/llm/chat/LlmMessageList';
-import { endInterviewStream, sendMessageStream } from '@/lib/api/llmRooms';
+import { endInterviewStream, getCurrentInterview, sendMessageStream } from '@/lib/api/llmRooms';
 import { useMessagesInfiniteQuery } from '@/lib/hooks/llm/useMessagesInfiniteQuery';
 import { useStartInterviewMutation } from '@/lib/hooks/llm/useStartInterviewMutation';
 import { toast } from '@/lib/toast/store';
@@ -74,11 +74,42 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
   const [interviewSession, setInterviewSession] = useState<InterviewSession | null>(null);
   const [model] = useState<LlmModel>(() => parseModel(initialModel));
   const [isSending, setIsSending] = useState(false);
+  const [streamingAiId, setStreamingAiId] = useState<string | null>(null);
   const notifiedDeletedRef = useRef(false);
 
   const errorStatus = (error as Error & { status?: number })?.status;
   const errorMessage = (error as Error | undefined)?.message ?? '';
   const isDeletedRoom = isError && (errorStatus === 404 || errorMessage.includes('채팅방'));
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchCurrentInterview = async () => {
+      if (numericRoomId <= 0) return;
+      try {
+        const result = await getCurrentInterview(numericRoomId);
+        if (!isMounted || !result.ok || !result.json) return;
+
+        if ('data' in result.json) {
+          const data = result.json.data;
+          if (!data) return;
+
+          setInterviewSession({
+            interviewId: data.interviewId,
+            type: data.interviewType,
+            questionCount: data.currentQuestionCount ?? 0,
+          });
+          setInterviewUIState('active');
+        }
+      } catch {}
+    };
+
+    fetchCurrentInterview();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [numericRoomId]);
 
   useEffect(() => {
     if (!isDeletedRoom || notifiedDeletedRef.current) return;
@@ -94,6 +125,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
     const systemId = `sys-${Date.now()}`;
     const evalId = `temp-eval-${Date.now()}`;
 
+    setStreamingAiId(evalId);
     setLocalMessages((prev) => [
       ...prev,
       {
@@ -132,6 +164,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
             errorMessage = data || errorMessage;
           }
 
+          setStreamingAiId((prev) => (prev === evalId ? null : prev));
           setLocalMessages((prev) =>
             prev.map((m) => (m.id === evalId ? { ...m, text: errorMessage, time: nowLabel() } : m)),
           );
@@ -140,6 +173,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
         }
 
         if (event === 'done') {
+          setStreamingAiId((prev) => (prev === evalId ? null : prev));
           setLocalMessages((prev) =>
             prev.map((m) => (m.id === evalId ? { ...m, text: evalText, time: nowLabel() } : m)),
           );
@@ -157,6 +191,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
     } catch {
       toast('면접 종료에 실패했습니다.');
       setInterviewUIState('active');
+      setStreamingAiId((prev) => (prev === evalId ? null : prev));
     }
   }, [interviewSession, numericRoomId]);
 
@@ -194,6 +229,14 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
         pendingUserMessage,
         ...(isFinalAnswer ? [] : [pendingAiMessage]),
       ]);
+
+      if (!isFinalAnswer) {
+        setStreamingAiId(tempAiId);
+      }
+
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => resolve());
+      });
 
       try {
         const response = await sendMessageStream(numericRoomId, {
@@ -295,6 +338,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
               errorMessage = data || errorMessage;
             }
 
+            setStreamingAiId((prev) => (prev === tempAiId ? null : prev));
             setLocalMessages((prev) =>
               prev.map((m) =>
                 m.id === tempUserId
@@ -309,6 +353,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
           }
 
           if (event === 'done') {
+            setStreamingAiId((prev) => (prev === tempAiId ? null : prev));
             setLocalMessages((prev) =>
               prev.map((m) => {
                 if (m.id === tempUserId) {
@@ -337,6 +382,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
           return true;
         });
       } catch {
+        setStreamingAiId((prev) => (prev === tempAiId ? null : prev));
         setLocalMessages((prev) =>
           prev
             .filter((m) => m.id !== tempAiId)
@@ -380,12 +426,17 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
 
             setInterviewSession({
               interviewId: response.interviewId,
-              type,
-              questionCount: 0,
+              type: response.interviewType ?? type,
+              questionCount: response.currentQuestionCount ?? 0,
             });
             setInterviewUIState('active');
 
+            if (response.isResumed) {
+              return;
+            }
+
             const tempAiId = `temp-ai-interview-${Date.now()}`;
+            setStreamingAiId(tempAiId);
             setLocalMessages((prev) => [
               ...prev,
               {
@@ -413,6 +464,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
 
               await readSseStream(streamResponse, ({ event, data }) => {
                 if (event === 'error') {
+                  setStreamingAiId((prev) => (prev === tempAiId ? null : prev));
                   setLocalMessages((prev) =>
                     prev.map((m) =>
                       m.id === tempAiId
@@ -424,6 +476,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
                 }
 
                 if (event === 'done') {
+                  setStreamingAiId((prev) => (prev === tempAiId ? null : prev));
                   setLocalMessages((prev) =>
                     prev.map((m) =>
                       m.id === tempAiId ? { ...m, text: aiText, time: nowLabel() } : m,
@@ -440,6 +493,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
                 return true;
               });
             } catch {
+              setStreamingAiId((prev) => (prev === tempAiId ? null : prev));
               setLocalMessages((prev) => prev.filter((m) => m.id !== tempAiId));
               toast('면접 질문 생성에 실패했습니다.');
             }
@@ -502,6 +556,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
       <div className="flex min-h-0 flex-1 flex-col bg-white">
         <LlmMessageList
           messages={messages}
+          streamingMessageId={streamingAiId}
           onLoadMore={() => fetchNextPage()}
           hasMore={hasNextPage}
           isLoadingMore={isFetchingNextPage}

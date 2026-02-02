@@ -319,6 +319,11 @@ export default function CalendarPage() {
     calendarApiRef.current?.next();
   }, []);
 
+  const handleToday = useCallback(() => {
+    calendarApiRef.current?.today();
+    setSelectedDate(null);
+  }, []);
+
   const handleWeekView = useCallback(() => {
     setViewMode('week');
     calendarApiRef.current?.today();
@@ -409,6 +414,13 @@ export default function CalendarPage() {
         <div className="mb-3 flex items-center justify-between">
           <div className="text-base font-semibold text-[#151515]">{currentTitle}</div>
           <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleToday}
+              className="inline-flex items-center rounded-full border border-[#05C075] bg-white px-3 text-xs font-semibold text-[#05C075] hover:bg-[#05C075]/10"
+            >
+              현재 날짜로 이동
+            </button>
             <button
               type="button"
               onClick={handlePrev}

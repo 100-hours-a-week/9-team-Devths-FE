@@ -388,10 +388,11 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
 
         <LlmTextAreaCard
           label="이력서 및 포트폴리오"
-          placeholder="이력서/포트폴리오 내용을 붙여 넣거나 직접 입력하세요"
+          placeholder={`이력서/포트폴리오 내용을 붙여 넣거나 직접 입력하세요. 잠금 상태인 파일은 첨부할 수 없습니다.`}
           value={form.resume.text}
           onChange={(text) => updateResume({ text })}
           onPasteBlocked={handlePasteBlocked}
+          helperText={null}
           attachments={{ images: form.resume.images, pdf: form.resume.pdf }}
           onRemoveImage={handleRemoveResumeImage}
           onRemovePdf={handleRemoveResumePdf}
