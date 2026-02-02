@@ -2,7 +2,7 @@
 
 import { FileText, SendHorizonal, X } from 'lucide-react';
 import Image from 'next/image';
-import { type ClipboardEvent, useMemo, useState } from 'react';
+import { type ClipboardEvent, useMemo, useRef, useState } from 'react';
 
 import { toast } from '@/lib/toast/store';
 
@@ -26,6 +26,7 @@ export default function LlmComposer(props: Props) {
     onRemovePdf,
   } = props;
   const [text, setText] = useState('');
+  const isComposingRef = useRef(false);
   const [isMobile] = useState(() => {
     if (typeof navigator === 'undefined') return false;
     const ua = navigator.userAgent.toLowerCase();
@@ -49,8 +50,9 @@ export default function LlmComposer(props: Props) {
   };
 
   const handleSend = () => {
-    if (!canSend) return;
-    onSend?.(text.trim());
+    if (!canSend || isComposingRef.current) return;
+    const message = text.trim();
+    onSend?.(message);
     setText('');
   };
 
@@ -113,7 +115,16 @@ export default function LlmComposer(props: Props) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           onPaste={handlePaste}
+          onCompositionStart={() => {
+            isComposingRef.current = true;
+          }}
+          onCompositionEnd={() => {
+            isComposingRef.current = false;
+          }}
           onKeyDown={(e) => {
+            const isComposing =
+              isComposingRef.current || (e.nativeEvent as KeyboardEvent).isComposing;
+            if (isComposing) return;
             if (!isMobile && e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
               handleSend();
