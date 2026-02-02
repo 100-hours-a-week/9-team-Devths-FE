@@ -252,6 +252,7 @@ export default function LlmMessageList({
   const ignoreNextAutoScrollRef = useRef(false);
   const isNearBottomRef = useRef(true);
   const prevMessageCountRef = useRef(0);
+  const hasInitialScrollRef = useRef(false);
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
 
   useLayoutEffect(() => {
@@ -309,6 +310,15 @@ export default function LlmMessageList({
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+
+    if (!hasInitialScrollRef.current && messages.length > 0) {
+      container.scrollTop = container.scrollHeight;
+      isNearBottomRef.current = true;
+      setShowJumpToLatest(false);
+      hasInitialScrollRef.current = true;
+      prevMessageCountRef.current = messages.length;
+      return;
+    }
 
     const bottomThreshold = 120;
     const distanceFromBottom =
