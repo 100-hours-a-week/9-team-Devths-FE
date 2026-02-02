@@ -60,8 +60,6 @@ export function mapAiChatRoomToLlmRoom(room: AiChatRoom): LlmRoom {
   };
 }
 
-const S3_BASE_URL = process.env.NEXT_PUBLIC_S3_URL ?? '';
-
 function mapRole(role: ChatMessage['role']): UIMessage['role'] {
   switch (role) {
     case 'ASSISTANT':
@@ -74,18 +72,11 @@ function mapRole(role: ChatMessage['role']): UIMessage['role'] {
 }
 
 export function toUIMessage(msg: ChatMessage): UIMessage {
-  const attachments: UIAttachment[] | undefined = msg.attachments?.map((att) => ({
-    type: att.mimeType.startsWith('image/') ? 'image' : 'file',
-    name: att.originalName,
-    url: `${S3_BASE_URL}/${att.s3Key}`,
-  }));
-
   return {
     id: String(msg.messageId),
     role: mapRole(msg.role),
     text: msg.content,
     time: formatMessageTime(msg.createdAt),
-    attachments: attachments?.length ? attachments : undefined,
   };
 }
 
