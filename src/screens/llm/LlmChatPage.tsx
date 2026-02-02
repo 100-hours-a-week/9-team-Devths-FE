@@ -195,6 +195,10 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
         ...(isFinalAnswer ? [] : [pendingAiMessage]),
       ]);
 
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => resolve());
+      });
+
       try {
         const response = await sendMessageStream(numericRoomId, {
           content: trimmed,
