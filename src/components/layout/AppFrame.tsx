@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { AppFrameContext, type AppFrameOptions } from '@/components/layout/AppFrameContext';
@@ -7,6 +8,7 @@ import BottomNav from '@/components/layout/BottomNav';
 import Header from '@/components/layout/Header';
 import { HeaderContext, type HeaderOptions } from '@/components/layout/HeaderContext';
 import LlmAnalysisTaskWatcher from '@/components/llm/analysis/LlmAnalysisTaskWatcher';
+import { getAccessToken } from '@/lib/auth/token';
 
 import type { CSSProperties, ReactNode } from 'react';
 
@@ -25,6 +27,7 @@ export default function AppFrame({
   onBackClick,
   rightSlot,
 }: AppFrameProps) {
+  const router = useRouter();
   const defaultOptions = useMemo<HeaderOptions>(
     () => ({
       title: headerTitle,
@@ -39,6 +42,7 @@ export default function AppFrame({
   const defaultFrameOptions = useMemo<AppFrameOptions>(() => ({ showBottomNav: true }), []);
   const [frameOptions, setFrameOptions] = useState<AppFrameOptions>(defaultFrameOptions);
   const isBottomNavVisible = true;
+  const [isAuthed, setIsAuthed] = useState<boolean | null>(null);
 
   useEffect(() => {
     setOptions(defaultOptions);
@@ -47,7 +51,16 @@ export default function AppFrame({
     setFrameOptions(defaultFrameOptions);
   }, [defaultFrameOptions]);
 
-  // Bottom nav stays visible even when scrolling.
+  useEffect(() => {
+    const token = getAccessToken();
+    if (!token) {
+      setIsAuthed(false);
+      router.replace('/');
+      return;
+    }
+
+    setIsAuthed(true);
+  }, [router]);
 
   const resetOptions = useCallback(() => {
     setOptions(defaultOptions);
@@ -56,7 +69,7 @@ export default function AppFrame({
     setFrameOptions(defaultFrameOptions);
   }, [defaultFrameOptions]);
 
-  return (
+  return isAuthed ? (
     <AppFrameContext.Provider
       value={{
         options: frameOptions,
@@ -89,5 +102,5 @@ export default function AppFrame({
         </div>
       </HeaderContext.Provider>
     </AppFrameContext.Provider>
-  );
+  ) : null;
 }
