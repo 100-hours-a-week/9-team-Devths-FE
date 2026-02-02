@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -188,62 +189,83 @@ export default function SignupPage() {
 
   if (tempToken === null || email === null || !tempToken || !email) {
     return (
-      <main className="flex min-h-dvh items-center justify-center px-6">
-        <p className="text-sm text-neutral-600">회원가입 페이지 준비 중...</p>
+      <main className="min-h-dvh bg-transparent">
+        <div className="mx-auto flex min-h-dvh w-full items-center justify-center bg-white px-6 sm:max-w-[430px] sm:shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
+          <p className="text-sm text-neutral-600">회원가입 페이지 준비 중...</p>
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-[420px] flex-col px-5 pt-20 pb-10">
-      <header className="mb-10 flex justify-center">
-        <h1 className="text-5xl font-bold tracking-tight">Devths</h1>
-      </header>
+    <main className="min-h-dvh bg-transparent">
+      <div className="mx-auto flex min-h-dvh w-full justify-center bg-white px-5 pt-20 pb-10 sm:max-w-[430px] sm:px-6 sm:shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
+        <div className="flex w-full max-w-[420px] flex-col">
+          <header className="mb-0 flex justify-center">
+            <h1 className="flex items-center">
+              <span className="sr-only">Devths</span>
+              <Image
+                src="/icons/Devths.png"
+                alt="Devths"
+                width={520}
+                height={132}
+                className="h-[132px] w-auto"
+                priority
+              />
+            </h1>
+          </header>
 
-      <section className="flex flex-1 flex-col gap-8">
-        <ProfileImagePicker
-          previewUrl={profilePreviewUrl}
-          onSelect={handleSelectProfile}
-          onFileTooLarge={() => setIsFileTooLargeOpen(true)}
-          onInvalidType={() => toast('지원하지 않는 파일 형식입니다. (jpg/jpeg/png/webp만 가능)')}
-        />
+          <section className="flex flex-1 flex-col gap-4">
+            <ProfileImagePicker
+              previewUrl={profilePreviewUrl}
+              onSelect={handleSelectProfile}
+              onFileTooLarge={() => setIsFileTooLargeOpen(true)}
+              onInvalidType={() =>
+                toast('지원하지 않는 파일 형식입니다. (jpg/jpeg/png/webp만 가능)')
+              }
+            />
 
-        {isUploadingProfile ? (
-          <p className="text-center text-xs text-neutral-600">프로필 사진 업로드 중...</p>
-        ) : profileImageS3Key ? (
-          <p className="text-center text-xs text-neutral-600">프로필 사진 업로드 완료</p>
-        ) : null}
+            {isUploadingProfile ? (
+              <p className="text-center text-xs text-neutral-600">프로필 사진 업로드 중...</p>
+            ) : profileImageS3Key ? (
+              <p className="text-center text-xs text-neutral-600">프로필 사진 업로드 완료</p>
+            ) : null}
 
-        <div className="px-1">
-          <NicknameField
-            value={nickname}
-            onChange={setNickname}
-            errorMessage={nicknameErrorMessage}
+            <div className="px-1">
+              <NicknameField
+                value={nickname}
+                onChange={setNickname}
+                errorMessage={nicknameErrorMessage}
+              />
+            </div>
+
+            <div className="px-1">
+              <div className="text-sm font-semibold">관심 분야</div>
+              <div className="mt-3">
+                <InterestChips
+                  options={INTEREST_OPTIONS}
+                  selected={interests}
+                  onToggle={handleToggleInterest}
+                />
+              </div>
+            </div>
+          </section>
+
+          <footer className="mt-auto pt-8">
+            <PrimaryButton
+              disabled={!isNicknameValid || !hasInterests || isUploadingProfile || isSubmitting}
+              onClick={handleSubmit}
+            >
+              시작하기
+            </PrimaryButton>
+          </footer>
+
+          <FileTooLargeModal
+            open={isFileTooLargeOpen}
+            onClose={() => setIsFileTooLargeOpen(false)}
           />
         </div>
-
-        <div className="px-1">
-          <div className="text-sm font-semibold">관심 분야</div>
-          <div className="mt-3">
-            <InterestChips
-              options={INTEREST_OPTIONS}
-              selected={interests}
-              onToggle={handleToggleInterest}
-            />
-          </div>
-        </div>
-      </section>
-
-      <footer className="mt-auto pt-8">
-        <PrimaryButton
-          disabled={!isNicknameValid || !hasInterests || isUploadingProfile || isSubmitting}
-          onClick={handleSubmit}
-        >
-          시작하기
-        </PrimaryButton>
-      </footer>
-
-      <FileTooLargeModal open={isFileTooLargeOpen} onClose={() => setIsFileTooLargeOpen(false)} />
+      </div>
     </main>
   );
 }

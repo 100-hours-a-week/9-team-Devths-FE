@@ -79,7 +79,7 @@ export default function WithdrawModal({ open, onClose, nickname }: WithdrawModal
           <button
             type="button"
             onClick={handleGoHome}
-            className="h-12 w-full rounded-xl bg-neutral-900 text-sm font-semibold text-white hover:bg-neutral-800"
+            className="h-12 w-full rounded-xl bg-[#05C075] text-sm font-semibold text-white hover:bg-[#05C075]/90"
           >
             홈으로 돌아가기
           </button>

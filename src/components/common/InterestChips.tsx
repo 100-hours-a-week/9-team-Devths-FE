@@ -31,7 +31,7 @@ export default function InterestChips<T extends string>({
             className={cn(
               'inline-flex h-9 w-full items-center justify-center rounded-full border text-sm leading-none font-medium transition',
               isActive
-                ? 'border-zinc-900 bg-zinc-900 text-white'
+                ? 'border-[#05C075] bg-white text-[#05C075]'
                 : 'border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50',
             )}
           >
