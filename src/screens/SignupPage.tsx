@@ -52,7 +52,6 @@ export default function SignupPage() {
     return getNicknameErrorMessage(trimmedNickname);
   }, [trimmedNickname]);
   const isNicknameValid = trimmedNickname.length > 0 && nicknameErrorMessage === null;
-  const hasInterests = interests.length > 0;
 
   const handleToggleInterest = (value: InterestValue) => {
     setInterests((prev) =>
@@ -129,18 +128,15 @@ export default function SignupPage() {
   };
 
   const handleSelectProfile = async (file: File) => {
-    // preview
     if (profilePreviewUrl) URL.revokeObjectURL(profilePreviewUrl);
     setProfilePreviewUrl(URL.createObjectURL(file));
 
-    // upload flow
     await uploadProfileImage(file);
   };
 
   const handleSubmit = async () => {
     if (!tempToken || !email) return;
     if (!isNicknameValid) return;
-    if (!hasInterests) return;
 
     setIsSubmitting(true);
     try {
@@ -240,7 +236,7 @@ export default function SignupPage() {
             </div>
 
             <div className="px-1">
-              <div className="text-sm font-semibold">관심 분야</div>
+              <div className="text-sm font-semibold">관심 분야 (선택)</div>
               <div className="mt-3">
                 <InterestChips
                   options={INTEREST_OPTIONS}
@@ -253,7 +249,7 @@ export default function SignupPage() {
 
           <footer className="mt-auto pt-8">
             <PrimaryButton
-              disabled={!isNicknameValid || !hasInterests || isUploadingProfile || isSubmitting}
+              disabled={!isNicknameValid || isUploadingProfile || isSubmitting}
               onClick={handleSubmit}
             >
               시작하기
