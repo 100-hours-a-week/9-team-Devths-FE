@@ -269,6 +269,20 @@ export default function LlmMessageList({
     isLoadingRef.current = false;
   }, [messages]);
 
+  // 초기 로딩 시 맨 아래로 스크롤
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || hasInitialScrollRef.current || messages.length === 0) return;
+
+    // DOM이 완전히 렌더링된 후 스크롤
+    requestAnimationFrame(() => {
+      container.scrollTop = container.scrollHeight;
+    });
+    isNearBottomRef.current = true;
+    hasInitialScrollRef.current = true;
+    prevMessageCountRef.current = messages.length;
+  }, [messages]);
+
   const handleScroll = useCallback(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -301,24 +315,10 @@ export default function LlmMessageList({
 
   useEffect(() => {
     const container = containerRef.current;
-    if (container && messages.length > 0) {
-      container.scrollTop = container.scrollHeight;
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    const container = containerRef.current;
     if (!container) return;
 
-    if (!hasInitialScrollRef.current && messages.length > 0) {
-      container.scrollTop = container.scrollHeight;
-      isNearBottomRef.current = true;
-      setShowJumpToLatest(false);
-      hasInitialScrollRef.current = true;
-      prevMessageCountRef.current = messages.length;
-      return;
-    }
+    // 초기 스크롤은 useLayoutEffect에서 처리
+    if (!hasInitialScrollRef.current) return;
 
     const bottomThreshold = 120;
     const distanceFromBottom =
@@ -340,7 +340,7 @@ export default function LlmMessageList({
       if (isNearBottomRef.current) {
         container.scrollTop = container.scrollHeight;
       } else {
-        setShowJumpToLatest(true);
+        queueMicrotask(() => setShowJumpToLatest(true));
       }
     }
 
@@ -348,7 +348,7 @@ export default function LlmMessageList({
   }, [messages.length]);
 
   return (
-    <div className="relative flex-1">
+    <div className="relative min-h-0 flex-1">
       <div ref={containerRef} className="h-full overflow-y-auto bg-white px-4 py-4">
         {isLoadingMore && (
           <div className="mb-3 flex justify-center">
