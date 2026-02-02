@@ -336,9 +336,18 @@ export default function EventFormModal({
             <input
               className={tagFieldClass}
               value={formState.tags}
-              onChange={handleChange('tags')}
+              onChange={(event) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  tags: event.target.value.slice(0, 100),
+                }))
+              }
+              maxLength={100}
               placeholder="예: 프론트엔드, 인턴"
             />
+            <div className="text-right text-[11px] text-black/40">
+              {formState.tags.length}/100
+            </div>
             <p className="text-[11px] text-black/40">콤마(,)로 구분해 입력하세요.</p>
           </div>
 
