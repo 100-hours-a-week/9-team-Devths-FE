@@ -285,7 +285,13 @@ export default function EventFormModal({
             <input
               className={fieldClass}
               value={formState.company}
-              onChange={handleChange('company')}
+              onChange={(event) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  company: event.target.value.slice(0, 50),
+                }))
+              }
+              maxLength={50}
               placeholder="예: Devths"
             />
             {errors.company && <p className="text-xs text-red-600">{errors.company}</p>}
