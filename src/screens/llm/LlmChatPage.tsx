@@ -64,7 +64,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
   const serverMessages = useMemo<UIMessage[]>(() => {
     if (!data?.pages) return [];
 
-    const allMessages = data.pages.flatMap((page) => page?.messages ?? []);
+    const allMessages = [...data.pages].reverse().flatMap((page) => page?.messages ?? []);
     return allMessages.map(toUIMessage);
   }, [data]);
 
