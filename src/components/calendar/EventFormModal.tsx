@@ -350,11 +350,17 @@ export default function EventFormModal({
             <div className="rounded-2xl bg-white p-2">
               <div className="flex items-center gap-2">
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   min={1}
                   className={`${compactFieldClass} w-20 text-center`}
                   value={formState.notificationTime}
-                  onChange={handleChange('notificationTime')}
+                  maxLength={2}
+                  onChange={(event) => {
+                    const digitsOnly = event.target.value.replace(/\D/g, '').slice(0, 2);
+                    setFormState((prev) => ({ ...prev, notificationTime: digitsOnly }));
+                  }}
                 />
                 <select
                   className={`${compactFieldClass} w-24 pr-8`}
