@@ -271,9 +271,7 @@ export default function EventFormModal({
               maxLength={100}
               placeholder="예: 1차 면접"
             />
-            <div className="text-right text-[11px] text-black/40">
-              {formState.title.length}/100
-            </div>
+            <div className="text-right text-[11px] text-black/40">{formState.title.length}/100</div>
             {errors.title && <p className="text-xs text-red-600">{errors.title}</p>}
           </div>
 
@@ -360,9 +358,7 @@ export default function EventFormModal({
               maxLength={100}
               placeholder="예: 프론트엔드, 인턴"
             />
-            <div className="text-right text-[11px] text-black/40">
-              {formState.tags.length}/100
-            </div>
+            <div className="text-right text-[11px] text-black/40">{formState.tags.length}/100</div>
             <p className="text-[11px] text-black/40">콤마(,)로 구분해 입력하세요.</p>
           </div>
 

@@ -28,7 +28,7 @@ function TypingIndicator() {
 function TypingCursor() {
   return (
     <span
-      className="ml-0.5 inline-block text-[12px] font-semibold text-[#05C075] animate-pulse"
+      className="ml-0.5 inline-block animate-pulse text-[12px] font-semibold text-[#05C075]"
       aria-hidden="true"
     >
       ▍
