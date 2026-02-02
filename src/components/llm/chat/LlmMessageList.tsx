@@ -1,13 +1,14 @@
 'use client';
 
 import { Bot } from 'lucide-react';
-import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import type { UIMessage } from '@/lib/utils/llm';
 import type { ReactNode } from 'react';
 
 type Props = {
   messages: UIMessage[];
+  streamingMessageId?: string | null;
   onLoadMore?: () => void;
   hasMore?: boolean;
   isLoadingMore?: boolean;
@@ -19,13 +20,58 @@ function TypingIndicator() {
   return (
     <div className="flex items-center gap-1 text-[12px] text-neutral-500">
       <span>답변 생성 중</span>
-      <span className="flex items-center gap-0.5">
-        <span className="h-1 w-1 animate-bounce rounded-full bg-[#05C075] [animation-delay:-0.2s]" />
-        <span className="h-1 w-1 animate-bounce rounded-full bg-[#05C075] [animation-delay:-0.1s]" />
-        <span className="h-1 w-1 animate-bounce rounded-full bg-[#05C075]" />
-      </span>
+      <TypingCursor />
     </div>
   );
+}
+
+function TypingCursor() {
+  return (
+    <span
+      className="ml-0.5 inline-block text-[12px] font-semibold text-[#05C075] animate-pulse"
+      aria-hidden="true"
+    >
+      ▍
+    </span>
+  );
+}
+
+function TypewriterText({ text }: { text: string }) {
+  const [displayLength, setDisplayLength] = useState(0);
+  const intervalRef = useRef<number | null>(null);
+  const displayLengthRef = useRef(displayLength);
+  const textLengthRef = useRef(text.length);
+
+  useEffect(() => {
+    displayLengthRef.current = displayLength;
+  }, [displayLength]);
+
+  useEffect(() => {
+    textLengthRef.current = text.length;
+    if (intervalRef.current !== null) return;
+    if (displayLengthRef.current >= text.length) return;
+
+    const charsPerTick = 2;
+    intervalRef.current = window.setInterval(() => {
+      setDisplayLength((prev) => {
+        const next = Math.min(prev + charsPerTick, textLengthRef.current);
+        if (next >= textLengthRef.current && intervalRef.current !== null) {
+          window.clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        return next;
+      });
+    }, 16);
+
+    return () => {
+      if (intervalRef.current !== null) {
+        window.clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [text.length]);
+
+  return <>{renderMarkdown(text.slice(0, displayLength))}</>;
 }
 
 function renderInline(text: string): ReactNode[] {
@@ -193,6 +239,7 @@ function renderMarkdown(text: string): ReactNode[] {
 
 export default function LlmMessageList({
   messages,
+  streamingMessageId,
   onLoadMore,
   hasMore,
   isLoadingMore,
@@ -282,6 +329,7 @@ export default function LlmMessageList({
           }
 
           const isUser = m.role === 'USER';
+          const isStreaming = m.id === streamingMessageId;
 
           return (
             <div key={m.id} className={isUser ? 'flex justify-end' : 'flex justify-start'}>
@@ -314,7 +362,16 @@ export default function LlmMessageList({
                     {m.role === 'AI' && m.text.trim().length === 0 ? (
                       <TypingIndicator />
                     ) : (
-                      <div className="space-y-2">{renderMarkdown(m.text)}</div>
+                      <div className="space-y-2">
+                        {!isUser && isStreaming ? (
+                          <>
+                            <TypewriterText text={m.text} />
+                            <TypingCursor />
+                          </>
+                        ) : (
+                          <>{renderMarkdown(m.text)}</>
+                        )}
+                      </div>
                     )}
                     {m.attachments && m.attachments.length > 0 ? (
                       <div className="mt-2 space-y-1">
