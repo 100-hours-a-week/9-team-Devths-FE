@@ -317,9 +317,18 @@ export default function EventFormModal({
             <textarea
               className={textAreaClass}
               value={formState.description}
-              onChange={handleChange('description')}
+              onChange={(event) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  description: event.target.value.slice(0, 500),
+                }))
+              }
+              maxLength={500}
               placeholder="일정에 대한 설명을 입력하세요"
             />
+            <div className="text-right text-[11px] text-black/40">
+              {formState.description.length}/500
+            </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
