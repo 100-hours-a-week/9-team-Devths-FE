@@ -220,7 +220,9 @@ export default function SignupPage() {
               previewUrl={profilePreviewUrl}
               onSelect={handleSelectProfile}
               onFileTooLarge={() => setIsFileTooLargeOpen(true)}
-              onInvalidType={() => toast('지원하지 않는 파일 형식입니다. (jpg/jpeg/png/webp만 가능)')}
+              onInvalidType={() =>
+                toast('지원하지 않는 파일 형식입니다. (jpg/jpeg/png/webp만 가능)')
+              }
             />
 
             {isUploadingProfile ? (
