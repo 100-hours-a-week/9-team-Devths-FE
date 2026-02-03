@@ -80,7 +80,7 @@ export default function LlmAttachmentSheet({
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-neutral-900">파일 첨부</p>
-                <p className="mt-0.5 text-xs text-neutral-500">PDF · 최대 1개 · 10MB</p>
+                <p className="mt-0.5 text-xs text-neutral-500">PDF · 최대 1개 · 10MB · 10장 이하</p>
               </div>
             </button>
 

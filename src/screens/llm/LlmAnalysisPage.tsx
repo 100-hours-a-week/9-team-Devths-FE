@@ -13,11 +13,13 @@ import {
   IMAGE_MIME_TYPES,
   FILE_MIME_TYPES,
   LLM_ATTACHMENT_CONSTRAINTS,
+  LLM_PDF_MAX_PAGES,
 } from '@/constants/attachment';
 import { createRoom, startAnalysis } from '@/lib/api/llmRooms';
 import { useAnalysisTaskStore } from '@/lib/llm/analysisTaskStore';
 import { toast } from '@/lib/toast/store';
 import { uploadFile } from '@/lib/upload/uploadFile';
+import { getPdfPageCount } from '@/lib/utils/pdf';
 import { getAnalysisDisabledReason } from '@/lib/validators/analysisForm';
 import { validateFiles } from '@/lib/validators/attachment';
 
@@ -144,29 +146,44 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
   );
 
   const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(e.target.files || []);
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const input = e.target;
+      const files = Array.from(input.files || []);
       if (files.length === 0) return;
 
-      const doc = getCurrentDoc();
-      const updateFn = getUpdateFn();
+      try {
+        const doc = getCurrentDoc();
+        const updateFn = getUpdateFn();
 
-      const { okFiles, errors } = validateFiles(
-        files,
-        LLM_ATTACHMENT_CONSTRAINTS,
-        0,
-        doc.pdf ? 1 : 0,
-      );
+        const { okFiles, errors } = validateFiles(
+          files,
+          LLM_ATTACHMENT_CONSTRAINTS,
+          0,
+          doc.pdf ? 1 : 0,
+        );
 
-      if (errors.length > 0) {
-        toast(errors[0].message);
+        if (errors.length > 0) {
+          toast(errors[0].message);
+        }
+
+        if (okFiles.length > 0) {
+          const file = okFiles[0];
+          try {
+            const pageCount = await getPdfPageCount(file);
+            if (pageCount > LLM_PDF_MAX_PAGES) {
+              toast(`PDF는 최대 ${LLM_PDF_MAX_PAGES}장까지 첨부할 수 있습니다.`);
+              return;
+            }
+          } catch {
+            toast('PDF를 확인할 수 없습니다. 잠금 상태인 파일은 첨부할 수 없습니다.');
+            return;
+          }
+
+          updateFn({ pdf: file });
+        }
+      } finally {
+        input.value = '';
       }
-
-      if (okFiles.length > 0) {
-        updateFn({ pdf: okFiles[0] });
-      }
-
-      e.target.value = '';
     },
     [getCurrentDoc, getUpdateFn],
   );
