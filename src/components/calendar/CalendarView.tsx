@@ -66,8 +66,27 @@ export default function CalendarView({
   const renderEventDot = (arg: EventContentArg) => {
     const stage = arg.event.extendedProps?.stage;
     const color = getStageColor(stage);
+    const start = arg.event.start;
+    const end = arg.event.end;
+    const isSingleDay = (() => {
+      if (!start || !end) return true;
+      if (arg.event.allDay) {
+        const diffDays = (end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000);
+        return diffDays <= 1;
+      }
+      return (
+        start.getFullYear() === end.getFullYear() &&
+        start.getMonth() === end.getMonth() &&
+        start.getDate() === end.getDate()
+      );
+    })();
 
-    return <span className="calendar-event-bar" style={{ backgroundColor: color }} />;
+    return (
+      <span
+        className={isSingleDay ? 'calendar-event-dot' : 'calendar-event-bar'}
+        style={{ backgroundColor: color }}
+      />
+    );
   };
 
   const renderDayNumber = (arg: DayCellContentArg) => {
@@ -97,7 +116,7 @@ export default function CalendarView({
         locale="ko"
         headerToolbar={false}
         firstDay={1}
-        showNonCurrentDates={false}
+        showNonCurrentDates={true}
         fixedWeekCount={false}
         dayMaxEvents={3}
         dayHeaderFormat={{ weekday: 'short' }}

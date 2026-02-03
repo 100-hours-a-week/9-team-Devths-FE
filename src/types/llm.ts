@@ -1,6 +1,6 @@
 export type CursorPage<T> = {
   items: T[];
-  lastId: number;
+  lastId: number | null;
   hasNext: boolean;
 };
 
@@ -31,13 +31,13 @@ export type ChatMessage = {
   content: string;
   type: MessageType;
   metadata: Record<string, unknown> | null;
-  attachments?: ChatMessageAttachment[];
+  // attachments?: ChatMessageAttachment[];
   createdAt: string;
 };
 
 export type FetchRoomsResponse = {
   rooms: AiChatRoom[];
-  lastId: number;
+  lastId: number | null;
   hasNext: boolean;
 };
 
@@ -50,7 +50,7 @@ export type CreateRoomResponse = {
 
 export type FetchMessagesResponse = {
   messages: ChatMessage[];
-  lastId: number;
+  lastId: number | null;
   hasNext: boolean;
 };
 
@@ -80,13 +80,23 @@ export type StartInterviewRequest = {
 export type StartInterviewResponse = {
   interviewId: number;
   interviewType: InterviewType;
+  currentQuestionCount: number;
+  isResumed: boolean;
 };
 
 export type EndInterviewRequest = {
   interviewId: number;
+  content?: string;
 };
 
 export type LlmModel = 'GEMINI' | 'VLLM';
+
+export type CurrentInterviewResponse = {
+  interviewId: number;
+  interviewType: InterviewType;
+  currentQuestionCount: number;
+  createdAt: string;
+};
 
 export type DocumentInput = {
   text: string;

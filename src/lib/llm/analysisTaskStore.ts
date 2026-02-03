@@ -1,6 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 import type { LlmModel, TaskStatus } from '@/types/llm';
 
@@ -21,10 +22,21 @@ type AnalysisTaskState = {
   clearActiveTask: () => void;
 };
 
-export const useAnalysisTaskStore = create<AnalysisTaskState>((set) => ({
-  activeTask: null,
-  setActiveTask: (task) => set({ activeTask: task }),
-  updateStatus: (status) =>
-    set((state) => (state.activeTask ? { activeTask: { ...state.activeTask, status } } : state)),
-  clearActiveTask: () => set({ activeTask: null }),
-}));
+export const useAnalysisTaskStore = create<AnalysisTaskState>()(
+  persist(
+    (set) => ({
+      activeTask: null,
+      setActiveTask: (task) => set({ activeTask: task }),
+      updateStatus: (status) =>
+        set((state) =>
+          state.activeTask ? { activeTask: { ...state.activeTask, status } } : state,
+        ),
+      clearActiveTask: () => set({ activeTask: null }),
+    }),
+    {
+      name: 'devths-analysis-task',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({ activeTask: state.activeTask }),
+    },
+  ),
+);

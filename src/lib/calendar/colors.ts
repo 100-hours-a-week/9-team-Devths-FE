@@ -1,9 +1,9 @@
 import type { InterviewStage } from '@/types/calendar';
 
 export const stageColorMap: Record<InterviewStage, string> = {
-  DOCUMENT: '#3B82F6',
-  CODING_TEST: '#8B5CF6',
-  INTERVIEW: '#22C55E',
+  DOCUMENT: '#05C075',
+  CODING_TEST: '#F4C430',
+  INTERVIEW: '#3B82F6',
 };
 
 export function getStageColor(stage?: InterviewStage) {

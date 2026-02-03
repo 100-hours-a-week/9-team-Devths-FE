@@ -15,8 +15,9 @@ export default function Page() {
   const roomId = params.roomId as string;
   const numericRoomId = Number(searchParams.get('rid')) || 0;
   const model = searchParams.get('model');
+  const from = searchParams.get('from');
   const { setOptions, resetOptions } = useHeader();
-  const { data } = useRoomsInfiniteQuery();
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useRoomsInfiniteQuery();
   const activeTask = useAnalysisTaskStore((state) => state.activeTask);
 
   const resolvedTitle = useMemo(() => {
@@ -36,11 +37,39 @@ export default function Page() {
     setOptions({
       title: resolvedTitle,
       showBackButton: true,
-      onBackClick: () => router.push('/llm'),
+      onBackClick: () => (from === 'notifications' ? router.back() : router.push('/llm')),
     });
 
     return () => resetOptions();
-  }, [resetOptions, resolvedTitle, router, setOptions]);
+  }, [from, resetOptions, resolvedTitle, router, setOptions]);
+
+  useEffect(() => {
+    if (numericRoomId > 0) return;
+    if (!data) return;
+
+    const rooms = data.pages.flatMap((page) => (page ? page.rooms : []));
+    const matched = rooms.find((room) => room.roomUuid === roomId);
+
+    if (matched?.roomId) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('rid', String(matched.roomId));
+      router.replace(`/llm/${roomId}?${params.toString()}`);
+      return;
+    }
+
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    numericRoomId,
+    roomId,
+    router,
+    searchParams,
+  ]);
 
   return <LlmChatPage roomId={roomId} numericRoomId={numericRoomId} initialModel={model} />;
 }

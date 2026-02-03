@@ -6,6 +6,7 @@ import CalendarFilters from '@/components/calendar/CalendarFilters';
 import CalendarView from '@/components/calendar/CalendarView';
 import EventDetailModal from '@/components/calendar/EventDetailModal';
 import EventFormModal, { type EventFormMode } from '@/components/calendar/EventFormModal';
+import BaseModal from '@/components/common/BaseModal';
 import TodoSummaryCard from '@/components/todo/TodoSummaryCard';
 import { createEvent, deleteEvent, getEvent, listEvents, updateEvent } from '@/lib/api/calendar';
 import { toFullCalendarEvent } from '@/lib/calendar/mappers';
@@ -18,9 +19,9 @@ import type { DateClickArg } from '@fullcalendar/interaction';
 type DateRange = ReturnType<typeof getSeoulDateRangeFromDatesSet>;
 
 const stageDotClasses: Record<InterviewStage, string> = {
-  DOCUMENT: 'bg-blue-500',
-  CODING_TEST: 'bg-purple-500',
-  INTERVIEW: 'bg-green-500',
+  DOCUMENT: 'bg-[#05C075]',
+  CODING_TEST: 'bg-[#F4C430]',
+  INTERVIEW: 'bg-[#3B82F6]',
 };
 
 const formatDateLabel = (date: Date) =>
@@ -34,8 +35,9 @@ const getWeekOfMonth = (date: Date) => {
 
 const formatEventTime = (start: Date | null, end: Date | null) => {
   if (!start) return '';
+  const dateLabel = start.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
   if (!end) {
-    return start.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+    return `${dateLabel} ${start.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`;
   }
 
   const sameDay =
@@ -44,7 +46,7 @@ const formatEventTime = (start: Date | null, end: Date | null) => {
     start.getDate() === end.getDate();
 
   if (sameDay) {
-    return `${start.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString(
+    return `${dateLabel} ${start.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString(
       'ko-KR',
       { hour: '2-digit', minute: '2-digit' },
     )}`;
@@ -70,6 +72,7 @@ export default function CalendarPage() {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [detail, setDetail] = useState<GoogleEventDetailResponse | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<EventFormMode>('create');
   const [formSubmitting, setFormSubmitting] = useState(false);
@@ -262,12 +265,15 @@ export default function CalendarPage() {
     [detail, fetchDetail, fetchEvents, formMode, handleCreated, stageFilter, tagFilter],
   );
 
-  const handleDelete = useCallback(async () => {
+  const handleDeleteRequest = useCallback(() => {
     if (!detail || deleteLoading) return;
-    const confirmed = window.confirm('이 일정을 삭제할까요?');
-    if (!confirmed) return;
+    setDeleteConfirmOpen(true);
+  }, [deleteLoading, detail]);
 
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!detail || deleteLoading) return;
     setDeleteLoading(true);
+    setDetailError(null);
 
     try {
       const result = await deleteEvent(detail.eventId);
@@ -277,6 +283,7 @@ export default function CalendarPage() {
         return;
       }
 
+      setDeleteConfirmOpen(false);
       handleCloseDetail();
 
       if (currentRangeRef.current) {
@@ -312,20 +319,22 @@ export default function CalendarPage() {
     calendarApiRef.current?.next();
   }, []);
 
+  const handleToday = useCallback(() => {
+    calendarApiRef.current?.today();
+    setSelectedDate(null);
+  }, []);
+
+  const handleWeekView = useCallback(() => {
+    setViewMode('week');
+    calendarApiRef.current?.today();
+  }, []);
+
   const handleEventRowClick = useCallback(
     async (eventId: string) => {
       await fetchDetail(eventId, { open: true });
     },
     [fetchDetail],
   );
-
-  const sortedEvents = useMemo(() => {
-    return [...events].sort((a, b) => {
-      const startA = a.start ? new Date(a.start as string | number | Date).getTime() : 0;
-      const startB = b.start ? new Date(b.start as string | number | Date).getTime() : 0;
-      return startA - startB;
-    });
-  }, [events]);
 
   const baseTitle = formatDateLabel(currentStart ?? new Date());
   const currentTitle =
@@ -336,25 +345,54 @@ export default function CalendarPage() {
     () => (selectedDate ? toLocalDate(selectedDate) : undefined),
     [selectedDate],
   );
+  const filteredEvents = useMemo(() => {
+    if (!selectedDateFilter) return events;
+
+    const targetKey = selectedDateFilter.replace(/-/g, '');
+
+    return events.filter((event) => {
+      if (!event.start) return false;
+
+      const startDate = toLocalDate(new Date(event.start as string | number | Date));
+      const endDate = event.end
+        ? toLocalDate(new Date(event.end as string | number | Date))
+        : startDate;
+
+      const startKey = startDate.replace(/-/g, '');
+      const endKey = endDate.replace(/-/g, '');
+
+      const rangeStart = startKey <= endKey ? startKey : endKey;
+      const rangeEnd = startKey <= endKey ? endKey : startKey;
+
+      return targetKey >= rangeStart && targetKey <= rangeEnd;
+    });
+  }, [events, selectedDateFilter]);
+  const sortedEvents = useMemo(() => {
+    return [...filteredEvents].sort((a, b) => {
+      const startA = a.start ? new Date(a.start as string | number | Date).getTime() : 0;
+      const startB = b.start ? new Date(b.start as string | number | Date).getTime() : 0;
+      return startA - startB;
+    });
+  }, [filteredEvents]);
 
   return (
     <main className="calendar-shell pb-8">
-      <div className="-mx-4 border-b border-[#E8E8E8] bg-white">
+      <div className="-mx-4 bg-white">
         <div className="flex">
           <button
             type="button"
             onClick={() => setViewMode('month')}
             className={`flex-1 py-3 text-sm font-medium transition-all ${
-              viewMode === 'month' ? 'border-b-2 border-[#151515] text-[#151515]' : 'text-[#8A8A8A]'
+              viewMode === 'month' ? 'border-b-2 border-[#05C075] text-[#151515]' : 'text-[#8A8A8A]'
             }`}
           >
             월간
           </button>
           <button
             type="button"
-            onClick={() => setViewMode('week')}
+            onClick={handleWeekView}
             className={`flex-1 py-3 text-sm font-medium transition-all ${
-              viewMode === 'week' ? 'border-b-2 border-[#151515] text-[#151515]' : 'text-[#8A8A8A]'
+              viewMode === 'week' ? 'border-b-2 border-[#05C075] text-[#151515]' : 'text-[#8A8A8A]'
             }`}
           >
             주간
@@ -376,6 +414,13 @@ export default function CalendarPage() {
         <div className="mb-3 flex items-center justify-between">
           <div className="text-base font-semibold text-[#151515]">{currentTitle}</div>
           <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleToday}
+              className="inline-flex items-center rounded-full border border-[#05C075] bg-white px-3 text-xs font-semibold text-[#05C075] hover:bg-[#05C075]/10"
+            >
+              현재 날짜로 이동
+            </button>
             <button
               type="button"
               onClick={handlePrev}
@@ -422,20 +467,20 @@ export default function CalendarPage() {
         />
       </section>
 
-      <section className="pt-4">
+      <section className="mt-4 rounded-2xl bg-white px-4 py-5">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-base font-bold text-[#151515]">
-            일정 목록
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-black">일정 목록</h2>
             {sortedEvents.length > 0 ? (
-              <span className="ml-2 text-sm font-normal text-[#8A8A8A]">
+              <span className="rounded-full bg-[#05C075]/10 px-2 py-1 text-xs font-semibold text-[#05C075]">
                 {sortedEvents.length}개
               </span>
             ) : null}
-          </h2>
+          </div>
           <button
             type="button"
             onClick={handleCreateOpen}
-            className="flex h-9 items-center gap-1 rounded-lg bg-[#05C075] px-4 text-sm font-medium text-white transition-all hover:bg-[#04A865]"
+            className="flex h-9 items-center gap-1 rounded-full bg-[#05C075] px-4 text-sm font-semibold text-white transition-all hover:bg-[#04A865]"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
@@ -450,10 +495,10 @@ export default function CalendarPage() {
         </div>
 
         {sortedEvents.length === 0 && !loading && !error ? (
-          <div className="rounded-2xl border border-[#E8E8E8] bg-white px-4 py-12 text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-[#E8E8E8] bg-[#FAFAFA]">
+          <div className="rounded-2xl bg-white px-4 py-8 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-black/5 bg-black/[0.02]">
               <svg
-                className="h-7 w-7 text-[#C8C8C8]"
+                className="h-7 w-7 text-black/20"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -466,9 +511,7 @@ export default function CalendarPage() {
                 />
               </svg>
             </div>
-            <p className="text-sm text-[#8A8A8A]">
-              등록된 일정이 없습니다. 새 일정을 추가해보세요!
-            </p>
+            <p className="text-sm text-black/40">등록된 일정이 없습니다. 새 일정을 추가해보세요!</p>
           </div>
         ) : null}
 
@@ -476,7 +519,7 @@ export default function CalendarPage() {
           <div className="space-y-2">
             {sortedEvents.map((event) => {
               const stage = event.extendedProps?.stage as InterviewStage | undefined;
-              const dotClass = stage ? stageDotClasses[stage] : 'bg-zinc-400';
+              const dotClass = stage ? stageDotClasses[stage] : 'bg-black/40';
               const startDate = event.start
                 ? new Date(event.start as string | number | Date)
                 : null;
@@ -489,12 +532,12 @@ export default function CalendarPage() {
                   key={String(event.id ?? title)}
                   type="button"
                   onClick={() => handleEventRowClick(String(event.id ?? ''))}
-                  className="flex w-full items-center gap-3 rounded-lg border border-[#E8E8E8] bg-white p-3 text-left shadow-sm transition-all hover:shadow-md"
+                  className="flex w-full items-center gap-3 rounded-xl border border-black/5 bg-white p-4 text-left transition-all hover:-translate-y-0.5"
                 >
                   <span className={`h-2.5 w-2.5 rounded-full ${dotClass}`} />
                   <div className="flex-1 overflow-hidden">
-                    <p className="truncate text-sm font-medium text-[#151515]">{displayTitle}</p>
-                    <p className="text-xs text-[#8A8A8A]">{formatEventTime(startDate, endDate)}</p>
+                    <p className="truncate text-sm font-semibold text-black">{displayTitle}</p>
+                    <p className="text-xs text-black/45">{formatEventTime(startDate, endDate)}</p>
                   </div>
                 </button>
               );
@@ -503,7 +546,7 @@ export default function CalendarPage() {
         ) : null}
       </section>
 
-      <section className="pt-4 pb-8">
+      <section className="mt-6 border-t border-black/5 pt-6 pb-8">
         <TodoSummaryCard dateFilter={selectedDateFilter} />
       </section>
 
@@ -511,12 +554,40 @@ export default function CalendarPage() {
         open={detailOpen}
         onClose={handleCloseDetail}
         onEdit={handleEditOpen}
-        onDelete={handleDelete}
+        onDelete={handleDeleteRequest}
         deleteLoading={deleteLoading}
         loading={detailLoading}
         error={detailError}
         detail={detail}
       />
+
+      <BaseModal
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        title="일정 삭제"
+      >
+        <div className="mt-3 space-y-4">
+          <p className="text-sm text-black/70">이 일정을 삭제할까요?</p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setDeleteConfirmOpen(false)}
+              className="h-10 flex-1 rounded-full border border-black/10 text-sm font-semibold text-black/70 hover:bg-black/5"
+              disabled={deleteLoading}
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteConfirm}
+              className="h-10 flex-1 rounded-full bg-red-600 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+              disabled={deleteLoading}
+            >
+              {deleteLoading ? '삭제 중...' : '삭제'}
+            </button>
+          </div>
+        </div>
+      </BaseModal>
 
       <EventFormModal
         open={formOpen}

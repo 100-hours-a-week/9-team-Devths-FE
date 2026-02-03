@@ -58,7 +58,7 @@ export default function MyPageScreen() {
 
   return (
     <main className="flex flex-col px-6 py-4">
-      <section className="mt-4 rounded-xl bg-white p-4 shadow-sm">
+      <section className="-mx-6 mt-2 bg-white px-6 py-4">
         {isLoading ? (
           <div className="flex items-center gap-4">
             <div className="h-16 w-16 animate-pulse rounded-full bg-neutral-200" />
@@ -70,59 +70,90 @@ export default function MyPageScreen() {
         ) : isError ? (
           <p className="text-sm text-red-500">프로필을 불러오지 못했습니다.</p>
         ) : (
-          <div className="flex items-center gap-4">
-            {data?.profileImage?.url ? (
-              <Image
-                src={data.profileImage.url}
-                alt="프로필"
-                width={64}
-                height={64}
-                className="h-16 w-16 rounded-full object-cover"
-              />
-            ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-neutral-200">
-                <User className="h-8 w-8 text-neutral-400" />
-              </div>
-            )}
-
-            <div className="flex-1">
-              <p className="text-lg font-semibold">{data?.nickname}</p>
-              {data?.interests && data.interests.length > 0 && (
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {data.interests.map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              {data?.profileImage?.url ? (
+                <Image
+                  src={data.profileImage.url}
+                  alt="프로필"
+                  width={64}
+                  height={64}
+                  className="h-16 w-16 rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-neutral-200">
+                  <User className="h-8 w-8 text-neutral-400" />
                 </div>
               )}
-            </div>
 
-            <button
-              type="button"
-              onClick={() => setIsEditOpen(true)}
-              className="flex items-center gap-1 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-neutral-600 hover:bg-neutral-50"
-            >
-              <Pencil className="h-4 w-4" />
-              수정
-            </button>
+              <div className="flex-1">
+                <p className="text-lg font-semibold text-neutral-900">{data?.nickname}</p>
+                {data?.interests && data.interests.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {data.interests.map((tag) => {
+                      const normalized = tag.toLowerCase();
+                      const mappedTag =
+                        normalized === '프론트엔드' ||
+                        normalized === 'frontend' ||
+                        normalized === 'fe'
+                          ? 'FE'
+                          : normalized === '백엔드' ||
+                              normalized === 'backend' ||
+                              normalized === 'be'
+                            ? 'BE'
+                            : normalized === '클라우드' || normalized === 'cloud'
+                              ? 'CLOUD'
+                              : normalized === 'ai' || normalized === '인공지능'
+                                ? 'AI'
+                                : tag;
+
+                      return (
+                        <span
+                          key={tag}
+                          className="justify-self-start rounded-full bg-neutral-100 px-3 py-1 text-center text-[11px] font-semibold whitespace-nowrap text-neutral-700"
+                        >
+                          #{mappedTag}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col items-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditOpen(true)}
+                  className="flex items-center gap-1 rounded-full bg-[#05C075] px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-[#04A865]"
+                >
+                  <Pencil className="h-4 w-4" />
+                  수정
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLogoutOpen}
+                  className="rounded-full border border-[#05C075] bg-white px-3 py-1.5 text-xs font-semibold text-[#05C075] shadow-sm hover:bg-[#E9F9F1]"
+                >
+                  로그아웃
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </section>
 
-      <section className="flex flex-1 flex-col items-center justify-center py-24">
-        <Smile className="h-12 w-12 text-neutral-300" />
-        <p className="mt-4 text-sm text-neutral-400">다음 버전에 기능 추가 예정입니다.</p>
+      <section className="mt-6 flex flex-1 flex-col items-center justify-center rounded-2xl bg-white py-20 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100">
+          <Smile className="h-6 w-6 text-neutral-400" />
+        </div>
+        <p className="mt-4 text-sm font-semibold text-neutral-700">기능 업데이트 준비 중</p>
+        <p className="mt-1 text-xs text-neutral-400">다음 버전에 추가될 예정입니다.</p>
       </section>
 
       <EditProfileModal
         open={isEditOpen}
         onClose={() => setIsEditOpen(false)}
         onWithdraw={handleWithdraw}
-        onLogout={handleLogoutOpen}
         initialData={data}
       />
 

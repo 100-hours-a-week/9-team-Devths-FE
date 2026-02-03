@@ -36,16 +36,6 @@ export function useNotificationsInfiniteQuery({ size }: UseNotificationsInfinite
       if (!lastPage.hasNext) return undefined;
       return lastPage.lastId ?? undefined;
     },
-    select: (data) => ({
-      ...data,
-      pages: data.pages.map((page) => ({
-        ...page,
-        notifications: page.notifications.map((notification) => ({
-          ...notification,
-          isRead: true,
-        })),
-      })),
-    }),
     enabled: hasAccessToken,
   });
 

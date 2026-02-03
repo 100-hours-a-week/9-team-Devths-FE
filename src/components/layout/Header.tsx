@@ -1,6 +1,7 @@
 'use client';
 
 import { Bell, ChevronLeft } from 'lucide-react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 import { useUnreadCountQuery } from '@/lib/hooks/notifications/useUnreadCountQuery';
@@ -26,8 +27,8 @@ export default function Header({
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white">
-      <div className="flex h-14 items-center justify-between px-4 sm:px-6">
-        <div className="flex w-10 items-center">
+      <div className="flex h-14 items-center px-4 sm:px-6">
+        <div className="flex items-center gap-2">
           {showBackButton ? (
             <button
               type="button"
@@ -38,11 +39,28 @@ export default function Header({
               <ChevronLeft className="h-5 w-5" />
             </button>
           ) : null}
+          {title === 'Devths' ? (
+            <button
+              type="button"
+              onClick={() => router.push('/llm')}
+              className="inline-flex items-center rounded-md transition hover:opacity-80"
+              aria-label="Devths 홈 이동"
+            >
+              <Image
+                src="/icons/Devths.png"
+                alt="Devths"
+                width={156}
+                height={48}
+                className="h-12 w-auto"
+                priority
+              />
+            </button>
+          ) : (
+            <h1 className="text-base font-semibold text-neutral-900">{title}</h1>
+          )}
         </div>
 
-        <h1 className="text-base font-semibold text-neutral-900">{title}</h1>
-
-        <div className="flex w-10 items-center justify-end">
+        <div className="ml-auto flex w-10 items-center justify-end">
           {rightSlot ?? (
             <button
               type="button"
@@ -52,7 +70,7 @@ export default function Header({
             >
               <Bell className="h-5 w-5" />
               {showBadge ? (
-                <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500" />
+                <span className="absolute top-[0.5px] right-[0.5px] h-2.5 w-2.5 rounded-full bg-red-500" />
               ) : null}
             </button>
           )}

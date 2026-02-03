@@ -27,6 +27,12 @@ const notificationUnitLabels: Record<NotificationUnit, string> = {
   DAY: '일 전',
 };
 
+const stageBadgeClasses: Record<InterviewStage, string> = {
+  DOCUMENT: 'border-[#05C075]/40 bg-[#05C075]/10 text-[#05C075]',
+  CODING_TEST: 'border-[#F4C430]/40 bg-[#F4C430]/15 text-[#B08200]',
+  INTERVIEW: 'border-[#3B82F6]/40 bg-[#3B82F6]/12 text-[#2563EB]',
+};
+
 function formatDateTime(value: string) {
   return value.replace('T', ' ');
 }
@@ -54,53 +60,62 @@ function renderContent({
       : `${detail.notificationTime}${notificationUnitLabels[detail.notificationUnit]}`;
 
   return (
-    <dl className="mt-3 space-y-2 text-sm">
-      <div className="flex gap-3">
-        <dt className="w-16 text-zinc-500">제목</dt>
-        <dd className="flex-1 text-zinc-900">{detail.title}</dd>
+    <div className="mt-3 space-y-4 text-sm">
+      <div className="rounded-2xl bg-black/[0.02] px-4 py-3">
+        <p className="text-[11px] font-semibold text-black/50">제목</p>
+        <p className="mt-1 text-base font-semibold text-black">{detail.title}</p>
       </div>
-      <div className="flex gap-3">
-        <dt className="w-16 text-zinc-500">회사</dt>
-        <dd className="flex-1 text-zinc-900">{detail.company}</dd>
+      <div className="rounded-2xl bg-black/[0.02] px-4 py-3">
+        <p className="text-[11px] font-semibold text-black/50">회사</p>
+        <p className="mt-1 text-sm font-semibold text-black/70">{detail.company}</p>
       </div>
-      <div className="flex gap-3">
-        <dt className="w-16 text-zinc-500">단계</dt>
-        <dd className="flex-1 text-zinc-900">{stageLabels[detail.stage]}</dd>
-      </div>
-      <div className="flex gap-3">
-        <dt className="w-16 text-zinc-500">시간</dt>
-        <dd className="flex-1 text-zinc-900">
-          {formatDateTime(detail.startTime)} ~ {formatDateTime(detail.endTime)}
-        </dd>
-      </div>
-      <div className="flex gap-3">
-        <dt className="w-16 text-zinc-500">설명</dt>
-        <dd className="flex-1 text-zinc-900">{detail.description || '없음'}</dd>
-      </div>
-      <div className="flex gap-3">
-        <dt className="w-16 text-zinc-500">태그</dt>
-        <dd className="flex-1 text-zinc-900">
-          {detail.tags.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {detail.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full bg-zinc-100 px-2 py-1 text-xs text-zinc-600"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          ) : (
-            '없음'
-          )}
-        </dd>
-      </div>
-      <div className="flex gap-3">
-        <dt className="w-16 text-zinc-500">알림</dt>
-        <dd className="flex-1 text-zinc-900">{notificationLabel}</dd>
-      </div>
-    </dl>
+
+      <dl className="space-y-3">
+        <div className="flex items-center justify-between">
+          <dt className="text-[11px] font-semibold text-black/50">단계</dt>
+          <dd
+            className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+              stageBadgeClasses[detail.stage]
+            }`}
+          >
+            {stageLabels[detail.stage]}
+          </dd>
+        </div>
+        <div className="flex flex-col gap-1">
+          <dt className="text-[11px] font-semibold text-black/50">시간</dt>
+          <dd className="text-sm font-medium text-black">
+            {formatDateTime(detail.startTime)} ~ {formatDateTime(detail.endTime)}
+          </dd>
+        </div>
+        <div className="flex flex-col gap-1">
+          <dt className="text-[11px] font-semibold text-black/50">설명</dt>
+          <dd className="text-sm text-black/70">{detail.description || '없음'}</dd>
+        </div>
+        <div className="flex flex-col gap-1">
+          <dt className="text-[11px] font-semibold text-black/50">태그</dt>
+          <dd className="text-sm text-black/70">
+            {detail.tags.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {detail.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full bg-[#05C075]/10 px-2 py-1 text-xs font-semibold text-[#05C075]"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              '없음'
+            )}
+          </dd>
+        </div>
+        <div className="flex items-center justify-between">
+          <dt className="text-[11px] font-semibold text-black/50">알림</dt>
+          <dd className="text-sm font-semibold text-black/70">{notificationLabel}</dd>
+        </div>
+      </dl>
+    </div>
   );
 }
 
@@ -120,14 +135,14 @@ export default function EventDetailModal({
   const showDeleteButton = Boolean(onDelete) && showActions;
 
   return (
-    <BaseModal open={open} onClose={onClose} title="일정 상세">
+    <BaseModal open={open} onClose={onClose} title="일정 상세" contentClassName="pt-3">
       {renderContent({ loading, error, detail })}
       {(showEditButton || showDeleteButton) && (
-        <div className="mt-4 flex justify-end gap-2">
+        <div className="mt-5 flex justify-end gap-2">
           {showDeleteButton && (
             <button
               type="button"
-              className="border-destructive text-destructive h-9 rounded-md border px-4 text-sm disabled:opacity-50"
+              className="h-9 rounded-full border border-black/10 px-4 text-sm font-semibold text-black/70 transition-colors hover:bg-black/5 disabled:opacity-50"
               onClick={onDelete}
               disabled={actionsDisabled}
             >
@@ -137,7 +152,7 @@ export default function EventDetailModal({
           {showEditButton && (
             <button
               type="button"
-              className="bg-primary text-primary-foreground h-9 rounded-md px-4 text-sm disabled:opacity-50"
+              className="h-9 rounded-full bg-[#05C075] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#04A865] disabled:opacity-50"
               onClick={onEdit}
               disabled={actionsDisabled}
             >

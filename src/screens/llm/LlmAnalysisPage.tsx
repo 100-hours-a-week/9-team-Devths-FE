@@ -13,11 +13,13 @@ import {
   IMAGE_MIME_TYPES,
   FILE_MIME_TYPES,
   LLM_ATTACHMENT_CONSTRAINTS,
+  LLM_PDF_MAX_PAGES,
 } from '@/constants/attachment';
 import { createRoom, startAnalysis } from '@/lib/api/llmRooms';
 import { useAnalysisTaskStore } from '@/lib/llm/analysisTaskStore';
 import { toast } from '@/lib/toast/store';
 import { uploadFile } from '@/lib/upload/uploadFile';
+import { getPdfPageCount } from '@/lib/utils/pdf';
 import { getAnalysisDisabledReason } from '@/lib/validators/analysisForm';
 import { validateFiles } from '@/lib/validators/attachment';
 
@@ -144,29 +146,44 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
   );
 
   const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(e.target.files || []);
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const input = e.target;
+      const files = Array.from(input.files || []);
       if (files.length === 0) return;
 
-      const doc = getCurrentDoc();
-      const updateFn = getUpdateFn();
+      try {
+        const doc = getCurrentDoc();
+        const updateFn = getUpdateFn();
 
-      const { okFiles, errors } = validateFiles(
-        files,
-        LLM_ATTACHMENT_CONSTRAINTS,
-        0,
-        doc.pdf ? 1 : 0,
-      );
+        const { okFiles, errors } = validateFiles(
+          files,
+          LLM_ATTACHMENT_CONSTRAINTS,
+          0,
+          doc.pdf ? 1 : 0,
+        );
 
-      if (errors.length > 0) {
-        toast(errors[0].message);
+        if (errors.length > 0) {
+          toast(errors[0].message);
+        }
+
+        if (okFiles.length > 0) {
+          const file = okFiles[0];
+          try {
+            const pageCount = await getPdfPageCount(file);
+            if (pageCount > LLM_PDF_MAX_PAGES) {
+              toast(`PDF는 최대 ${LLM_PDF_MAX_PAGES}장까지 첨부할 수 있습니다.`);
+              return;
+            }
+          } catch {
+            toast('PDF를 확인할 수 없습니다. 잠금 상태인 파일은 첨부할 수 없습니다.');
+            return;
+          }
+
+          updateFn({ pdf: file });
+        }
+      } finally {
+        input.value = '';
       }
-
-      if (okFiles.length > 0) {
-        updateFn({ pdf: okFiles[0] });
-      }
-
-      e.target.value = '';
     },
     [getCurrentDoc, getUpdateFn],
   );
@@ -355,7 +372,7 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
   ]);
 
   return (
-    <main className="flex min-h-[calc(100dvh-56px-64px)] flex-col bg-white px-4 pt-5 pb-4 text-black">
+    <main className="flex min-h-[calc(100dvh-56px-64px)] flex-col bg-transparent px-5 pt-6 pb-5">
       <input
         ref={imageInputRef}
         type="file"
@@ -372,13 +389,27 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
         onChange={handleFileChange}
       />
 
-      <div className="space-y-4">
+      <div className="divide-y divide-neutral-200">
+        <div className="pb-5">
+          <div className="flex items-center gap-2 text-[11px] font-semibold text-neutral-500">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#05C075]" />
+            AI ANALYSIS
+          </div>
+          <h1 className="mt-2 text-[22px] font-bold text-neutral-900">AI 분석</h1>
+          <p className="mt-2 text-sm text-neutral-500">
+            이력서와 채용 공고를 입력하면
+            <br />
+            핵심 요약과 개선 포인트를 알려드려요.
+          </p>
+        </div>
+
         <LlmTextAreaCard
-          label="이력서 및 포트폴리오 입력"
-          placeholder="이력서/포트폴리오 내용을 붙여 넣거나 직접 입력하세요."
+          label="이력서 및 포트폴리오"
+          placeholder={`이력서/포트폴리오 내용을 붙여 넣거나 직접 입력하세요. 잠금 상태인 파일은 첨부할 수 없습니다.`}
           value={form.resume.text}
           onChange={(text) => updateResume({ text })}
           onPasteBlocked={handlePasteBlocked}
+          helperText={null}
           attachments={{ images: form.resume.images, pdf: form.resume.pdf }}
           onRemoveImage={handleRemoveResumeImage}
           onRemovePdf={handleRemoveResumePdf}
@@ -392,21 +423,21 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
               }}
               disabled={form.resume.text.trim().length > 0}
               className={[
-                'inline-flex items-center gap-1.5 rounded-full border border-neutral-200 px-3 py-1.5 text-xs font-semibold',
+                'inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-semibold transition-colors',
                 form.resume.text.trim().length > 0
-                  ? 'cursor-not-allowed bg-neutral-100 text-neutral-400'
-                  : 'bg-white text-neutral-800 hover:bg-neutral-50',
+                  ? 'cursor-not-allowed bg-[#E5E8EB] text-[#ADB5BD]'
+                  : 'bg-[#05C075]/10 text-[#05C075] active:bg-[#05C075]/20',
               ].join(' ')}
             >
-              <Paperclip className="h-4 w-4" />
+              <Paperclip className="h-4 w-4" strokeWidth={2} />
               첨부
             </button>
           }
         />
 
         <LlmTextAreaCard
-          label="채용 공고 입력"
-          placeholder="채용 공고 내용을 붙여 넣거나 직접 입력하세요."
+          label="채용 공고"
+          placeholder="채용 공고 내용을 붙여 넣거나 직접 입력하세요"
           value={form.jobPosting.text}
           onChange={(text) => updateJobPosting({ text })}
           onPasteBlocked={handlePasteBlocked}
@@ -423,35 +454,38 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
               }}
               disabled={form.jobPosting.text.trim().length > 0}
               className={[
-                'inline-flex items-center gap-1.5 rounded-full border border-neutral-200 px-3 py-1.5 text-xs font-semibold',
+                'inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-semibold transition-colors',
                 form.jobPosting.text.trim().length > 0
-                  ? 'cursor-not-allowed bg-neutral-100 text-neutral-400'
-                  : 'bg-white text-neutral-800 hover:bg-neutral-50',
+                  ? 'cursor-not-allowed bg-[#E5E8EB] text-[#ADB5BD]'
+                  : 'bg-[#05C075]/10 text-[#05C075] active:bg-[#05C075]/20',
               ].join(' ')}
             >
-              <Paperclip className="h-4 w-4" />
+              <Paperclip className="h-4 w-4" strokeWidth={2} />
               첨부
             </button>
           }
         />
 
         <LlmModelSwitch value={form.model} onChange={updateModel} />
+      </div>
+
+      <div className="pt-4">
         <LlmModelNotice model={form.model} />
       </div>
 
-      <div className="mt-auto pt-6 pb-2">
+      <div className="mt-auto pt-8 pb-8">
         {disabledReason && (
-          <p className="mb-2 text-center text-xs text-neutral-500">{disabledReason}</p>
+          <p className="mb-3 text-center text-[13px] text-[#8B95A1]">{disabledReason}</p>
         )}
         <button
           type="button"
           disabled={isSubmitDisabled}
           onClick={handleSubmit}
           className={[
-            'w-full rounded-2xl py-4 text-sm font-semibold transition',
+            'w-full rounded-2xl py-4 text-[17px] font-semibold transition-colors',
             isSubmitDisabled
-              ? 'cursor-not-allowed bg-neutral-200 text-neutral-500'
-              : 'bg-neutral-900 text-white hover:bg-neutral-800',
+              ? 'cursor-not-allowed bg-[#E5E8EB] text-[#ADB5BD]'
+              : 'bg-[#05C075] text-white active:bg-[#049e61]',
           ].join(' ')}
         >
           종합 분석하기

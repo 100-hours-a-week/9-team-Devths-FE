@@ -14,15 +14,29 @@ export function useMessagesInfiniteQuery(roomId: number) {
         lastId: pageParam,
       });
 
-      if (!result.ok || !result.json) {
-        throw new Error('Failed to fetch messages');
+      if (!result.json) {
+        const error = new Error('Failed to fetch messages');
+        (error as Error & { status?: number }).status = result.status;
+        throw error;
+      }
+
+      if (!result.ok) {
+        const message =
+          'message' in result.json && typeof result.json.message === 'string'
+            ? result.json.message
+            : 'Failed to fetch messages';
+        const error = new Error(message);
+        (error as Error & { status?: number }).status = result.status;
+        throw error;
       }
 
       if ('data' in result.json) {
         return result.json.data;
       }
 
-      throw new Error('Invalid response format');
+      const error = new Error('Invalid response format');
+      (error as Error & { status?: number }).status = result.status;
+      throw error;
     },
     initialPageParam: undefined as number | undefined,
     getNextPageParam: (lastPage) => {

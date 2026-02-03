@@ -20,7 +20,7 @@ export default function LlmRoomListItem({
   onDelete,
 }: Props) {
   return (
-    <div className="rounded-2xl border bg-white p-4 shadow-sm">
+    <div className="bg-white py-4">
       <div className="flex items-center justify-between gap-3">
         <button
           type="button"
@@ -34,9 +34,10 @@ export default function LlmRoomListItem({
           className="flex min-w-0 flex-1 flex-col text-left"
         >
           <div className="flex min-w-0 items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#05C075]" />
             <span className="truncate text-sm font-semibold text-neutral-900">{room.title}</span>
             {isAnalyzing ? (
-              <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+              <span className="shrink-0 rounded-full bg-[#05C075]/10 px-2 py-0.5 text-[10px] font-semibold text-[#05C075]">
                 분석 중
               </span>
             ) : null}
@@ -47,7 +48,7 @@ export default function LlmRoomListItem({
         <button
           type="button"
           onClick={() => onDelete?.(room.id)}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full border bg-white hover:bg-neutral-50"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 bg-white text-red-500 hover:bg-red-50"
           aria-label="대화 삭제"
         >
           <Trash2 className="h-4 w-4" />

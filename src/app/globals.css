@@ -122,13 +122,49 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
+    background-color: transparent;
+    min-height: 100dvh;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-color: var(--background);
+    background-image: url('/images/background.png');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
   }
 }
 
 @layer components {
   .calendar-shell {
     @apply w-full;
+  }
+
+  .calendar-grid {
+    --calendar-day-height: clamp(60px, calc((100svh - 260px) / 6), 92px);
+    --calendar-day-number-size: 32px;
+    --calendar-day-number-top: 6px;
+    --calendar-day-event-gap: 10px;
+    --calendar-dot-row-height: 16px;
+    --calendar-dot-row-gap: -23px;
+    --calendar-dot-row-offset: -16px;
+    --calendar-day-event-top: calc(
+      var(--calendar-day-number-top) + var(--calendar-day-number-size) +
+        var(--calendar-day-event-gap)
+    );
+  }
+
+  @media (min-width: 1024px) {
+    .calendar-grid {
+      --calendar-day-height: clamp(68px, calc((100svh - 230px) / 6), 110px);
+    }
   }
 
   .calendar-grid .fc {
@@ -152,7 +188,9 @@
   .calendar-grid .fc .fc-daygrid-day-top {
     align-items: center;
     justify-content: center;
-    inset: 0;
+    inset-inline: 0;
+    top: var(--calendar-day-number-top);
+    height: var(--calendar-day-number-size);
     position: absolute;
     z-index: 2;
   }
@@ -162,14 +200,20 @@
     align-items: center;
     border-radius: 9999px;
     display: inline-flex;
-    height: 32px;
+    height: var(--calendar-day-number-size);
     justify-content: center;
-    width: 32px;
+    width: var(--calendar-day-number-size);
+  }
+
+  .calendar-grid .fc .fc-daygrid-day {
+    height: var(--calendar-day-height);
+    overflow: visible;
   }
 
   .calendar-grid .fc .fc-daygrid-day-frame {
-    aspect-ratio: 1 / 1;
-    min-height: 0;
+    height: 100%;
+    min-height: var(--calendar-day-height);
+    overflow: visible;
     position: relative;
   }
 
@@ -182,6 +226,11 @@
     color: #fff;
   }
 
+  .calendar-grid .fc .fc-daygrid-day.fc-day-other .fc-daygrid-day-number,
+  .calendar-grid .fc .fc-daygrid-day.fc-day-other .calendar-day-number {
+    color: #b1b1b1;
+  }
+
   .calendar-grid .fc .fc-daygrid-day.is-selected .fc-daygrid-day-number {
     box-shadow: 0 0 0 2px #05c075;
   }
@@ -192,23 +241,50 @@
 
   .calendar-grid .fc .fc-daygrid-day-events {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: nowrap;
     align-items: center;
-    gap: 2px;
-    justify-content: flex-start;
-    margin-top: 2px;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 0;
     position: absolute;
     inset-inline: 0;
-    top: 44px;
+    top: calc(var(--calendar-day-event-top) + var(--calendar-dot-row-offset));
+    overflow: visible;
     z-index: 1;
   }
 
   .calendar-grid .fc .fc-daygrid-event {
+    display: block;
     width: 100%;
     margin: 0;
     padding: 0;
     border: none;
     background: none;
+  }
+
+  .calendar-grid .fc .fc-daygrid-event.fc-daygrid-dot-event {
+    width: auto;
+  }
+
+  .calendar-grid .fc .fc-daygrid-event-harness {
+    flex: 0 0 auto;
+  }
+
+  .calendar-grid .fc .fc-daygrid-event-harness:has(.fc-daygrid-dot-event) {
+    height: var(--calendar-dot-row-height);
+    display: flex;
+    align-items: center;
+  }
+
+  .calendar-grid .fc .fc-daygrid-event-harness-abs {
+    flex: 0 0 100%;
+    transform: translateY(
+      calc(
+        var(--calendar-dot-row-height) + var(--calendar-dot-row-gap) -
+          var(--calendar-dot-row-offset)
+      )
+    );
   }
 
   .calendar-grid .fc .fc-daygrid-event .fc-event-main {
@@ -220,7 +296,15 @@
   }
 
   .calendar-grid .fc .calendar-event-bar {
+    display: block;
     width: 100%;
+    height: 8px;
+    border-radius: 9999px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  }
+
+  .calendar-grid .fc .calendar-event-dot {
+    width: 8px;
     height: 8px;
     border-radius: 9999px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
@@ -229,4 +313,26 @@
   .calendar-grid .fc .calendar-day-number {
     @apply text-sm font-medium text-[#151515];
   }
+}
+
+@keyframes typing-indicator {
+  0%,
+  80%,
+  100% {
+    opacity: 0.2;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+.typing-indicator-dot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 9999px;
+  background-color: currentColor;
+  animation: typing-indicator 1.2s infinite ease-in-out;
 }

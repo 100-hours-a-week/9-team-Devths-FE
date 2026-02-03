@@ -12,6 +12,7 @@ import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { useDeleteProfileImageMutation } from '@/lib/hooks/users/useDeleteProfileImageMutation';
 import { useUpdateMeMutation } from '@/lib/hooks/users/useUpdateMeMutation';
 import { useUploadProfileImageMutation } from '@/lib/hooks/users/useUpdateProfileImageMutation';
+import { toast } from '@/lib/toast/store';
 import { validateNickname } from '@/lib/utils/validateNickname';
 
 import type { MeData } from '@/lib/api/users';
@@ -20,17 +21,16 @@ type EditProfileModalProps = {
   open: boolean;
   onClose: () => void;
   onWithdraw: () => void;
-  onLogout: () => void;
   initialData?: MeData | null;
 };
 
 type EditFormProps = {
   initialData?: MeData | null;
+  onClose: () => void;
   onWithdraw: () => void;
-  onLogout: () => void;
 };
 
-function EditForm({ initialData, onWithdraw, onLogout }: EditFormProps) {
+function EditForm({ initialData, onClose, onWithdraw }: EditFormProps) {
   const [nickname, setNickname] = useState(initialData?.nickname ?? '');
   const [interests, setInterests] = useState<string[]>(
     normalizeInterests(initialData?.interests ?? []),
@@ -119,7 +119,6 @@ function EditForm({ initialData, onWithdraw, onLogout }: EditFormProps) {
     }
 
     try {
-      // 1) 프로필 이미지 업로드 (새 파일이 있는 경우)
       if (hasImageChange) {
         if (!userId) {
           setSubmitMessage({ type: 'error', text: '유저 정보를 확인할 수 없습니다.' });
@@ -130,13 +129,13 @@ function EditForm({ initialData, onWithdraw, onLogout }: EditFormProps) {
         setSelectedFile(null);
       }
 
-      // 2) 프로필 업데이트 (PUT /api/users/me)
       await updateMutation.mutateAsync({
         nickname,
         interests: hasInterestsChange ? interests : undefined,
       });
 
-      setSubmitMessage({ type: 'success', text: '회원 정보가 성공적으로 변경되었습니다.' });
+      toast('회원 정보가 성공적으로 변경되었습니다.');
+      onClose();
     } catch (error) {
       const err = error as Error & { status?: number; serverMessage?: string };
       if (err.status === 409) {
@@ -157,45 +156,58 @@ function EditForm({ initialData, onWithdraw, onLogout }: EditFormProps) {
     (submitMessage?.type === 'error' ? submitMessage.text : null);
 
   return (
-    <div className="mt-4 flex flex-col gap-6">
-      <div className="flex flex-col items-center">
-        <ProfileImagePicker
-          previewUrl={previewUrl}
-          onSelect={handleSelectImage}
-          onFileTooLarge={() => setIsFileTooLargeOpen(true)}
-        />
-        {hasProfileImage && (
-          <button
-            type="button"
-            onClick={handleDeleteImage}
-            disabled={deleteProfileImageMutation.isPending}
-            className="mt-2 rounded-lg bg-neutral-200 px-4 py-1.5 text-sm text-neutral-600 hover:bg-neutral-300 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {deleteProfileImageMutation.isPending ? '삭제 중...' : '삭제'}
-          </button>
-        )}
-      </div>
+    <div className="mt-1 flex flex-col gap-0">
+      <header className="space-y-1">
+        <div className="flex items-center gap-2" />
+        <h2 className="text-lg font-bold text-neutral-900">프로필 수정</h2>
+        <p className="text-[11px] text-neutral-500">
+          변경사항은 저장 후 즉시 마이페이지에 반영됩니다.
+        </p>
+      </header>
 
-      <div>
+      <section className="rounded-2xl bg-white p-2">
+        <p className="text-xs font-semibold text-neutral-900">프로필 사진</p>
+        <div className="mt-2 flex flex-col items-center">
+          <ProfileImagePicker
+            previewUrl={previewUrl}
+            onSelect={handleSelectImage}
+            onFileTooLarge={() => setIsFileTooLargeOpen(true)}
+            size="sm"
+            compact
+          />
+          {hasProfileImage && (
+            <button
+              type="button"
+              onClick={handleDeleteImage}
+              disabled={deleteProfileImageMutation.isPending}
+              className="mt-2 rounded-full border border-neutral-300 px-3 py-1 text-[11px] font-semibold text-neutral-700 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {deleteProfileImageMutation.isPending ? '삭제 중...' : '사진 삭제'}
+            </button>
+          )}
+        </div>
+      </section>
+
+      <section className="rounded-2xl bg-white p-2">
         <NicknameField
           value={nickname}
           onChange={handleNicknameChange}
           errorMessage={helperMessage}
         />
         {submitMessage?.type === 'success' && (
-          <p className="-mt-3 text-xs text-green-600">{submitMessage.text}</p>
+          <p className="-mt-3 text-[11px] text-green-600">{submitMessage.text}</p>
         )}
-      </div>
+      </section>
 
-      <div>
-        <p className="text-sm font-semibold">관심 분야 수정</p>
-        <div className="mt-3 flex flex-wrap gap-2">
+      <section className="rounded-2xl bg-white p-2">
+        <p className="text-xs font-semibold text-neutral-900">관심 분야</p>
+        <div className="mt-2 flex flex-wrap gap-2">
           {INTEREST_OPTIONS.filter((o) => interests.includes(o.value)).map((option) => (
             <button
               key={option.value}
               type="button"
               onClick={() => handleToggleInterest(option.value)}
-              className="inline-flex items-center gap-1 rounded-full bg-neutral-900 px-3 py-1.5 text-sm text-white"
+              className="inline-flex items-center gap-1 rounded-full border border-[#05C075] bg-white px-2.5 py-1 text-xs font-semibold text-[#05C075] shadow-sm"
             >
               {option.label}
               <X className="h-3.5 w-3.5" />
@@ -206,36 +218,28 @@ function EditForm({ initialData, onWithdraw, onLogout }: EditFormProps) {
               key={option.value}
               type="button"
               onClick={() => handleToggleInterest(option.value)}
-              className="rounded-full border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-50"
+              className="rounded-full border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-800 hover:bg-white"
             >
               {option.label}
             </button>
           ))}
         </div>
-      </div>
+      </section>
 
-      <div className="flex flex-col items-center gap-3 pt-2">
+      <div className="flex flex-col items-center gap-2.5 pt-3">
         <button
           type="button"
           onClick={handleSubmit}
           disabled={!nicknameValidation.isValid || isPending}
-          className="h-12 w-full rounded-xl bg-neutral-900 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-10 w-full rounded-xl bg-[#05C075] text-sm font-semibold text-white shadow-sm hover:bg-[#04A865] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isPending ? '변경 중...' : '변경하기'}
         </button>
 
         <button
           type="button"
-          onClick={onLogout}
-          className="text-sm text-neutral-400 hover:text-neutral-600"
-        >
-          로그아웃
-        </button>
-
-        <button
-          type="button"
           onClick={onWithdraw}
-          className="text-sm text-red-500 hover:text-red-600"
+          className="text-sm font-semibold text-red-500 hover:text-red-600"
         >
           탈퇴하기
         </button>
@@ -250,18 +254,17 @@ export default function EditProfileModal({
   open,
   onClose,
   onWithdraw,
-  onLogout,
   initialData,
 }: EditProfileModalProps) {
   if (!open) return null;
 
   return (
-    <BaseModal open={open} onClose={onClose} title="프로필 수정">
+    <BaseModal open={open} onClose={onClose} contentClassName="max-w-[360px] p-4">
       <EditForm
         key={open ? 'open' : 'closed'}
         initialData={initialData}
+        onClose={onClose}
         onWithdraw={onWithdraw}
-        onLogout={onLogout}
       />
     </BaseModal>
   );
