@@ -48,7 +48,7 @@ jobs:
           PASSED=$(jq '.stats.expected - .stats.unexpected - .stats.skipped' result.json)
           FAILED=$(jq '.stats.unexpected' result.json)
           SKIPPED=$(jq '.stats.skipped' result.json)
-          
+
           echo "total=$TOTAL" >> $GITHUB_OUTPUT
           echo "passed=$PASSED" >> $GITHUB_OUTPUT
           echo "failed=$FAILED" >> $GITHUB_OUTPUT
@@ -64,13 +64,13 @@ jobs:
           description: |
             **대상 URL**: ${{ inputs.target_url }}
             **실행자**: ${{ github.actor }}
-            
+
             📊 **테스트 요약**
             - ✅ 성공: ${{ steps.results.outputs.passed }}
             - ❌ 실패: ${{ steps.results.outputs.failed }}
             - ⏭️ 건너뜀: ${{ steps.results.outputs.skipped }}
             (총 ${{ steps.results.outputs.total }}개 케이스)
-            
+
             **🔗 링크**: [결과 리포트 확인하기](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
           color: "${{ job.status == 'success' && 65280 || 16711680 }}"
           username: Playwright E2E Bot
