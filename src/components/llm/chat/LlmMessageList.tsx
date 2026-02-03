@@ -20,7 +20,11 @@ function TypingIndicator() {
   return (
     <div className="flex items-center gap-1 text-[12px] text-neutral-500">
       <span>답변 생성 중</span>
-      <TypingCursor />
+      <span className="inline-flex items-center gap-0.5" aria-hidden="true">
+        <span className="typing-indicator-dot" style={{ animationDelay: '0s' }} />
+        <span className="typing-indicator-dot" style={{ animationDelay: '0.2s' }} />
+        <span className="typing-indicator-dot" style={{ animationDelay: '0.4s' }} />
+      </span>
     </div>
   );
 }

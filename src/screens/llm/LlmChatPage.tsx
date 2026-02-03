@@ -290,6 +290,14 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
             hour12: true,
           });
 
+        if (!response.ok) {
+          throw new Error(`SSE 요청 실패 (HTTP ${response.status})`);
+        }
+
+        setLocalMessages((prev) =>
+          prev.map((m) => (m.id === tempUserId ? { ...m, status: 'sent', time: nowLabel() } : m)),
+        );
+
         let aiText = '';
 
         await readSseStream(response, ({ event, data }) => {
@@ -306,7 +314,9 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
             setLocalMessages((prev) =>
               prev.map((m) =>
                 m.id === tempUserId
-                  ? { ...m, status: 'failed', time: '전송 실패' }
+                  ? m.status === 'sending'
+                    ? { ...m, status: 'failed', time: '전송 실패' }
+                    : m
                   : m.id === tempAiId
                     ? { ...m, text: errorMessage, time: nowLabel() }
                     : m,
