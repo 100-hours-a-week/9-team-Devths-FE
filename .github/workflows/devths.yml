@@ -357,3 +357,13 @@ jobs:
           color: "${{ needs.deploy.result == 'success' && 65280 || 16711680 }}"
           username: GitHub FE Deploy Bot
           avatar_url: https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png
+
+  # 7. E2E 테스트 (배포 성공 시 실행)
+  e2e-test:
+    needs: [deploy]
+    if: startsWith(github.ref_name, 'release/')
+    uses: ./.github/workflows/playwright.yml
+    with:
+      target_url: 'https://stg.devths.com'
+    secrets:
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_NON_PROD_URL }}
