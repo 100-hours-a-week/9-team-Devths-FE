@@ -86,6 +86,7 @@ export type StartInterviewResponse = {
 
 export type EndInterviewRequest = {
   interviewId: number;
+  content?: string;
 };
 
 export type LlmModel = 'GEMINI' | 'VLLM';
