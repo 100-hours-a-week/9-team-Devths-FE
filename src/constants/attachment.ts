@@ -21,6 +21,8 @@ export const LLM_ATTACHMENT_CONSTRAINTS: AttachmentConstraints = {
   fileMimeTypes: FILE_MIME_TYPES,
 };
 
+export const LLM_PDF_MAX_PAGES = 10;
+
 export const CHAT_ATTACHMENT_CONSTRAINTS: AttachmentConstraints = {
   maxImages: 9,
   maxFiles: 1,
