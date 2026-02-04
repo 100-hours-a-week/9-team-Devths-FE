@@ -76,7 +76,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
   const [isSending, setIsSending] = useState(false);
   const [streamingAiId, setStreamingAiId] = useState<string | null>(null);
   const notifiedDeletedRef = useRef(false);
-  const { setBlocked } = useNavigationGuard();
+  const { setBlocked, setBlockMessage } = useNavigationGuard();
 
   const errorStatus = (error as Error & { status?: number })?.status;
   const errorMessage = (error as Error | undefined)?.message ?? '';
@@ -119,9 +119,25 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
   }, [isDeletedRoom]);
 
   useEffect(() => {
-    setBlocked(Boolean(streamingAiId));
+    const isInterviewInProgress =
+      interviewUIState === 'starting' ||
+      interviewUIState === 'active' ||
+      interviewUIState === 'ending';
+    const shouldBlock = Boolean(streamingAiId) || isInterviewInProgress;
+
+    if (shouldBlock) {
+      setBlockMessage(
+        streamingAiId
+          ? '답변 생성 중에는 이동할 수 없습니다.'
+          : '면접 진행 중에는 이동할 수 없습니다.',
+      );
+    } else {
+      setBlockMessage('답변 생성 중에는 이동할 수 없습니다.');
+    }
+
+    setBlocked(shouldBlock);
     return () => setBlocked(false);
-  }, [setBlocked, streamingAiId]);
+  }, [interviewUIState, setBlocked, setBlockMessage, streamingAiId]);
 
   const handleEndInterview = useCallback(
     async (options?: { userMessageId?: string }) => {

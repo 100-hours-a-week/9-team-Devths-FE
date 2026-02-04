@@ -5,6 +5,8 @@ import { createContext, useContext } from 'react';
 type NavigationGuardContextValue = {
   isBlocked: boolean;
   setBlocked: (blocked: boolean) => void;
+  blockMessage: string;
+  setBlockMessage: (message: string) => void;
   requestNavigation: (action: () => void) => void;
 };
 
@@ -17,6 +19,8 @@ export function useNavigationGuard(): NavigationGuardContextValue {
   return {
     isBlocked: false,
     setBlocked: () => {},
+    blockMessage: '답변 생성 중에는 이동할 수 없습니다.',
+    setBlockMessage: () => {},
     requestNavigation: (action: () => void) => action(),
   };
 }
