@@ -23,6 +23,8 @@ type TodoCreateModalProps = {
   >;
 };
 
+const TODO_TITLE_MAX_LENGTH = 50;
+
 export default function TodoCreateModal({
   open,
   onClose,
@@ -90,10 +92,14 @@ export default function TodoCreateModal({
           <input
             type="text"
             value={title}
-            onChange={(event) => setTitle(event.target.value)}
+            onChange={(event) => setTitle(event.target.value.slice(0, TODO_TITLE_MAX_LENGTH))}
+            maxLength={TODO_TITLE_MAX_LENGTH}
             placeholder="할 일을 입력하세요"
             className="h-12 w-full rounded-2xl border border-black/10 bg-white px-4 text-sm text-black placeholder:text-black/30 focus:border-black focus:ring-2 focus:ring-[#05C075]/20 focus:outline-none"
           />
+          <div className="mt-1 text-right text-[11px] text-black/40">
+            {title.length}/{TODO_TITLE_MAX_LENGTH}
+          </div>
         </div>
 
         <div>
