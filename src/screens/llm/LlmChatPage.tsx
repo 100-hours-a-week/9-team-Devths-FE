@@ -238,6 +238,13 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
       const questionCount = interviewSession?.questionCount ?? 0;
       const isFinalAnswer = Boolean(interviewSession) && questionCount >= MAX_QUESTIONS;
 
+      const nowLabel = () =>
+        new Date().toLocaleTimeString('ko-KR', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+        });
+
       const tempUserId = `temp-user-${Date.now()}`;
       const tempAiId = `temp-ai-${Date.now()}`;
 
@@ -245,8 +252,8 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
         id: tempUserId,
         role: 'USER',
         text: trimmed,
-        time: '전송 중...',
-        status: 'sending',
+        time: nowLabel(),
+        status: 'sent',
       };
 
       const pendingAiMessage: UIMessage = {
@@ -283,13 +290,6 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
           interviewId: interviewSession?.interviewId ?? null,
         });
 
-        const nowLabel = () =>
-          new Date().toLocaleTimeString('ko-KR', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true,
-          });
-
         if (!response.ok) {
           throw new Error(`SSE 요청 실패 (HTTP ${response.status})`);
         }
@@ -314,9 +314,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
             setLocalMessages((prev) =>
               prev.map((m) =>
                 m.id === tempUserId
-                  ? m.status === 'sending'
-                    ? { ...m, status: 'failed', time: '전송 실패' }
-                    : m
+                  ? { ...m, status: 'failed', time: '전송 실패' }
                   : m.id === tempAiId
                     ? { ...m, text: errorMessage, time: nowLabel() }
                     : m,
@@ -486,6 +484,11 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
     () => [...serverMessages, ...localMessages],
     [serverMessages, localMessages],
   );
+  const isComposerDisabled =
+    isSending ||
+    Boolean(streamingAiId) ||
+    interviewUIState === 'starting' ||
+    interviewUIState === 'ending';
 
   if (isLoading) {
     return (
@@ -612,7 +615,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
           )}
         </div>
 
-        <LlmComposer onSend={handleSendMessage} disabled={isSending} />
+        <LlmComposer onSend={handleSendMessage} disabled={isComposerDisabled} />
       </div>
     </main>
   );

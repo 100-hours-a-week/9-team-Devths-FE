@@ -292,6 +292,9 @@ export default function EventFormModal({
               maxLength={50}
               placeholder="예: Devths"
             />
+            <div className="text-right text-[11px] text-black/40">
+              {formState.company.length}/50
+            </div>
             {errors.company && <p className="text-xs text-red-600">{errors.company}</p>}
           </div>
 
