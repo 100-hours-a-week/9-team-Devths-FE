@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useAppFrame } from '@/components/layout/AppFrameContext';
+import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import LlmComposer from '@/components/llm/chat/LlmComposer';
 import LlmMessageList from '@/components/llm/chat/LlmMessageList';
 import { endInterviewStream, getCurrentInterview, sendMessageStream } from '@/lib/api/llmRooms';
@@ -75,6 +76,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
   const [isSending, setIsSending] = useState(false);
   const [streamingAiId, setStreamingAiId] = useState<string | null>(null);
   const notifiedDeletedRef = useRef(false);
+  const { setBlocked } = useNavigationGuard();
 
   const errorStatus = (error as Error & { status?: number })?.status;
   const errorMessage = (error as Error | undefined)?.message ?? '';
@@ -115,6 +117,11 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
     notifiedDeletedRef.current = true;
     toast('삭제된 채팅방입니다.');
   }, [isDeletedRoom]);
+
+  useEffect(() => {
+    setBlocked(Boolean(streamingAiId));
+    return () => setBlocked(false);
+  }, [setBlocked, streamingAiId]);
 
   const handleEndInterview = useCallback(
     async (options?: { userMessageId?: string }) => {
