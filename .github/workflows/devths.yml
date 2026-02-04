@@ -7,6 +7,13 @@ on:
       - release/*
       - main
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   NODE_VERSION: '22.x'
   AWS_REGION: ${{ secrets.AWS_REGION }}
@@ -19,6 +26,7 @@ jobs:
   # 1. 통합 품질 검사 (Lint + Prettier + TypeCheck)
   lint:
     runs-on: ubuntu-22.04
+    timeout-minutes: 15
     steps:
       - name: 체크아웃
         uses: actions/checkout@v4
@@ -43,6 +51,7 @@ jobs:
   # 2. 정적 분석 (CodeQL)
   static-analysis:
     runs-on: ubuntu-22.04
+    timeout-minutes: 15
     permissions:
       actions: read
       contents: read
@@ -93,6 +102,7 @@ jobs:
   build:
     needs: [lint, static-analysis]
     runs-on: ubuntu-22.04
+    timeout-minutes: 15
     outputs:
       artifact_name: ${{ steps.upload.outputs.artifact_name }}
       s3_key: ${{ steps.upload.outputs.s3_key }}
@@ -204,6 +214,7 @@ jobs:
   deploy:
     needs: [build]
     runs-on: ubuntu-22.04
+    timeout-minutes: 15
     # main은 CI까지만 수행 (배포는 별도 운영 프로세스로 진행)
     if: github.ref_name != 'main'
     outputs:
@@ -284,6 +295,7 @@ jobs:
   # 5. CI 디스코드 알림
   notify-ci:
     runs-on: ubuntu-22.04
+    timeout-minutes: 15
     needs: [lint, static-analysis, build]
     if: always()
     steps:
@@ -291,9 +303,10 @@ jobs:
         id: prep
         env:
           USER_MAP: ${{ secrets.USER_MAP_JSON }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
           # 1. 커밋 메시지 추출 (Push 제목 대용)
-          COMMIT_MSG=$(echo "${{ github.event.head_commit.message }}" | head -n 1)
+          COMMIT_MSG=$(echo "$COMMIT_MESSAGE" | head -n 1)
           echo "title=$COMMIT_MSG" >> $GITHUB_OUTPUT
 
           # 2. 브랜치 정보
@@ -326,13 +339,16 @@ jobs:
   # 6. CD 디스코드 알림 (배포 실패해도 결과 전송)
   notify-cd:
     runs-on: ubuntu-22.04
+    timeout-minutes: 15
     needs: [build, deploy]
     if: ${{ github.ref_name != 'main' && needs.build.result == 'success' && always() }}
     steps:
       - name: 데이터 준비
         id: prep
+        env:
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
-          COMMIT_MSG=$(echo "${{ github.event.head_commit.message }}" | head -n 1)
+          COMMIT_MSG=$(echo "$COMMIT_MESSAGE" | head -n 1)
           echo "title=$COMMIT_MSG" >> $GITHUB_OUTPUT
           echo "branch=${{ github.ref_name }}" >> $GITHUB_OUTPUT
 
@@ -357,3 +373,13 @@ jobs:
           color: "${{ needs.deploy.result == 'success' && 65280 || 16711680 }}"
           username: GitHub FE Deploy Bot
           avatar_url: https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png
+
+  # 7. E2E 테스트 (배포 성공 시 실행)
+  e2e-test:
+    needs: [deploy]
+    if: startsWith(github.ref_name, 'release/')
+    uses: ./.github/workflows/playwright.yml
+    with:
+      target_url: 'https://stg.devths.com'
+    secrets:
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_NON_PROD_URL }}
