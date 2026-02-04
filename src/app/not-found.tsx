@@ -4,7 +4,7 @@ export default function NotFound() {
   return (
     <main className="flex min-h-[100dvh] items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm rounded-3xl border border-black/10 bg-white/90 p-6 text-center shadow-sm backdrop-blur">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+        <p className="text-[11px] font-semibold tracking-[0.2em] text-neutral-400 uppercase">
           404 NOT FOUND
         </p>
         <p className="mt-1 text-xs font-semibold text-[#05C075]">404</p>

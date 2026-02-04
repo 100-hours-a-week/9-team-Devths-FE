@@ -484,6 +484,11 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
     () => [...serverMessages, ...localMessages],
     [serverMessages, localMessages],
   );
+  const isComposerDisabled =
+    isSending ||
+    Boolean(streamingAiId) ||
+    interviewUIState === 'starting' ||
+    interviewUIState === 'ending';
 
   if (isLoading) {
     return (
@@ -610,7 +615,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
           )}
         </div>
 
-        <LlmComposer onSend={handleSendMessage} disabled={isSending} />
+        <LlmComposer onSend={handleSendMessage} disabled={isComposerDisabled} />
       </div>
     </main>
   );
