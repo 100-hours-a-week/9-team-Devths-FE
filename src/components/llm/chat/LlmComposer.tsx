@@ -47,7 +47,7 @@ export default function LlmComposer(props: Props) {
     const files = e.clipboardData?.files;
     if (files && files.length > 0) {
       e.preventDefault();
-      toast('이미지/파일은 첨부 버튼으로만 업로드할 수 있어요.');
+      toast('첨부파일 기능은 다음 버전에서 업데이트될 예정이에요!');
     }
   };
 
