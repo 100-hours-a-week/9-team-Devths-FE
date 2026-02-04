@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useAppFrame } from '@/components/layout/AppFrameContext';
+import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import LlmComposer from '@/components/llm/chat/LlmComposer';
 import LlmMessageList from '@/components/llm/chat/LlmMessageList';
 import { endInterviewStream, getCurrentInterview, sendMessageStream } from '@/lib/api/llmRooms';
@@ -23,6 +24,7 @@ type Props = {
 
 const MAX_QUESTIONS = 5;
 const DEFAULT_MODEL: LlmModel = 'GEMINI';
+const FINAL_ANSWER_TIMEOUT_MS = 30_000;
 function parseModel(value: string | null | undefined): LlmModel {
   if (value === 'GEMINI' || value === 'VLLM') {
     return value;
@@ -74,6 +76,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
   const [isSending, setIsSending] = useState(false);
   const [streamingAiId, setStreamingAiId] = useState<string | null>(null);
   const notifiedDeletedRef = useRef(false);
+  const { setBlocked, setBlockMessage } = useNavigationGuard();
 
   const errorStatus = (error as Error & { status?: number })?.status;
   const errorMessage = (error as Error | undefined)?.message ?? '';
@@ -115,11 +118,31 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
     toast('삭제된 채팅방입니다.');
   }, [isDeletedRoom]);
 
+  useEffect(() => {
+    const isInterviewInProgress =
+      interviewUIState === 'starting' ||
+      interviewUIState === 'active' ||
+      interviewUIState === 'ending';
+    const shouldBlock = Boolean(streamingAiId) || isInterviewInProgress;
+
+    if (shouldBlock) {
+      setBlockMessage(
+        streamingAiId
+          ? '답변 생성 중에는 이동할 수 없습니다.'
+          : '면접 진행 중에는 이동할 수 없습니다.',
+      );
+    } else {
+      setBlockMessage('답변 생성 중에는 이동할 수 없습니다.');
+    }
+
+    setBlocked(shouldBlock);
+    return () => setBlocked(false);
+  }, [interviewUIState, setBlocked, setBlockMessage, streamingAiId]);
+
   const handleEndInterview = useCallback(
-    async (options?: { finalAnswer?: string; userMessageId?: string }) => {
+    async (options?: { userMessageId?: string }) => {
       if (!interviewSession) return;
 
-      const finalAnswer = options?.finalAnswer?.trim();
       const userMessageId = options?.userMessageId;
 
       setInterviewUIState('ending');
@@ -146,7 +169,6 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
       try {
         const response = await endInterviewStream(numericRoomId, {
           interviewId: interviewSession.interviewId,
-          ...(finalAnswer ? { content: finalAnswer } : {}),
         });
 
         if (!response.ok) {
@@ -160,14 +182,6 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
             minute: '2-digit',
             hour12: true,
           });
-
-        if (finalAnswer && userMessageId) {
-          setLocalMessages((prev) =>
-            prev.map((m) =>
-              m.id === userMessageId ? { ...m, status: 'sent', time: nowLabel() } : m,
-            ),
-          );
-        }
 
         await readSseStream(response, ({ event, data }) => {
           if (event === 'error') {
@@ -191,6 +205,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
                 return m;
               }),
             );
+            setInterviewUIState('active');
             toast(errorMessage);
             return false;
           }
@@ -238,6 +253,13 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
       const questionCount = interviewSession?.questionCount ?? 0;
       const isFinalAnswer = Boolean(interviewSession) && questionCount >= MAX_QUESTIONS;
 
+      const nowLabel = () =>
+        new Date().toLocaleTimeString('ko-KR', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+        });
+
       const tempUserId = `temp-user-${Date.now()}`;
       const tempAiId = `temp-ai-${Date.now()}`;
 
@@ -245,8 +267,8 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
         id: tempUserId,
         role: 'USER',
         text: trimmed,
-        time: '전송 중...',
-        status: 'sending',
+        time: nowLabel(),
+        status: 'sent',
       };
 
       const pendingAiMessage: UIMessage = {
@@ -270,25 +292,12 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
         requestAnimationFrame(() => resolve());
       });
 
-      if (isFinalAnswer) {
-        void handleEndInterview({ finalAnswer: trimmed, userMessageId: tempUserId });
-        setIsSending(false);
-        return;
-      }
-
       try {
         const response = await sendMessageStream(numericRoomId, {
           content: trimmed,
           model,
           interviewId: interviewSession?.interviewId ?? null,
         });
-
-        const nowLabel = () =>
-          new Date().toLocaleTimeString('ko-KR', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true,
-          });
 
         if (!response.ok) {
           throw new Error(`SSE 요청 실패 (HTTP ${response.status})`);
@@ -297,6 +306,71 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
         setLocalMessages((prev) =>
           prev.map((m) => (m.id === tempUserId ? { ...m, status: 'sent', time: nowLabel() } : m)),
         );
+
+        if (isFinalAnswer) {
+          let timeoutId: number | null = null;
+          let didComplete = false;
+          let didFail = false;
+
+          const timeoutPromise = new Promise<'timeout'>((resolve) => {
+            timeoutId = window.setTimeout(() => resolve('timeout'), FINAL_ANSWER_TIMEOUT_MS);
+          });
+
+          const streamPromise = readSseStream(response, ({ event, data }) => {
+            if (event === 'error') {
+              didFail = true;
+              let errorMessage = '메시지 전송에 실패했습니다.';
+              try {
+                const parsed = JSON.parse(data) as { message?: string };
+                if (parsed.message) errorMessage = parsed.message;
+              } catch {
+                errorMessage = data || errorMessage;
+              }
+
+              setLocalMessages((prev) =>
+                prev.map((m) =>
+                  m.id === tempUserId ? { ...m, status: 'failed', time: '전송 실패' } : m,
+                ),
+              );
+              toast(errorMessage);
+              return false;
+            }
+
+            if (event === 'done') {
+              didComplete = true;
+              void handleEndInterview();
+              return false;
+            }
+
+            return true;
+          }).then(() => 'stream' as const);
+
+          const raceResult = await Promise.race([streamPromise, timeoutPromise]);
+
+          if (timeoutId !== null) {
+            window.clearTimeout(timeoutId);
+          }
+
+          if (!didComplete && !didFail) {
+            setLocalMessages((prev) =>
+              prev.map((m) =>
+                m.id === tempUserId ? { ...m, status: 'failed', time: '전송 실패' } : m,
+              ),
+            );
+            toast(
+              raceResult === 'timeout'
+                ? '응답 대기 시간이 초과되었습니다. 다시 시도해주세요.'
+                : '응답이 완료되지 않아 전송에 실패했습니다.',
+            );
+            try {
+              await response.body?.cancel();
+            } catch {
+              // ignore cancel errors
+            }
+          }
+
+          return;
+        }
 
         let aiText = '';
 
@@ -314,9 +388,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
             setLocalMessages((prev) =>
               prev.map((m) =>
                 m.id === tempUserId
-                  ? m.status === 'sending'
-                    ? { ...m, status: 'failed', time: '전송 실패' }
-                    : m
+                  ? { ...m, status: 'failed', time: '전송 실패' }
                   : m.id === tempAiId
                     ? { ...m, text: errorMessage, time: nowLabel() }
                     : m,
@@ -428,6 +500,10 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
                 interviewId: response.interviewId,
               });
 
+              if (!streamResponse.ok) {
+                throw new Error(`SSE 요청 실패 (HTTP ${streamResponse.status})`);
+              }
+
               let aiText = '';
               const nowLabel = () =>
                 new Date().toLocaleTimeString('ko-KR', {
@@ -486,6 +562,11 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
     () => [...serverMessages, ...localMessages],
     [serverMessages, localMessages],
   );
+  const isComposerDisabled =
+    isSending ||
+    Boolean(streamingAiId) ||
+    interviewUIState === 'starting' ||
+    interviewUIState === 'ending';
 
   if (isLoading) {
     return (
@@ -612,7 +693,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
           )}
         </div>
 
-        <LlmComposer onSend={handleSendMessage} disabled={isSending} />
+        <LlmComposer onSend={handleSendMessage} disabled={isComposerDisabled} />
       </div>
     </main>
   );

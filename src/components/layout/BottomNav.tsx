@@ -3,7 +3,9 @@
 import clsx from 'clsx';
 import { Bot, Calendar, User } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+
+import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 
 type Tab = {
   label: string;
@@ -25,6 +27,15 @@ type BottomNavProps = {
 
 export default function BottomNav({ hidden = false }: BottomNavProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { isBlocked, requestNavigation } = useNavigationGuard();
+
+  const handleNavigate =
+    (href: string) => (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+      if (!isBlocked) return;
+      event.preventDefault();
+      requestNavigation(() => router.push(href));
+    };
 
   return (
     <nav
@@ -44,6 +55,7 @@ export default function BottomNav({ hidden = false }: BottomNavProps) {
                 <Link
                   key={tab.label}
                   href={tab.href}
+                  onClick={handleNavigate(tab.href)}
                   className="flex flex-col items-center justify-center"
                 >
                   <div className="-mt-6 flex h-14 w-14 items-center justify-center rounded-full bg-[#05C075] shadow-lg">
@@ -80,7 +92,12 @@ export default function BottomNav({ hidden = false }: BottomNavProps) {
             }
 
             return (
-              <Link key={tab.label} href={tab.href} className={clsx(baseClass, activeClass)}>
+              <Link
+                key={tab.label}
+                href={tab.href}
+                onClick={handleNavigate(tab.href)}
+                className={clsx(baseClass, activeClass)}
+              >
                 <Icon className="h-5 w-5" />
                 <span>{tab.label}</span>
               </Link>

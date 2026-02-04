@@ -16,6 +16,8 @@ type Props = {
   onRemovePdf?: () => void;
 };
 
+const CHAT_MESSAGE_MAX_LENGTH = 2000;
+
 export default function LlmComposer(props: Props) {
   const {
     onSend,
@@ -45,7 +47,7 @@ export default function LlmComposer(props: Props) {
     const files = e.clipboardData?.files;
     if (files && files.length > 0) {
       e.preventDefault();
-      toast('이미지/파일은 첨부 버튼으로만 업로드할 수 있어요.');
+      toast('첨부파일 기능은 다음 버전에서 업데이트될 예정이에요!');
     }
   };
 
@@ -54,6 +56,11 @@ export default function LlmComposer(props: Props) {
     const message = text.trim();
     onSend?.(message);
     setText('');
+  };
+
+  const handleDisabledInputClick = () => {
+    if (!disabled) return;
+    toast('AI 답변 생성 중에는 채팅을 입력할 수 없습니다');
   };
 
   return (
@@ -109,28 +116,35 @@ export default function LlmComposer(props: Props) {
           <Paperclip className="h-5 w-5" />
         </button>
         */}
-        <textarea
-          className="h-11 flex-1 resize-none rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-900 transition outline-none placeholder:text-neutral-400 focus:border-[#05C075] focus:ring-2 focus:ring-[#05C075]/20"
-          placeholder="메시지를 입력하세요"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onPaste={handlePaste}
-          onCompositionStart={() => {
-            isComposingRef.current = true;
-          }}
-          onCompositionEnd={() => {
-            isComposingRef.current = false;
-          }}
-          onKeyDown={(e) => {
-            const isComposing =
-              isComposingRef.current || (e.nativeEvent as KeyboardEvent).isComposing;
-            if (isComposing) return;
-            if (!isMobile && e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              handleSend();
-            }
-          }}
-        />
+        <div className="flex-1" onMouseDown={handleDisabledInputClick}>
+          <textarea
+            className={[
+              'h-11 w-full resize-none rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-900 transition outline-none placeholder:text-neutral-400 focus:border-[#05C075] focus:ring-2 focus:ring-[#05C075]/20',
+              disabled ? 'bg-neutral-100 text-neutral-400' : '',
+            ].join(' ')}
+            placeholder="메시지를 입력하세요"
+            value={text}
+            onChange={(e) => setText(e.target.value.slice(0, CHAT_MESSAGE_MAX_LENGTH))}
+            maxLength={CHAT_MESSAGE_MAX_LENGTH}
+            onPaste={handlePaste}
+            disabled={disabled}
+            onCompositionStart={() => {
+              isComposingRef.current = true;
+            }}
+            onCompositionEnd={() => {
+              isComposingRef.current = false;
+            }}
+            onKeyDown={(e) => {
+              const isComposing =
+                isComposingRef.current || (e.nativeEvent as KeyboardEvent).isComposing;
+              if (isComposing) return;
+              if (!isMobile && e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+          />
+        </div>
 
         <button
           type="button"
@@ -146,6 +160,9 @@ export default function LlmComposer(props: Props) {
         >
           <SendHorizonal className="h-5 w-5" />
         </button>
+      </div>
+      <div className="mt-1 text-right text-[11px] text-neutral-400">
+        {text.length}/{CHAT_MESSAGE_MAX_LENGTH}
       </div>
     </div>
   );

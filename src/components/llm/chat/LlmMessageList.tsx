@@ -122,9 +122,9 @@ function renderMarkdown(text: string): ReactNode[] {
 
   const flushParagraph = () => {
     if (paragraphLines.length === 0) return;
-    const paragraph = paragraphLines.join(' ');
+    const paragraph = paragraphLines.join('\n');
     blocks.push(
-      <p key={`p-${blocks.length}`} className="leading-5">
+      <p key={`p-${blocks.length}`} className="leading-5 whitespace-pre-wrap">
         {renderInline(paragraph)}
       </p>,
     );
@@ -136,7 +136,7 @@ function renderMarkdown(text: string): ReactNode[] {
     blocks.push(
       <ul key={`ul-${blocks.length}`} className="list-disc space-y-1 pl-5">
         {listItems.map((item, index) => (
-          <li key={`li-${blocks.length}-${index}`} className="leading-5">
+          <li key={`li-${blocks.length}-${index}`} className="leading-5 whitespace-pre-wrap">
             {renderInline(item)}
           </li>
         ))}
@@ -173,55 +173,55 @@ function renderMarkdown(text: string): ReactNode[] {
       continue;
     }
 
-    const line = rawLine.trim();
+    const trimmedLine = rawLine.trim();
 
-    if (!line) {
+    if (!trimmedLine) {
       flushParagraph();
       flushList();
       continue;
     }
 
-    if (line.startsWith('### ')) {
+    if (trimmedLine.startsWith('### ')) {
       flushParagraph();
       flushList();
       blocks.push(
         <h3 key={`h3-${blocks.length}`} className="text-sm font-semibold">
-          {renderInline(line.slice(4))}
+          {renderInline(trimmedLine.slice(4))}
         </h3>,
       );
       continue;
     }
 
-    if (line.startsWith('## ')) {
+    if (trimmedLine.startsWith('## ')) {
       flushParagraph();
       flushList();
       blocks.push(
         <h2 key={`h2-${blocks.length}`} className="text-sm font-semibold">
-          {renderInline(line.slice(3))}
+          {renderInline(trimmedLine.slice(3))}
         </h2>,
       );
       continue;
     }
 
-    if (line.startsWith('# ')) {
+    if (trimmedLine.startsWith('# ')) {
       flushParagraph();
       flushList();
       blocks.push(
         <h1 key={`h1-${blocks.length}`} className="text-base font-semibold">
-          {renderInline(line.slice(2))}
+          {renderInline(trimmedLine.slice(2))}
         </h1>,
       );
       continue;
     }
 
-    if (line.startsWith('- ')) {
+    if (trimmedLine.startsWith('- ')) {
       flushParagraph();
-      listItems.push(line.slice(2));
+      listItems.push(trimmedLine.slice(2));
       continue;
     }
 
     flushList();
-    paragraphLines.push(line);
+    paragraphLines.push(rawLine);
   }
 
   if (inCodeBlock) {
