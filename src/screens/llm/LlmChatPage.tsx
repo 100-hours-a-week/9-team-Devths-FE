@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import ConfirmModal from '@/components/common/ConfirmModal';
 import { useAppFrame } from '@/components/layout/AppFrameContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import LlmComposer from '@/components/llm/chat/LlmComposer';
@@ -75,6 +76,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
   const [model] = useState<LlmModel>(() => parseModel(initialModel));
   const [isSending, setIsSending] = useState(false);
   const [streamingAiId, setStreamingAiId] = useState<string | null>(null);
+  const [isEndConfirmOpen, setIsEndConfirmOpen] = useState(false);
   const notifiedDeletedRef = useRef(false);
   const { setBlocked, setBlockMessage } = useNavigationGuard();
 
@@ -144,6 +146,23 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
       if (!interviewSession) return;
 
       const userMessageId = options?.userMessageId;
+      const isFinalAnswerReached = interviewSession.questionCount >= MAX_QUESTIONS;
+
+      if (!isFinalAnswerReached) {
+        const systemId = `sys-${Date.now()}`;
+        setLocalMessages((prev) => [
+          ...prev,
+          {
+            id: systemId,
+            role: 'SYSTEM',
+            text: '면접이 종료되었습니다.',
+          },
+        ]);
+        setInterviewSession(null);
+        setInterviewUIState('idle');
+        setStreamingAiId(null);
+        return;
+      }
 
       setInterviewUIState('ending');
 
@@ -241,6 +260,24 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
     },
     [interviewSession, numericRoomId],
   );
+
+  const handleEndInterviewClick = useCallback(() => {
+    if (!interviewSession) return;
+    if (interviewSession.questionCount < MAX_QUESTIONS) {
+      setIsEndConfirmOpen(true);
+      return;
+    }
+    void handleEndInterview();
+  }, [handleEndInterview, interviewSession]);
+
+  const handleConfirmEndInterview = useCallback(() => {
+    setIsEndConfirmOpen(false);
+    void handleEndInterview();
+  }, [handleEndInterview]);
+
+  const handleCancelEndInterview = useCallback(() => {
+    setIsEndConfirmOpen(false);
+  }, []);
 
   const handleSendMessage = useCallback(
     async (text: string) => {
@@ -678,7 +715,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
               </span>
               <button
                 type="button"
-                onClick={() => handleEndInterview()}
+                onClick={handleEndInterviewClick}
                 className="ml-auto rounded-2xl border border-neutral-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-neutral-900 shadow-sm hover:bg-neutral-50"
               >
                 면접 종료
@@ -695,6 +732,16 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
 
         <LlmComposer onSend={handleSendMessage} disabled={isComposerDisabled} />
       </div>
+
+      <ConfirmModal
+        isOpen={isEndConfirmOpen}
+        title="면접을 종료할까요?"
+        message="아직 질문 5개를 채우지 못했어요. 지금 종료하면 평가를 받을 수 없습니다."
+        confirmText="면접 종료"
+        cancelText="계속 진행하기"
+        onConfirm={handleConfirmEndInterview}
+        onCancel={handleCancelEndInterview}
+      />
     </main>
   );
 }
