@@ -4,8 +4,8 @@ import { Bell, ChevronLeft } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
-import { useUnreadCountQuery } from '@/lib/hooks/notifications/useUnreadCountQuery';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
+import { useUnreadCountQuery } from '@/lib/hooks/notifications/useUnreadCountQuery';
 
 import type { ReactNode } from 'react';
 
