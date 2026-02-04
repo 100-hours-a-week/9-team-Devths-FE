@@ -46,6 +46,7 @@ export default function AppFrame({
   const isBottomNavVisible = true;
   const [isAuthed, setIsAuthed] = useState<boolean | null>(null);
   const [isNavigationBlocked, setIsNavigationBlocked] = useState(false);
+  const [blockMessage, setBlockMessage] = useState('답변 생성 중에는 이동할 수 없습니다.');
 
   useEffect(() => {
     setOptions(defaultOptions);
@@ -78,7 +79,7 @@ export default function AppFrame({
     const handlePopState = () => {
       if (!isNavigationBlocked) return;
       window.history.pushState(null, '', window.location.href);
-      toast('답변 생성 중에는 이동할 수 없습니다.');
+      toast(blockMessage);
     };
 
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
@@ -95,7 +96,7 @@ export default function AppFrame({
       window.removeEventListener('popstate', handlePopState);
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [isNavigationBlocked]);
+  }, [blockMessage, isNavigationBlocked]);
 
   const requestNavigation = useCallback(
     (action: () => void) => {
@@ -103,9 +104,9 @@ export default function AppFrame({
         action();
         return;
       }
-      toast('답변 생성 중에는 이동할 수 없습니다.');
+      toast(blockMessage);
     },
-    [isNavigationBlocked],
+    [blockMessage, isNavigationBlocked],
   );
 
   return isAuthed ? (
@@ -121,6 +122,8 @@ export default function AppFrame({
         value={{
           isBlocked: isNavigationBlocked,
           setBlocked: setIsNavigationBlocked,
+          blockMessage,
+          setBlockMessage,
           requestNavigation,
         }}
       >
