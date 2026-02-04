@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useAppFrame } from '@/components/layout/AppFrameContext';
+import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import LlmComposer from '@/components/llm/chat/LlmComposer';
 import LlmMessageList from '@/components/llm/chat/LlmMessageList';
 import { endInterviewStream, getCurrentInterview, sendMessageStream } from '@/lib/api/llmRooms';
@@ -23,6 +24,7 @@ type Props = {
 
 const MAX_QUESTIONS = 5;
 const DEFAULT_MODEL: LlmModel = 'GEMINI';
+const FINAL_ANSWER_TIMEOUT_MS = 30_000;
 function parseModel(value: string | null | undefined): LlmModel {
   if (value === 'GEMINI' || value === 'VLLM') {
     return value;
@@ -74,6 +76,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
   const [isSending, setIsSending] = useState(false);
   const [streamingAiId, setStreamingAiId] = useState<string | null>(null);
   const notifiedDeletedRef = useRef(false);
+  const { setBlocked } = useNavigationGuard();
 
   const errorStatus = (error as Error & { status?: number })?.status;
   const errorMessage = (error as Error | undefined)?.message ?? '';
@@ -115,11 +118,15 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
     toast('삭제된 채팅방입니다.');
   }, [isDeletedRoom]);
 
+  useEffect(() => {
+    setBlocked(Boolean(streamingAiId));
+    return () => setBlocked(false);
+  }, [setBlocked, streamingAiId]);
+
   const handleEndInterview = useCallback(
-    async (options?: { finalAnswer?: string; userMessageId?: string }) => {
+    async (options?: { userMessageId?: string }) => {
       if (!interviewSession) return;
 
-      const finalAnswer = options?.finalAnswer?.trim();
       const userMessageId = options?.userMessageId;
 
       setInterviewUIState('ending');
@@ -146,7 +153,6 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
       try {
         const response = await endInterviewStream(numericRoomId, {
           interviewId: interviewSession.interviewId,
-          ...(finalAnswer ? { content: finalAnswer } : {}),
         });
 
         if (!response.ok) {
@@ -160,14 +166,6 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
             minute: '2-digit',
             hour12: true,
           });
-
-        if (finalAnswer && userMessageId) {
-          setLocalMessages((prev) =>
-            prev.map((m) =>
-              m.id === userMessageId ? { ...m, status: 'sent', time: nowLabel() } : m,
-            ),
-          );
-        }
 
         await readSseStream(response, ({ event, data }) => {
           if (event === 'error') {
@@ -191,6 +189,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
                 return m;
               }),
             );
+            setInterviewUIState('active');
             toast(errorMessage);
             return false;
           }
@@ -277,12 +276,6 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
         requestAnimationFrame(() => resolve());
       });
 
-      if (isFinalAnswer) {
-        void handleEndInterview({ finalAnswer: trimmed, userMessageId: tempUserId });
-        setIsSending(false);
-        return;
-      }
-
       try {
         const response = await sendMessageStream(numericRoomId, {
           content: trimmed,
@@ -297,6 +290,71 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
         setLocalMessages((prev) =>
           prev.map((m) => (m.id === tempUserId ? { ...m, status: 'sent', time: nowLabel() } : m)),
         );
+
+        if (isFinalAnswer) {
+          let timeoutId: number | null = null;
+          let didComplete = false;
+          let didFail = false;
+
+          const timeoutPromise = new Promise<'timeout'>((resolve) => {
+            timeoutId = window.setTimeout(() => resolve('timeout'), FINAL_ANSWER_TIMEOUT_MS);
+          });
+
+          const streamPromise = readSseStream(response, ({ event, data }) => {
+            if (event === 'error') {
+              didFail = true;
+              let errorMessage = '메시지 전송에 실패했습니다.';
+              try {
+                const parsed = JSON.parse(data) as { message?: string };
+                if (parsed.message) errorMessage = parsed.message;
+              } catch {
+                errorMessage = data || errorMessage;
+              }
+
+              setLocalMessages((prev) =>
+                prev.map((m) =>
+                  m.id === tempUserId ? { ...m, status: 'failed', time: '전송 실패' } : m,
+                ),
+              );
+              toast(errorMessage);
+              return false;
+            }
+
+            if (event === 'done') {
+              didComplete = true;
+              void handleEndInterview();
+              return false;
+            }
+
+            return true;
+          }).then(() => 'stream' as const);
+
+          const raceResult = await Promise.race([streamPromise, timeoutPromise]);
+
+          if (timeoutId !== null) {
+            window.clearTimeout(timeoutId);
+          }
+
+          if (!didComplete && !didFail) {
+            setLocalMessages((prev) =>
+              prev.map((m) =>
+                m.id === tempUserId ? { ...m, status: 'failed', time: '전송 실패' } : m,
+              ),
+            );
+            toast(
+              raceResult === 'timeout'
+                ? '응답 대기 시간이 초과되었습니다. 다시 시도해주세요.'
+                : '응답이 완료되지 않아 전송에 실패했습니다.',
+            );
+            try {
+              await response.body?.cancel();
+            } catch {
+              // ignore cancel errors
+            }
+          }
+
+          return;
+        }
 
         let aiText = '';
 
@@ -425,6 +483,10 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
                 model,
                 interviewId: response.interviewId,
               });
+
+              if (!streamResponse.ok) {
+                throw new Error(`SSE 요청 실패 (HTTP ${streamResponse.status})`);
+              }
 
               let aiText = '';
               const nowLabel = () =>

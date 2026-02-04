@@ -4,6 +4,7 @@ import { Bell, ChevronLeft } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
+import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import { useUnreadCountQuery } from '@/lib/hooks/notifications/useUnreadCountQuery';
 
 import type { ReactNode } from 'react';
@@ -23,7 +24,21 @@ export default function Header({
 }: HeaderProps) {
   const router = useRouter();
   const { data: unreadCount } = useUnreadCountQuery();
+  const { requestNavigation } = useNavigationGuard();
   const showBadge = typeof unreadCount === 'number' && unreadCount > 0;
+
+  const handleBackClick = () => {
+    if (!onBackClick) return;
+    requestNavigation(() => onBackClick());
+  };
+
+  const handleHomeClick = () => {
+    requestNavigation(() => router.push('/llm'));
+  };
+
+  const handleNotificationsClick = () => {
+    requestNavigation(() => router.push('/notifications'));
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white">
@@ -32,7 +47,7 @@ export default function Header({
           {showBackButton ? (
             <button
               type="button"
-              onClick={onBackClick}
+              onClick={handleBackClick}
               className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-neutral-100"
               aria-label="뒤로가기"
             >
@@ -42,7 +57,7 @@ export default function Header({
           {title === 'Devths' ? (
             <button
               type="button"
-              onClick={() => router.push('/llm')}
+              onClick={handleHomeClick}
               className="inline-flex items-center rounded-md transition hover:opacity-80"
               aria-label="Devths 홈 이동"
             >
@@ -64,7 +79,7 @@ export default function Header({
           {rightSlot ?? (
             <button
               type="button"
-              onClick={() => router.push('/notifications')}
+              onClick={handleNotificationsClick}
               className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-neutral-100"
               aria-label="알림"
             >
