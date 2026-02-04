@@ -12,6 +12,14 @@ type Props = {
   onDelete?: (roomId: string) => void;
 };
 
+const ROOM_TITLE_MAX_LENGTH = 10;
+
+function formatRoomTitle(title: string) {
+  const chars = Array.from(title);
+  if (chars.length <= ROOM_TITLE_MAX_LENGTH) return title;
+  return `${chars.slice(0, ROOM_TITLE_MAX_LENGTH).join('')}...`;
+}
+
 export default function LlmRoomListItem({
   room,
   isAnalyzing,
@@ -19,6 +27,8 @@ export default function LlmRoomListItem({
   onAnalyzingClick,
   onDelete,
 }: Props) {
+  const displayTitle = formatRoomTitle(room.title);
+
   return (
     <div className="bg-white py-4">
       <div className="flex items-center justify-between gap-3">
@@ -35,7 +45,9 @@ export default function LlmRoomListItem({
         >
           <div className="flex min-w-0 items-center gap-2">
             <span className="h-1.5 w-1.5 rounded-full bg-[#05C075]" />
-            <span className="truncate text-sm font-semibold text-neutral-900">{room.title}</span>
+            <span className="truncate text-sm font-semibold text-neutral-900" title={room.title}>
+              {displayTitle}
+            </span>
             {isAnalyzing ? (
               <span className="shrink-0 rounded-full bg-[#05C075]/10 px-2 py-0.5 text-[10px] font-semibold text-[#05C075]">
                 분석 중
