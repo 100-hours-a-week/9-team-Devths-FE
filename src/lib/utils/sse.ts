@@ -42,7 +42,11 @@ export async function readSseStream(response: Response, onEvent: SseEventHandler
           event = line.slice(6).trim();
         } else if (line.startsWith('data:')) {
           const value = line.slice(5);
-          dataLines.push(value.startsWith(' ') ? value.slice(1) : value);
+          if (value.startsWith(' ') && value.length > 1) {
+            dataLines.push(value.slice(1));
+          } else {
+            dataLines.push(value);
+          }
         }
       }
 
@@ -81,7 +85,11 @@ export async function readSseStream(response: Response, onEvent: SseEventHandler
         event = line.slice(6).trim();
       } else if (line.startsWith('data:')) {
         const value = line.slice(5);
-        dataLines.push(value.startsWith(' ') ? value.slice(1) : value);
+        if (value.startsWith(' ') && value.length > 1) {
+          dataLines.push(value.slice(1));
+        } else {
+          dataLines.push(value);
+        }
       }
     }
 
