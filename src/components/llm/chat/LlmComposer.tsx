@@ -16,6 +16,8 @@ type Props = {
   onRemovePdf?: () => void;
 };
 
+const CHAT_MESSAGE_MAX_LENGTH = 2000;
+
 export default function LlmComposer(props: Props) {
   const {
     onSend,
@@ -113,7 +115,8 @@ export default function LlmComposer(props: Props) {
           className="h-11 flex-1 resize-none rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-900 transition outline-none placeholder:text-neutral-400 focus:border-[#05C075] focus:ring-2 focus:ring-[#05C075]/20"
           placeholder="메시지를 입력하세요"
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => setText(e.target.value.slice(0, CHAT_MESSAGE_MAX_LENGTH))}
+          maxLength={CHAT_MESSAGE_MAX_LENGTH}
           onPaste={handlePaste}
           onCompositionStart={() => {
             isComposingRef.current = true;
@@ -146,6 +149,9 @@ export default function LlmComposer(props: Props) {
         >
           <SendHorizonal className="h-5 w-5" />
         </button>
+      </div>
+      <div className="mt-1 text-right text-[11px] text-neutral-400">
+        {text.length}/{CHAT_MESSAGE_MAX_LENGTH}
       </div>
     </div>
   );
