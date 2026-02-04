@@ -29,15 +29,17 @@ export default function NicknameField({
           className={cn(
             'h-12 w-full rounded-xl border px-4 text-sm outline-none',
             'bg-background placeholder:text-muted-foreground',
-            'focus:ring-ring/30 focus:ring-2',
-            hasError ? 'border-destructive focus:ring-destructive/20' : 'border-input',
+            'focus:ring-2',
+            hasError
+              ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
+              : 'border-input focus:border-[#05C075] focus:ring-[#05C075]/20',
           )}
         />
       </div>
 
       <p
         className={cn(
-          'mt-2 min-h-[20px] text-xs',
+          'mt-2 min-h-[16px] text-[11px] leading-4',
           hasError ? 'text-destructive' : 'text-muted-foreground',
         )}
       >

@@ -2,15 +2,47 @@ name: Devths-FE CI 파이프라인
 
 on:
   pull_request:
-    branches: [develop, release, main]
+    branches:
+      - develop
+      - release/*
+      - main
 
 env:
   NODE_VERSION: '22.x'
 
 jobs:
+  # 0. main 브랜치 보호: release/hotfix/*만 PR 허용
+  main-branch-guard:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: main PR 브랜치 검증
+        run: |
+          BASE="${{ github.event.pull_request.base.ref }}"
+          HEAD="${{ github.event.pull_request.head.ref }}"
+
+          echo "📌 대상 브랜치: $BASE"
+          echo "📌 소스 브랜치: $HEAD"
+
+          # main이 아닐 땐 통과
+          if [ "$BASE" != "main" ]; then
+            echo "✅ 브랜치 정책 통과 (main 아님)"
+            exit 0
+          fi
+
+          # main일 때 허용 브랜치: release/*, hotfix/*
+          if [[ "$HEAD" =~ ^release\/.+$ || "$HEAD" =~ ^hotfix\/.+$ ]]; then
+            echo "✅ 브랜치 정책 통과 (허용된 소스 브랜치)"
+            exit 0
+          fi
+
+          echo "❌ 정책 위반: main에는 release/* 또는 hotfix/* 브랜치만 PR 가능"
+          exit 1
+
   # 1. 통합 품질 검사 (Lint + Prettier + TypeCheck)
   lint:
     runs-on: ubuntu-22.04
+    needs: [main-branch-guard]
+    if: needs.main-branch-guard.result == 'success'
     steps:
       - name: 체크아웃
         uses: actions/checkout@v4
@@ -35,6 +67,8 @@ jobs:
   # 2. 정적 분석 (CodeQL)
   static-analysis:
     runs-on: ubuntu-22.04
+    needs: [main-branch-guard]
+    if: needs.main-branch-guard.result == 'success'
     permissions:
       actions: read
       contents: read
@@ -44,18 +78,49 @@ jobs:
         uses: actions/checkout@v4
 
       - name: CodeQL 초기화
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: javascript-typescript
+          config-file: './.github/codeql/code-ql-heavy.yml'
 
       - name: 분석 수행
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
+
+      - name: 보안 취약점 결과 확인 및 차단
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "⏳ 분석 결과가 GitHub에 반영되기를 기다리는 중 (10초)..."
+          sleep 10
+
+          # 1. 현재 이벤트가 push인지 pr인지에 따라 검색할 REF 설정
+          # GITHUB_REF는 push일 땐 refs/heads/branch명, PR일 땐 refs/pull/번호/merge가 됩니다.
+          CURRENT_REF="${{ github.ref }}"
+          echo "📍 현재 Ref: $CURRENT_REF"
+
+          # 2. API 호출하여 High/Critical 등급의 Open 상태인 알림 조회
+          ALERTS=$(gh api "repos/${{ github.repository }}/code-scanning/alerts?tool_name=CodeQL&state=open&ref=$CURRENT_REF" \
+            --jq '[.[] | select(.rule.security_severity_level == "high" or .rule.security_severity_level == "critical")]')
+
+          COUNT=$(echo "$ALERTS" | jq 'length')
+
+          if [ "$COUNT" -gt 0 ]; then
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "❌ 보안 검사 실패: 고위험(High/Critical) 취약점 $COUNT개 발견"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "$ALERTS" | jq -r '.[] | "- [\(.rule.security_severity_level)] \(.rule.description) \n   위치: \(.most_recent_instance.location.path)"'
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            exit 1
+          else
+            echo "✅ 보안 검사 통과: 현재 커밋($CURRENT_REF)은 안전합니다."
+          fi
 
   # 3. 빌드 테스트
   build:
     name: build
-    needs: [lint, static-analysis]
+    needs: [main-branch-guard, lint, static-analysis]
     runs-on: ubuntu-22.04
+    if: needs.main-branch-guard.result == 'success'
     steps:
       - name: 체크아웃
         uses: actions/checkout@v4
@@ -73,13 +138,24 @@ jobs:
       - name: 의존성 설치
         run: pnpm install --frozen-lockfile
 
+      - name: 환경 변수 설정
+        run: |
+          BASE="${{ github.event.pull_request.base.ref }}"
+          if [ "$BASE" == "main" ]; then
+            echo "${{ secrets.ENV_FILE_PROD }}" > .env
+          elif [[ "$BASE" == release/* ]]; then
+            echo "${{ secrets.ENV_FILE_STAGING }}" > .env
+          else
+            echo "${{ secrets.ENV_FILE_DEV }}" > .env
+          fi
+
       - name: 프로젝트 빌드
         run: pnpm build
 
   # 4. 디스코드 통합 알림
   notify-discord:
     runs-on: ubuntu-22.04
-    needs: [lint, static-analysis, build]
+    needs: [main-branch-guard, lint, static-analysis, build]
     if: always()
     steps:
       - name: 데이터 준비
@@ -87,6 +163,20 @@ jobs:
         env:
           USER_MAP: ${{ secrets.USER_MAP_JSON }}
         run: |
+          # 브랜치 가드 재평가 (main은 release/*/hotfix/*만 허용)
+          BASE="${{ github.event.pull_request.base.ref }}"
+          HEAD="${{ github.event.pull_request.head.ref }}"
+          if [ "$BASE" == "main" ] && [[ ! "$HEAD" =~ ^release\/.+$ && ! "$HEAD" =~ ^hotfix\/.+$ ]]; then
+            GUARD_ALLOWED=false
+            GUARD_REASON="main에는 release/* 또는 hotfix/* 브랜치만 PR 가능"
+          else
+            GUARD_ALLOWED=true
+            GUARD_REASON="정책 통과"
+          fi
+
+          echo "branch_guard_allowed=$GUARD_ALLOWED" >> $GITHUB_OUTPUT
+          echo "branch_guard_reason=$GUARD_REASON" >> $GITHUB_OUTPUT
+
           # 1. 작성자 멘션화
           LOGIN_ID="${{ github.event.pull_request.user.login }}"
           AUTHOR_RAW=$(echo "$USER_MAP" | jq -r --arg id "$LOGIN_ID" '.[$id] // $id')
@@ -120,21 +210,23 @@ jobs:
         uses: sarisia/actions-status-discord@v1
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          status: ${{ (needs.lint.result == 'success' && needs.static-analysis.result == 'success' && needs.build.result == 'success') && 'success' || 'failure' }}
-          title: "${{ github.event.pull_request.base.ref }} FE PR [${{ (needs.lint.result == 'success' && needs.static-analysis.result == 'success' && needs.build.result == 'success') && '✅성공' || '❌실패' }}]"
+          status: ${{ steps.prep.outputs.branch_guard_allowed == 'true' && needs.lint.result == 'success' && needs.static-analysis.result == 'success' && needs.build.result == 'success' && 'success' || 'failure' }}
+          title: "${{ github.event.pull_request.base.ref }} FE PR [${{ steps.prep.outputs.branch_guard_allowed == 'true' && needs.lint.result == 'success' && needs.static-analysis.result == 'success' && needs.build.result == 'success' && '✅성공' || '❌실패' }}]"
           description: |
             **PR 제목**: ${{ github.event.pull_request.title }}
+            **브랜치 가드**: ${{ steps.prep.outputs.branch_guard_allowed == 'true' && '✅ 통과' || '❌ 차단' }} (이유: ${{ steps.prep.outputs.branch_guard_reason }})
             **작성자**: ${{ steps.prep.outputs.author }}
             **리뷰어**: ${{ steps.prep.outputs.reviewers }}
             **작업 내용**: ${{ steps.prep.outputs.description }}...
             **경로**: `${{ github.event.pull_request.head.ref }}` → `${{ github.event.pull_request.base.ref }}`
 
             **📊 상세 결과**:
-            - Lint/Type: ${{ needs.lint.result == 'success' && ' ✅' || ' ❌' }}
-            - Static Analysis: ${{ needs.static-analysis.result == 'success' && ' ✅' || ' ❌' }}
-            - Build: ${{ needs.build.result == 'success' && ' ✅' || ' ❌' }}
+            - Branch Guard: ${{ steps.prep.outputs.branch_guard_allowed == 'true' && ' ✅' || ' ❌' }}
+            - Lint/Type: ${{ steps.prep.outputs.branch_guard_allowed == 'true' && (needs.lint.result == 'success' && ' ✅' || ' ❌') || ' ⚪️ (브랜치 가드 차단)' }}
+            - Static Analysis: ${{ steps.prep.outputs.branch_guard_allowed == 'true' && (needs.static-analysis.result == 'success' && ' ✅' || ' ❌') || ' ⚪️ (브랜치 가드 차단)' }}
+            - Build: ${{ steps.prep.outputs.branch_guard_allowed == 'true' && (needs.build.result == 'success' && ' ✅' || ' ❌') || ' ⚪️ (브랜치 가드 차단)' }}
 
             **🔗 링크**: [PR 확인하기](${{ github.event.pull_request.html_url }})
-          color: "${{ (needs.lint.result == 'success' && needs.static-analysis.result == 'success' && needs.build.result == 'success') && 65280 || 16711680 }}"
+          color: "${{ steps.prep.outputs.branch_guard_allowed == 'true' && needs.lint.result == 'success' && needs.static-analysis.result == 'success' && needs.build.result == 'success' && 65280 || 16711680 }}"
           username: GitHub FE Bot
           avatar_url: https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png

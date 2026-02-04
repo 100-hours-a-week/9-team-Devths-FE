@@ -1,3 +1,7 @@
+import { apiRequest } from '@/lib/api/client';
+
+import type { ApiErrorResponse, ApiResponse } from '@/types/api';
+
 export type GoogleAuthResponse =
   | {
       message: string;
@@ -63,4 +67,20 @@ export async function postGoogleAuth(authCode: string): Promise<PostGoogleAuthRe
     json,
     accessToken,
   };
+}
+
+export type PostLogoutResult = {
+  ok: boolean;
+  status: number;
+  json: (ApiResponse<null> | ApiErrorResponse) | null;
+};
+
+export async function postLogout(): Promise<PostLogoutResult> {
+  const { ok, status, json } = await apiRequest<null>({
+    method: 'POST',
+    path: '/api/auth/logout',
+    withAuth: true,
+  });
+
+  return { ok, status, json };
 }

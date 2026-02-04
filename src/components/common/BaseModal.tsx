@@ -1,5 +1,9 @@
 'use client';
 
+import { createPortal } from 'react-dom';
+
+import { cn } from '@/lib/utils';
+
 import type { ReactNode } from 'react';
 
 type BaseModalProps = {
@@ -7,21 +11,41 @@ type BaseModalProps = {
   onClose: () => void;
   title?: string;
   children: ReactNode;
+  contentClassName?: string;
+  variant?: 'center' | 'sheet';
 };
 
-export default function BaseModal({ open, onClose, title, children }: BaseModalProps) {
+export default function BaseModal({
+  open,
+  onClose,
+  title,
+  children,
+  contentClassName,
+  variant = 'center',
+}: BaseModalProps) {
   if (!open) return null;
 
-  return (
+  const baseClass =
+    variant === 'sheet'
+      ? 'fixed bottom-0 left-1/2 z-[51] w-full max-w-[430px] -translate-x-1/2 rounded-t-2xl bg-white p-5 shadow-lg'
+      : 'fixed top-1/2 left-1/2 z-[51] w-[calc(100%-40px)] sm:w-[calc(100%-80px)] max-w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-5 shadow-lg';
+
+  return createPortal(
     <div className="fixed inset-0 z-50">
       <button
         type="button"
-        className="absolute inset-0 bg-black/40"
+        className="fixed inset-0 z-50 bg-black/50"
         onClick={onClose}
         aria-label="닫기"
       />
 
-      <div className="absolute top-1/2 left-1/2 w-[calc(100%-40px)] max-w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-5 shadow-lg">
+      <div
+        className={cn(
+          baseClass,
+          variant === 'sheet' ? 'max-h-[85vh] overflow-y-auto' : '',
+          contentClassName,
+        )}
+      >
         <button
           type="button"
           onClick={onClose}
@@ -34,6 +58,7 @@ export default function BaseModal({ open, onClose, title, children }: BaseModalP
         {title ? <h2 className="text-base font-bold">{title}</h2> : null}
         <div className={title ? 'mt-2' : ''}>{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

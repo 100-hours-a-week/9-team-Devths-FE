@@ -1,9 +1,10 @@
 'use client';
+
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
 import { postGoogleAuth } from '@/lib/api/auth';
-import { setAccessToken, setTempToken } from '@/lib/auth/token';
+import { setAccessToken, setSignupEmail, setTempToken } from '@/lib/auth/token';
 
 export default function AuthCallbackClient() {
   const router = useRouter();
@@ -57,11 +58,13 @@ export default function AuthCallbackClient() {
           }
 
           setAccessToken(accessToken);
-          router.replace('/calendar');
+          router.replace('/llm');
           return;
         }
 
+        // 비회원: 회원가입 컨텍스트 저장
         setTempToken(json.data.tempToken);
+        setSignupEmail(json.data.email);
         router.replace('/signup');
       } catch (err) {
         console.warn(err);
@@ -74,8 +77,10 @@ export default function AuthCallbackClient() {
   }, [router, searchParams]);
 
   return (
-    <main className="flex min-h-dvh items-center justify-center px-6">
-      <p className="text-sm text-neutral-600">로그인 처리 중...</p>
+    <main className="min-h-dvh bg-transparent">
+      <div className="mx-auto flex min-h-dvh w-full items-center justify-center bg-white px-6 sm:max-w-[430px] sm:shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
+        <p className="text-sm text-neutral-600">로그인 처리 중...</p>
+      </div>
     </main>
   );
 }
