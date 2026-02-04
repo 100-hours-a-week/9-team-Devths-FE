@@ -58,7 +58,7 @@ jobs:
         if: always()
         uses: sarisia/actions-status-discord@v1
         with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          webhook: ${{ secrets.DISCORD_WEBHOOK_NON_PROD_URL }}
           status: ${{ job.status }}
           title: "🎭 E2E Test 결과 [${{ job.status == 'success' && '✅성공' || '❌실패' }}]"
           description: |
