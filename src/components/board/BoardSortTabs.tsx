@@ -25,8 +25,8 @@ export default function BoardSortTabs({ value, onChange }: BoardSortTabsProps) {
             className={clsx(
               'rounded-full px-3 py-1 text-sm font-semibold transition',
               isActive
-                ? 'bg-[#1A1A1A] text-white'
-                : 'bg-white text-neutral-600 shadow-sm ring-1 ring-neutral-200 hover:bg-neutral-50',
+                ? 'bg-[#05C075] text-white'
+                : 'border border-[#05C075] bg-white text-[#05C075] hover:bg-[#E9F9F1]',
             )}
             aria-pressed={isActive}
           >
