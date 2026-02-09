@@ -1,5 +1,5 @@
-import BoardCreatePlaceholderPage from '@/screens/board/BoardCreatePlaceholderPage';
+import BoardCreatePage from '@/screens/board/BoardCreatePage';
 
 export default function Page() {
-  return <BoardCreatePlaceholderPage />;
+  return <BoardCreatePage />;
 }
