@@ -1,7 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
-import { Bot, Calendar, User } from 'lucide-react';
+import { Bot, Calendar, LayoutList, User } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -17,6 +17,7 @@ type Tab = {
 
 const TABS: Tab[] = [
   { label: '캘린더', href: '/calendar', icon: Calendar },
+  { label: '게시판', href: '/board', icon: LayoutList },
   { label: 'AI', href: '/llm', icon: Bot, highlight: true },
   { label: '프로필', href: '/profile', icon: User },
 ];
@@ -45,7 +46,7 @@ export default function BottomNav({ hidden = false }: BottomNavProps) {
       )}
     >
       <div className="border-t">
-        <div className="grid h-16 grid-cols-3 px-2">
+        <div className="grid h-16 grid-cols-4 px-2">
           {TABS.map((tab) => {
             const isActive = pathname.startsWith(tab.href);
             const Icon = tab.icon;
