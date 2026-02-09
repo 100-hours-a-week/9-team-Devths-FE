@@ -157,7 +157,7 @@ export default function BoardListPage() {
           <button
             type="button"
             onClick={handleCreatePost}
-            className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#05C075] text-white shadow-lg transition hover:bg-[#04A865]"
+            className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-b from-[#1CD48A] to-[#05C075] text-white shadow-[0_12px_24px_rgba(5,192,117,0.35)] ring-1 ring-white/60 transition hover:scale-105 hover:from-[#2DE09A] hover:to-[#07B374] active:translate-y-0.5"
             aria-label="게시글 작성"
           >
             <Plus className="h-5 w-5" />
