@@ -1,8 +1,8 @@
 'use client';
 
-import { Plus } from 'lucide-react';
+import { Bell, Plus, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import BoardPostCard from '@/components/board/BoardPostCard';
 import BoardSortTabs from '@/components/board/BoardSortTabs';
@@ -13,6 +13,7 @@ import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
 import { BOARD_TAG_MAX } from '@/constants/board';
 import { useBoardListInfiniteQuery } from '@/lib/hooks/boards/useBoardListInfiniteQuery';
+import { useUnreadCountQuery } from '@/lib/hooks/notifications/useUnreadCountQuery';
 
 import type { BoardSort, BoardTag } from '@/types/board';
 
@@ -22,51 +23,81 @@ export default function BoardListPage() {
   const router = useRouter();
   const { setOptions, resetOptions } = useHeader();
   const { requestNavigation } = useNavigationGuard();
+  const { data: unreadCount } = useUnreadCountQuery();
+  const showBadge = typeof unreadCount === 'number' && unreadCount > 0;
   const [sort, setSort] = useState<BoardSort>('LATEST');
   const [selectedTags, setSelectedTags] = useState<BoardTag[]>([]);
   const [isTagOpen, setIsTagOpen] = useState(false);
   const [isMiniProfileOpen, setIsMiniProfileOpen] = useState(false);
   const [selectedAuthorId, setSelectedAuthorId] = useState<number | null>(null);
 
-  const {
-    data,
-    isLoading,
-    isError,
-    refetch,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useBoardListInfiniteQuery({
-    size: PAGE_SIZE,
-    sort,
-    tags: selectedTags,
-  });
+  const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useBoardListInfiniteQuery({
+      size: PAGE_SIZE,
+      sort,
+      tags: selectedTags,
+    });
 
   const posts = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data]);
 
   const selectedAuthor = useMemo(
-    () =>
-      posts.find((post) => post.author.userId === selectedAuthorId)?.author ?? null,
+    () => posts.find((post) => post.author.userId === selectedAuthorId)?.author ?? null,
     [posts, selectedAuthorId],
   );
 
-  const handleCreatePost = () => {
+  const handleCreatePost = useCallback(() => {
     requestNavigation(() => router.push('/board/create'));
-  };
+  }, [requestNavigation, router]);
+
+  const handleSearchClick = useCallback(() => {
+    requestNavigation(() => router.push('/board/search'));
+  }, [requestNavigation, router]);
+
+  const handleNotificationsClick = useCallback(() => {
+    requestNavigation(() => router.push('/notifications'));
+  }, [requestNavigation, router]);
 
   const handleAuthorClick = (userId: number) => {
     setSelectedAuthorId(userId);
     setIsMiniProfileOpen(true);
   };
 
+  const rightSlot = useMemo(
+    () => (
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={handleSearchClick}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-neutral-100"
+          aria-label="게시글 검색"
+        >
+          <Search className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          onClick={handleNotificationsClick}
+          className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-neutral-100"
+          aria-label="알림"
+        >
+          <Bell className="h-5 w-5" />
+          {showBadge ? (
+            <span className="absolute top-[0.5px] right-[0.5px] h-2.5 w-2.5 rounded-full bg-red-500" />
+          ) : null}
+        </button>
+      </div>
+    ),
+    [handleNotificationsClick, handleSearchClick, showBadge],
+  );
+
   useEffect(() => {
     setOptions({
       title: 'Devths',
       showBackButton: false,
+      rightSlot,
     });
 
     return () => resetOptions();
-  }, [resetOptions, setOptions]);
+  }, [resetOptions, rightSlot, setOptions]);
 
   return (
     <>
@@ -107,11 +138,7 @@ export default function BoardListPage() {
           ) : (
             <>
               {posts.map((post) => (
-                <BoardPostCard
-                  key={post.postId}
-                  post={post}
-                  onAuthorClick={handleAuthorClick}
-                />
+                <BoardPostCard key={post.postId} post={post} onAuthorClick={handleAuthorClick} />
               ))}
               <div className="pt-2">
                 <ListLoadMoreSentinel
