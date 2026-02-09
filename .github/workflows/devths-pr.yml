@@ -5,6 +5,7 @@ on:
     branches:
       - develop
       - release/*
+      - hotfix/*
       - main
 
 env:
