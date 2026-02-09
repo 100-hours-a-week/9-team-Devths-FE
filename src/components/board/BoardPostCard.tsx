@@ -1,6 +1,6 @@
 'use client';
 
-import { MessageCircle, Share2, ThumbsUp } from 'lucide-react';
+import { Heart, MessageCircle, Share2 } from 'lucide-react';
 
 import { formatCountCompact, formatRelativeTime } from '@/lib/utils/board';
 
@@ -88,7 +88,7 @@ export default function BoardPostCard({ post, onClick, onAuthorClick }: BoardPos
 
       <div className="mt-3 flex items-center gap-4 text-[11px] text-neutral-500">
         <div className="flex items-center gap-1">
-          <ThumbsUp className="h-3.5 w-3.5" />
+          <Heart className="h-3.5 w-3.5" />
           <span>{formatCountCompact(post.stats.likeCount)}</span>
         </div>
         <div className="flex items-center gap-1">
