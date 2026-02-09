@@ -21,3 +21,26 @@ export function formatCountCompact(value: number, fractionDigits = 1): string {
 
   return formatWithUnit(1000, 'K');
 }
+
+export function formatRelativeTime(dateIso: string, now = new Date()): string {
+  const date = new Date(dateIso);
+  if (Number.isNaN(date.getTime())) return dateIso;
+
+  const diffMs = now.getTime() - date.getTime();
+  if (diffMs < 60 * 1000) {
+    return '방금 전';
+  }
+
+  const diffMins = Math.floor(diffMs / (60 * 1000));
+  if (diffMins < 60) {
+    return `${diffMins}분 전`;
+  }
+
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) {
+    return `${diffHours}시간 전`;
+  }
+
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}일 전`;
+}
