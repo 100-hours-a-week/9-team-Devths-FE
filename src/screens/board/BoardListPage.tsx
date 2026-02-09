@@ -167,11 +167,11 @@ export default function BoardListPage() {
               </button>
             </div>
           ) : filteredPosts.length === 0 ? (
-            <div className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-neutral-500 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
+            <p className="px-4 py-6 text-center text-sm text-neutral-500">
               {selectedTags.length > 0
                 ? '선택한 태그에 해당하는 글이 없어요.'
                 : '아직 게시글이 없어요.'}
-            </div>
+            </p>
           ) : (
             <>
               {filteredPosts.map((post) => (
