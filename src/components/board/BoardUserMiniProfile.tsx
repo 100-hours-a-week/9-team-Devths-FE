@@ -4,13 +4,14 @@ import { MessageCircle, UserPlus } from 'lucide-react';
 import Image from 'next/image';
 
 import BaseModal from '@/components/common/BaseModal';
-import type { BoardTag } from '@/types/board';
+
+import type { BoardInterest } from '@/types/board';
 
 type BoardMiniProfileUser = {
   userId: number;
   nickname: string;
   profileImageUrl?: string | null;
-  interests?: BoardTag[];
+  interests?: BoardInterest[];
 };
 
 type BoardUserMiniProfileProps = {

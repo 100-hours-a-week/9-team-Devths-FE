@@ -174,7 +174,7 @@ export default function BoardListPage() {
                 userId: selectedAuthor.userId,
                 nickname: selectedAuthor.nickname,
                 profileImageUrl: selectedAuthor.profileImageUrl ?? null,
-                interests: [],
+                interests: selectedAuthor.interests ?? [],
               }
             : null
         }

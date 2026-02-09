@@ -58,35 +58,41 @@ export default function BoardPostCard({ post, onClick, onAuthorClick }: BoardPos
             </span>
           </div>
 
-          <div className="mt-1">
-            <h3 className="line-clamp-1 text-sm font-semibold text-neutral-900">
-              {post.title}
-            </h3>
-            <p className="mt-1 line-clamp-2 text-xs text-neutral-500">{post.preview}</p>
-          </div>
-
-          {post.tags.length > 0 ? (
-            <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-neutral-500">
-              {post.tags.map((tag) => (
-                <span key={tag}>#{tag}</span>
+          {post.author.interests && post.author.interests.length > 0 ? (
+            <div className="mt-1 flex flex-wrap gap-1 text-[11px] text-neutral-500">
+              {post.author.interests.map((interest) => (
+                <span key={interest}>#{interest}</span>
               ))}
             </div>
           ) : null}
+        </div>
+      </div>
 
-          <div className="mt-3 flex items-center gap-4 text-[11px] text-neutral-500">
-            <div className="flex items-center gap-1">
-              <ThumbsUp className="h-3.5 w-3.5" />
-              <span>{formatCountCompact(post.stats.likeCount)}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <MessageCircle className="h-3.5 w-3.5" />
-              <span>{formatCountCompact(post.stats.commentCount)}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Share2 className="h-3.5 w-3.5" />
-              <span>{formatCountCompact(post.stats.shareCount)}</span>
-            </div>
-          </div>
+      <div className="mt-3">
+        <h3 className="line-clamp-1 text-sm font-semibold text-neutral-900">{post.title}</h3>
+        <p className="mt-1 line-clamp-2 text-xs text-neutral-500">{post.preview}</p>
+      </div>
+
+      {post.tags.length > 0 ? (
+        <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-neutral-500">
+          {post.tags.map((tag) => (
+            <span key={tag}>#{tag}</span>
+          ))}
+        </div>
+      ) : null}
+
+      <div className="mt-3 flex items-center gap-4 text-[11px] text-neutral-500">
+        <div className="flex items-center gap-1">
+          <ThumbsUp className="h-3.5 w-3.5" />
+          <span>{formatCountCompact(post.stats.likeCount)}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <MessageCircle className="h-3.5 w-3.5" />
+          <span>{formatCountCompact(post.stats.commentCount)}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Share2 className="h-3.5 w-3.5" />
+          <span>{formatCountCompact(post.stats.shareCount)}</span>
         </div>
       </div>
     </article>
