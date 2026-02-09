@@ -80,6 +80,12 @@ export default function BoardListPage() {
             <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-6 text-center text-sm text-neutral-500">
               게시글을 불러오는 중...
             </div>
+          ) : posts.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-6 text-center text-sm text-neutral-500">
+              {selectedTags.length > 0
+                ? '선택한 태그에 해당하는 글이 없어요.'
+                : '아직 게시글이 없어요.'}
+            </div>
           ) : (
             <>
               {posts.map((post) => (
