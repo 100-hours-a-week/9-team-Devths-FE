@@ -28,12 +28,19 @@ export default function BoardListPage() {
   const [isMiniProfileOpen, setIsMiniProfileOpen] = useState(false);
   const [selectedAuthorId, setSelectedAuthorId] = useState<number | null>(null);
 
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useBoardListInfiniteQuery({
-      size: PAGE_SIZE,
-      sort,
-      tags: selectedTags,
-    });
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useBoardListInfiniteQuery({
+    size: PAGE_SIZE,
+    sort,
+    tags: selectedTags,
+  });
 
   const posts = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data]);
 
@@ -79,6 +86,17 @@ export default function BoardListPage() {
           {isLoading ? (
             <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-6 text-center text-sm text-neutral-500">
               게시글을 불러오는 중...
+            </div>
+          ) : isError ? (
+            <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-6 text-center text-sm text-neutral-500">
+              <p>네트워크 오류가 발생했어요.</p>
+              <button
+                type="button"
+                onClick={() => void refetch()}
+                className="mt-3 rounded-full border border-neutral-200 bg-white px-4 py-1 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+              >
+                다시 시도
+              </button>
             </div>
           ) : posts.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-6 text-center text-sm text-neutral-500">
