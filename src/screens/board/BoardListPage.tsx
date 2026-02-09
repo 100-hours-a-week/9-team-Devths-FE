@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import BoardPostCard from '@/components/board/BoardPostCard';
 import BoardSortTabs from '@/components/board/BoardSortTabs';
 import BoardTagFilter from '@/components/board/BoardTagFilter';
+import BoardUserMiniProfile from '@/components/board/BoardUserMiniProfile';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
@@ -24,6 +25,8 @@ export default function BoardListPage() {
   const [sort, setSort] = useState<BoardSort>('LATEST');
   const [selectedTags, setSelectedTags] = useState<BoardTag[]>([]);
   const [isTagOpen, setIsTagOpen] = useState(false);
+  const [isMiniProfileOpen, setIsMiniProfileOpen] = useState(false);
+  const [selectedAuthorId, setSelectedAuthorId] = useState<number | null>(null);
 
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useBoardListInfiniteQuery({
@@ -34,8 +37,19 @@ export default function BoardListPage() {
 
   const posts = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data]);
 
+  const selectedAuthor = useMemo(
+    () =>
+      posts.find((post) => post.author.userId === selectedAuthorId)?.author ?? null,
+    [posts, selectedAuthorId],
+  );
+
   const handleCreatePost = () => {
     requestNavigation(() => router.push('/board/create'));
+  };
+
+  const handleAuthorClick = (userId: number) => {
+    setSelectedAuthorId(userId);
+    setIsMiniProfileOpen(true);
   };
 
   useEffect(() => {
@@ -69,7 +83,11 @@ export default function BoardListPage() {
           ) : (
             <>
               {posts.map((post) => (
-                <BoardPostCard key={post.postId} post={post} />
+                <BoardPostCard
+                  key={post.postId}
+                  post={post}
+                  onAuthorClick={handleAuthorClick}
+                />
               ))}
               <div className="pt-2">
                 <ListLoadMoreSentinel
@@ -95,6 +113,23 @@ export default function BoardListPage() {
           </button>
         </div>
       </div>
+
+      <BoardUserMiniProfile
+        open={isMiniProfileOpen}
+        onClose={() => setIsMiniProfileOpen(false)}
+        user={
+          selectedAuthor
+            ? {
+                userId: selectedAuthor.userId,
+                nickname: selectedAuthor.nickname,
+                profileImageUrl: selectedAuthor.profileImageUrl ?? null,
+                interests: [],
+              }
+            : null
+        }
+        onStartChat={() => setIsMiniProfileOpen(false)}
+        onToggleFollow={() => setIsMiniProfileOpen(false)}
+      />
     </>
   );
 }
