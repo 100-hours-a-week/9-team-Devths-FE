@@ -1,6 +1,11 @@
 import type { BoardSort, BoardTag } from '@/types/board';
 
-export const BOARD_TAGS = ['이력서', '포트폴리오', '면접', '코딩테스트'] as const satisfies readonly BoardTag[];
+export const BOARD_TAGS = [
+  '이력서',
+  '포트폴리오',
+  '면접',
+  '코딩테스트',
+] as const satisfies readonly BoardTag[];
 
 export const BOARD_TAG_MAX = 4;
 

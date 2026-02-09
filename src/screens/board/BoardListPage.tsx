@@ -44,9 +44,7 @@ export default function BoardListPage() {
     let filtered = rawPosts;
 
     if (selectedTags.length > 0) {
-      filtered = filtered.filter((post) =>
-        selectedTags.some((tag) => post.tags.includes(tag)),
-      );
+      filtered = filtered.filter((post) => selectedTags.some((tag) => post.tags.includes(tag)));
     }
 
     if (sort === 'POPULAR') {
@@ -127,14 +125,7 @@ export default function BoardListPage() {
     if (!hasNextPage || isFetchingNextPage) return;
     if (filteredPosts.length > 0) return;
     void fetchNextPage();
-  }, [
-    fetchNextPage,
-    filteredPosts.length,
-    hasNextPage,
-    isError,
-    isFetchingNextPage,
-    isLoading,
-  ]);
+  }, [fetchNextPage, filteredPosts.length, hasNextPage, isError, isFetchingNextPage, isLoading]);
 
   return (
     <>

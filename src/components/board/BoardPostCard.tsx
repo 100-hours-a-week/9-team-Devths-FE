@@ -53,9 +53,7 @@ export default function BoardPostCard({ post, onClick, onAuthorClick }: BoardPos
             >
               {post.author.nickname}
             </button>
-            <span className="text-xs text-neutral-400">
-              {formatRelativeTime(post.createdAt)}
-            </span>
+            <span className="text-xs text-neutral-400">{formatRelativeTime(post.createdAt)}</span>
           </div>
 
           {post.author.interests && post.author.interests.length > 0 ? (

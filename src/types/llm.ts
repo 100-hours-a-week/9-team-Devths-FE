@@ -1,4 +1,3 @@
-
 export type AiChatRoom = {
   roomId: number;
   roomUuid: string;

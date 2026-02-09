@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useCallback, useEffect } from 'react';
 
 import { useHeader } from '@/components/layout/HeaderContext';
 
