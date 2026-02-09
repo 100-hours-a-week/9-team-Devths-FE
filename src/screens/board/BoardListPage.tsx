@@ -113,13 +113,13 @@ export default function BoardListPage() {
           />
         </div>
 
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 -mx-3 border-t border-neutral-200">
           {isLoading ? (
-            <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-6 text-center text-sm text-neutral-500">
+            <div className="border-b border-neutral-200 bg-white px-4 py-6 text-center text-sm text-neutral-500">
               게시글을 불러오는 중...
             </div>
           ) : isError ? (
-            <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-6 text-center text-sm text-neutral-500">
+            <div className="border-b border-neutral-200 bg-white px-4 py-6 text-center text-sm text-neutral-500">
               <p>네트워크 오류가 발생했어요.</p>
               <button
                 type="button"
@@ -130,7 +130,7 @@ export default function BoardListPage() {
               </button>
             </div>
           ) : posts.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-6 text-center text-sm text-neutral-500">
+            <div className="border-b border-neutral-200 bg-white px-4 py-6 text-center text-sm text-neutral-500">
               {selectedTags.length > 0
                 ? '선택한 태그에 해당하는 글이 없어요.'
                 : '아직 게시글이 없어요.'}
@@ -140,7 +140,7 @@ export default function BoardListPage() {
               {posts.map((post) => (
                 <BoardPostCard key={post.postId} post={post} onAuthorClick={handleAuthorClick} />
               ))}
-              <div className="pt-2">
+              <div className="px-4 pt-2">
                 <ListLoadMoreSentinel
                   onLoadMore={() => void fetchNextPage()}
                   hasNextPage={hasNextPage ?? false}
