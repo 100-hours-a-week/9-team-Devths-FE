@@ -30,7 +30,7 @@ export default function BoardCreatePlaceholderPage() {
   return (
     <main className="px-3 pt-4 pb-3">
       <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-6 text-center text-sm text-neutral-500">
-        게시글 작성 화면 준비 중
+        게시글 작성 화면 준비 중 입니다
       </div>
     </main>
   );
