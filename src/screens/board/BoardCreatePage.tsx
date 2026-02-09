@@ -1,13 +1,17 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useHeader } from '@/components/layout/HeaderContext';
+import { BOARD_TITLE_MAX_LENGTH } from '@/constants/boardCreate';
+import { validateBoardCreateTitle } from '@/lib/validators/boardCreate';
 
 export default function BoardCreatePage() {
   const router = useRouter();
   const { setOptions, resetOptions } = useHeader();
+  const [title, setTitle] = useState('');
+  const titleError = useMemo(() => validateBoardCreateTitle(title), [title]);
 
   const handleBackClick = useCallback(() => {
     router.push('/board');
@@ -44,6 +48,26 @@ export default function BoardCreatePage() {
       </section>
 
       <section className="mt-4 space-y-4">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-neutral-900">제목</span>
+            <span className="text-xs text-rose-500">*</span>
+          </div>
+          <input
+            type="text"
+            value={title}
+            maxLength={BOARD_TITLE_MAX_LENGTH}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="제목을 입력하세요"
+            className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-[#05C075] focus:outline-none focus:ring-2 focus:ring-[#05C075]/20"
+          />
+          <div className="flex items-center justify-between text-xs text-neutral-400">
+            <span>{titleError ?? ' '}</span>
+            <span>
+              {title.trim().length}/{BOARD_TITLE_MAX_LENGTH}
+            </span>
+          </div>
+        </div>
         <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-4 text-sm text-neutral-400">
           제목/내용/태그/첨부 영역이 여기에 들어갈 예정입니다.
         </div>
