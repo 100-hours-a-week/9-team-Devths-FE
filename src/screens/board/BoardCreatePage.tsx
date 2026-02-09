@@ -4,9 +4,12 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import BoardMarkdownPreview from '@/components/board/BoardMarkdownPreview';
+import BoardTagSelector from '@/components/board/BoardTagSelector';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { BOARD_TITLE_MAX_LENGTH } from '@/constants/boardCreate';
 import { validateBoardCreateTitle } from '@/lib/validators/boardCreate';
+
+import type { BoardTag } from '@/types/board';
 
 export default function BoardCreatePage() {
   const router = useRouter();
@@ -14,6 +17,7 @@ export default function BoardCreatePage() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isPreview, setIsPreview] = useState(false);
+  const [tags, setTags] = useState<BoardTag[]>([]);
   const titleError = useMemo(() => validateBoardCreateTitle(title), [title]);
 
   const handleBackClick = useCallback(() => {
@@ -118,8 +122,10 @@ export default function BoardCreatePage() {
           )}
         </div>
 
+        <BoardTagSelector value={tags} onChange={setTags} />
+
         <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-4 text-sm text-neutral-400">
-          제목/내용/태그/첨부 영역이 여기에 들어갈 예정입니다.
+          첨부 영역이 여기에 들어갈 예정입니다.
         </div>
       </section>
     </main>
