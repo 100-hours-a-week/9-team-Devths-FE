@@ -74,11 +74,11 @@ export default function BoardPostCard({ post, onClick, onAuthorClick }: BoardPos
       </div>
 
       {post.tags.length > 0 ? (
-        <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-neutral-600">
+        <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-[#1FAE73]">
           {post.tags.map((tag) => (
             <span
               key={tag}
-              className="rounded-md border border-neutral-200 bg-neutral-100 px-2 py-0.5 font-medium"
+              className="rounded-md border border-[#BFEFDB] bg-[#E9F9F1] px-2 py-0.5 font-medium"
             >
               {tag}
             </span>
