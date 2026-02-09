@@ -6,6 +6,7 @@ import BoardPostCard from '@/components/board/BoardPostCard';
 import BoardSortTabs from '@/components/board/BoardSortTabs';
 import BoardTagFilter from '@/components/board/BoardTagFilter';
 import { useHeader } from '@/components/layout/HeaderContext';
+import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
 import { BOARD_TAG_MAX } from '@/constants/board';
 import { useBoardListInfiniteQuery } from '@/lib/hooks/boards/useBoardListInfiniteQuery';
 
@@ -19,11 +20,12 @@ export default function BoardListPage() {
   const [selectedTags, setSelectedTags] = useState<BoardTag[]>([]);
   const [isTagOpen, setIsTagOpen] = useState(false);
 
-  const { data, isLoading } = useBoardListInfiniteQuery({
-    size: PAGE_SIZE,
-    sort,
-    tags: selectedTags,
-  });
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useBoardListInfiniteQuery({
+      size: PAGE_SIZE,
+      sort,
+      tags: selectedTags,
+    });
 
   const posts = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data]);
 
@@ -55,7 +57,18 @@ export default function BoardListPage() {
             게시글을 불러오는 중...
           </div>
         ) : (
-          posts.map((post) => <BoardPostCard key={post.postId} post={post} />)
+          <>
+            {posts.map((post) => (
+              <BoardPostCard key={post.postId} post={post} />
+            ))}
+            <div className="pt-2">
+              <ListLoadMoreSentinel
+                onLoadMore={() => void fetchNextPage()}
+                hasNextPage={hasNextPage ?? false}
+                isFetchingNextPage={isFetchingNextPage}
+              />
+            </div>
+          </>
         )}
       </div>
     </main>
