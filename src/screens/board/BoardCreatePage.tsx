@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import BoardMarkdownPreview from '@/components/board/BoardMarkdownPreview';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { BOARD_TITLE_MAX_LENGTH } from '@/constants/boardCreate';
 import { validateBoardCreateTitle } from '@/lib/validators/boardCreate';
@@ -61,7 +62,7 @@ export default function BoardCreatePage() {
             maxLength={BOARD_TITLE_MAX_LENGTH}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="제목을 입력하세요"
-            className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-[#05C075] focus:outline-none focus:ring-2 focus:ring-[#05C075]/20"
+            className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-[#05C075] focus:ring-2 focus:ring-[#05C075]/20 focus:outline-none"
           />
           <div className="flex items-center justify-between text-xs text-neutral-400">
             <span>{titleError ?? ' '}</span>
@@ -104,17 +105,15 @@ export default function BoardCreatePage() {
           </div>
 
           {isPreview ? (
-            <div className="min-h-[180px] rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-              {content.trim()
-                ? content
-                : '미리보기할 내용이 없습니다. 편집 탭에서 내용을 입력하세요.'}
+            <div className="min-h-[180px] rounded-2xl border border-neutral-200 bg-white px-4 py-3">
+              <BoardMarkdownPreview content={content} />
             </div>
           ) : (
             <textarea
               value={content}
               onChange={(event) => setContent(event.target.value)}
               placeholder="마크다운으로 작성해 보세요. 예: # 제목, - 목록, ```코드```"
-              className="min-h-[180px] w-full resize-none rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-[#05C075] focus:outline-none focus:ring-2 focus:ring-[#05C075]/20"
+              className="min-h-[180px] w-full resize-none rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-[#05C075] focus:ring-2 focus:ring-[#05C075]/20 focus:outline-none"
             />
           )}
         </div>
