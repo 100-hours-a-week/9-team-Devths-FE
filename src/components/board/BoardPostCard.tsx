@@ -32,7 +32,7 @@ export default function BoardPostCard({ post, onClick, onAuthorClick }: BoardPos
           handleCardClick();
         }
       }}
-      className="border-b border-neutral-200 bg-white px-4 py-4 transition hover:bg-neutral-50"
+      className="rounded-2xl border border-transparent bg-white px-4 py-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:border-[#05C075] hover:shadow-[0_12px_28px_rgba(15,23,42,0.08)]"
     >
       <div className="flex gap-3">
         <button
@@ -59,7 +59,7 @@ export default function BoardPostCard({ post, onClick, onAuthorClick }: BoardPos
           </div>
 
           {post.author.interests && post.author.interests.length > 0 ? (
-            <div className="mt-1 flex flex-wrap gap-1 text-[11px] text-neutral-500">
+            <div className="mt-1 flex flex-wrap gap-1 text-[11px] text-neutral-400">
               {post.author.interests.map((interest) => (
                 <span key={interest}>#{interest}</span>
               ))}
@@ -86,7 +86,7 @@ export default function BoardPostCard({ post, onClick, onAuthorClick }: BoardPos
         </div>
       ) : null}
 
-      <div className="mt-3 flex items-center gap-4 text-[11px] text-neutral-500">
+      <div className="mt-3 flex items-center gap-5 text-[11px] text-neutral-500">
         <div className="flex items-center gap-1">
           <Heart className="h-3.5 w-3.5" />
           <span>{formatCountCompact(post.stats.likeCount)}</span>
