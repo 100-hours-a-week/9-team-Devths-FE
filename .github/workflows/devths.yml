@@ -378,7 +378,7 @@ jobs:
   e2e-test:
     needs: [deploy]
     if: startsWith(github.ref_name, 'release/')
-    uses: ./.github/workflows/playwright.yml
+    uses: ./.github/workflows/devths-playwright.yml
     with:
       target_url: 'https://stg.devths.com'
     secrets:
