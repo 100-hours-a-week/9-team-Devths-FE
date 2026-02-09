@@ -11,7 +11,7 @@ import BoardUserMiniProfile from '@/components/board/BoardUserMiniProfile';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
-import { BOARD_TAG_MAX } from '@/constants/board';
+import { BOARD_TAG_MAX, POPULAR_MIN_LIKES } from '@/constants/board';
 import { useBoardListInfiniteQuery } from '@/lib/hooks/boards/useBoardListInfiniteQuery';
 import { useUnreadCountQuery } from '@/lib/hooks/notifications/useUnreadCountQuery';
 
@@ -38,11 +38,34 @@ export default function BoardListPage() {
       tags: selectedTags,
     });
 
-  const posts = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data]);
+  const rawPosts = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data]);
+
+  const filteredPosts = useMemo(() => {
+    let filtered = rawPosts;
+
+    if (selectedTags.length > 0) {
+      filtered = filtered.filter((post) =>
+        selectedTags.some((tag) => post.tags.includes(tag)),
+      );
+    }
+
+    if (sort === 'POPULAR') {
+      filtered = filtered
+        .filter((post) => post.stats.likeCount >= POPULAR_MIN_LIKES)
+        .sort((a, b) => {
+          if (b.stats.likeCount !== a.stats.likeCount) {
+            return b.stats.likeCount - a.stats.likeCount;
+          }
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+    }
+
+    return filtered;
+  }, [rawPosts, selectedTags, sort]);
 
   const selectedAuthor = useMemo(
-    () => posts.find((post) => post.author.userId === selectedAuthorId)?.author ?? null,
-    [posts, selectedAuthorId],
+    () => rawPosts.find((post) => post.author.userId === selectedAuthorId)?.author ?? null,
+    [rawPosts, selectedAuthorId],
   );
 
   const handleCreatePost = useCallback(() => {
@@ -99,6 +122,20 @@ export default function BoardListPage() {
     return () => resetOptions();
   }, [resetOptions, rightSlot, setOptions]);
 
+  useEffect(() => {
+    if (isLoading || isError) return;
+    if (!hasNextPage || isFetchingNextPage) return;
+    if (filteredPosts.length > 0) return;
+    void fetchNextPage();
+  }, [
+    fetchNextPage,
+    filteredPosts.length,
+    hasNextPage,
+    isError,
+    isFetchingNextPage,
+    isLoading,
+  ]);
+
   return (
     <>
       <main className="px-3 pt-4 pb-3">
@@ -129,7 +166,7 @@ export default function BoardListPage() {
                 다시 시도
               </button>
             </div>
-          ) : posts.length === 0 ? (
+          ) : filteredPosts.length === 0 ? (
             <div className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-neutral-500 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
               {selectedTags.length > 0
                 ? '선택한 태그에 해당하는 글이 없어요.'
@@ -137,7 +174,7 @@ export default function BoardListPage() {
             </div>
           ) : (
             <>
-              {posts.map((post) => (
+              {filteredPosts.map((post) => (
                 <BoardPostCard key={post.postId} post={post} onAuthorClick={handleAuthorClick} />
               ))}
               <div className="px-4 pt-2">
