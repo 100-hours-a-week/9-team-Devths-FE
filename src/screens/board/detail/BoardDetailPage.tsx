@@ -12,6 +12,7 @@ import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { useBoardDetailQuery } from '@/lib/hooks/boards/useBoardDetailQuery';
 import { toast } from '@/lib/toast/store';
+import { formatCountCompact } from '@/lib/utils/board';
 import BoardPostDetailSkeleton from '@/screens/board/detail/BoardPostDetailSkeleton';
 
 export default function BoardDetailPage() {
@@ -26,9 +27,12 @@ export default function BoardDetailPage() {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const optionsButtonRef = useRef<HTMLButtonElement>(null);
   const optionsMenuRef = useRef<HTMLDivElement>(null);
-  const { data: post, isLoading, isError, refetch } = useBoardDetailQuery(
-    Number.isFinite(postId) ? postId : null,
-  );
+  const {
+    data: post,
+    isLoading,
+    isError,
+    refetch,
+  } = useBoardDetailQuery(Number.isFinite(postId) ? postId : null);
 
   const handleSearchClick = useCallback(() => {
     requestNavigation(() => router.push('/board/search'));
@@ -182,15 +186,15 @@ export default function BoardDetailPage() {
           <div className="mt-4 flex items-center gap-5 text-[11px] text-neutral-500">
             <button type="button" className="flex items-center gap-1" aria-label="좋아요">
               <Heart className="h-3.5 w-3.5" />
-              <span>{post.stats.likeCount}</span>
+              <span>{formatCountCompact(post.stats.likeCount)}</span>
             </button>
             <div className="flex items-center gap-1">
               <MessageCircle className="h-3.5 w-3.5" />
-              <span>{post.stats.commentCount}</span>
+              <span>{formatCountCompact(post.stats.commentCount)}</span>
             </div>
             <button type="button" className="flex items-center gap-1" aria-label="공유">
               <Share2 className="h-3.5 w-3.5" />
-              <span>{post.stats.shareCount}</span>
+              <span>{formatCountCompact(post.stats.shareCount)}</span>
             </button>
           </div>
         </article>
@@ -201,7 +205,7 @@ export default function BoardDetailPage() {
 
         <section className="space-y-2">
           <p className="text-sm font-semibold text-neutral-800">
-            댓글 {post.stats.commentCount}개
+            댓글 {formatCountCompact(post.stats.commentCount)}개
           </p>
           <div className="space-y-2">
             {[
