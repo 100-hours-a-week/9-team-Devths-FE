@@ -19,13 +19,16 @@ import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { boardsKeys } from '@/lib/hooks/boards/queryKeys';
 import { useBoardCommentsQuery } from '@/lib/hooks/boards/useBoardCommentsQuery';
 import { useBoardDetailQuery } from '@/lib/hooks/boards/useBoardDetailQuery';
+import { useCreateCommentMutation } from '@/lib/hooks/boards/useCreateCommentMutation';
+import { useDeleteCommentMutation } from '@/lib/hooks/boards/useDeleteCommentMutation';
+import { useUpdateCommentMutation } from '@/lib/hooks/boards/useUpdateCommentMutation';
 import { toast } from '@/lib/toast/store';
 import { formatCountCompact } from '@/lib/utils/board';
 import { groupCommentsByThread } from '@/lib/utils/comments';
 import BoardPostDetailSkeleton from '@/screens/board/detail/BoardPostDetailSkeleton';
 
 import type { BoardPostSummary } from '@/types/board';
-import type { PostDetail } from '@/types/boardDetail';
+import type { CommentItem, PostDetail } from '@/types/boardDetail';
 import type { CursorPage } from '@/types/pagination';
 
 export default function BoardDetailPage() {
@@ -61,6 +64,13 @@ export default function BoardDetailPage() {
     isError: isCommentsError,
     refetch: refetchComments,
   } = useBoardCommentsQuery(Number.isFinite(postId) ? postId : null, 50);
+  const { mutateAsync: createComment, isPending: isCommentSubmitting } = useCreateCommentMutation();
+  const { mutateAsync: deleteComment, isPending: isCommentDeleting } = useDeleteCommentMutation();
+  const { mutateAsync: updateComment, isPending: isCommentUpdating } = useUpdateCommentMutation();
+  const [pendingDeleteCommentId, setPendingDeleteCommentId] = useState<number | null>(null);
+  const [isCommentDeleteOpen, setIsCommentDeleteOpen] = useState(false);
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [replyTargetId, setReplyTargetId] = useState<number | null>(null);
 
   const handleSearchClick = useCallback(() => {
     requestNavigation(() => router.push('/board/search'));
@@ -124,6 +134,48 @@ export default function BoardDetailPage() {
     setIsOptionsOpen((prev) => !prev);
   };
 
+  const updateCommentCountCache = useCallback(
+    (targetPostId: number, nextCount: number) => {
+      queryClient.setQueryData<PostDetail>(boardsKeys.detail(targetPostId), (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          stats: {
+            ...prev.stats,
+            commentCount: nextCount,
+          },
+        };
+      });
+
+      queryClient.setQueriesData<InfiniteData<CursorPage<BoardPostSummary>>>(
+        {
+          predicate: (query) => query.queryKey[0] === 'boards' && query.queryKey[1] === 'list',
+        },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.map((item) =>
+                item.postId === targetPostId
+                  ? {
+                      ...item,
+                      stats: {
+                        ...item.stats,
+                        commentCount: nextCount,
+                      },
+                    }
+                  : item,
+              ),
+            })),
+          };
+        },
+      );
+    },
+    [queryClient],
+  );
+
   const updateLikeCache = useCallback(
     (targetPostId: number, nextLiked: boolean, nextCount: number) => {
       queryClient.setQueryData<PostDetail>(boardsKeys.detail(targetPostId), (prev) => {
@@ -160,6 +212,29 @@ export default function BoardDetailPage() {
                   : item,
               ),
             })),
+          };
+        },
+      );
+    },
+    [queryClient],
+  );
+
+  const updateCommentContentCache = useCallback(
+    (targetPostId: number, targetCommentId: number, content: string) => {
+      queryClient.setQueriesData<CursorPage<CommentItem>>(
+        {
+          predicate: (query) =>
+            query.queryKey[0] === 'boards' &&
+            query.queryKey[1] === 'comments' &&
+            query.queryKey[2] === targetPostId,
+        },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            items: old.items.map((item) =>
+              item.commentId === targetCommentId ? { ...item, content } : item,
+            ),
           };
         },
       );
@@ -306,6 +381,57 @@ export default function BoardDetailPage() {
     }
   };
 
+  const handleCommentDeleteOpen = (commentId: number) => {
+    if (isCommentDeleting) return;
+    setEditingCommentId(null);
+    setReplyTargetId(null);
+    setPendingDeleteCommentId(commentId);
+    setIsCommentDeleteOpen(true);
+  };
+
+  const handleCommentDeleteCancel = () => {
+    setPendingDeleteCommentId(null);
+    setIsCommentDeleteOpen(false);
+  };
+
+  const handleCommentDeleteConfirm = async () => {
+    if (!post || pendingDeleteCommentId === null) return;
+    try {
+      await deleteComment({ postId: post.postId, commentId: pendingDeleteCommentId });
+      const detailSnapshot = queryClient.getQueryData<PostDetail>(boardsKeys.detail(post.postId));
+      const nextCount = Math.max(
+        0,
+        (detailSnapshot?.stats.commentCount ?? post.stats.commentCount) - 1,
+      );
+      updateCommentCountCache(post.postId, nextCount);
+      await refetchComments();
+      toast('댓글이 삭제되었습니다.');
+      setIsCommentDeleteOpen(false);
+      setPendingDeleteCommentId(null);
+    } catch (error) {
+      toast(error instanceof Error ? error.message : '댓글 삭제에 실패했습니다.');
+    }
+  };
+
+  const handleCommentEditOpen = (commentId: number, _content: string | null) => {
+    if (isCommentDeleting) return;
+    setPendingDeleteCommentId(null);
+    setIsCommentDeleteOpen(false);
+    setEditingCommentId(commentId);
+    setReplyTargetId(null);
+  };
+
+  const handleCommentEditCancel = () => {
+    setEditingCommentId(null);
+  };
+
+  const handleReplyToggle = (commentId: number) => {
+    if (editingCommentId !== null || isCommentUpdating || isCommentDeleting) return;
+    setPendingDeleteCommentId(null);
+    setIsCommentDeleteOpen(false);
+    setReplyTargetId((prev) => (prev === commentId ? null : commentId));
+  };
+
   useEffect(() => {
     if (!isOptionsOpen) return;
 
@@ -427,7 +553,6 @@ export default function BoardDetailPage() {
                 onClick={handleShareOpen}
               >
                 <Share2 className="h-3.5 w-3.5" />
-                <span>{formatCountCompact(post.stats.shareCount)}</span>
               </button>
             </div>
           </article>
@@ -458,7 +583,86 @@ export default function BoardDetailPage() {
             ) : (
               <CommentList
                 threads={commentThreads}
-                onReplyClick={() => toast('답글 기능은 준비 중입니다.')}
+                onReplyClick={handleReplyToggle}
+                currentUserId={currentUserId}
+                onDeleteClick={handleCommentDeleteOpen}
+                onEditClick={handleCommentEditOpen}
+                isEditingCommentId={editingCommentId}
+                disableActions={
+                  editingCommentId !== null ||
+                  isCommentUpdating ||
+                  isCommentDeleting ||
+                  isCommentDeleteOpen
+                }
+                renderEditor={(commentId, _content, depth) => (
+                  <div className={depth === 2 ? 'ml-6' : undefined}>
+                    <CommentComposer
+                      className="mt-2"
+                      defaultValue={_content ?? ''}
+                      maxLength={500}
+                      submitLabel="저장"
+                      onCancel={handleCommentEditCancel}
+                      isSubmitting={isCommentUpdating}
+                      onSubmit={async (nextContent) => {
+                        if (!post) return false;
+                        const previousContent = _content ?? '';
+                        updateCommentContentCache(post.postId, commentId, nextContent);
+                        try {
+                          await updateComment({
+                            postId: post.postId,
+                            commentId,
+                            content: nextContent,
+                          });
+                          handleCommentEditCancel();
+                          return true;
+                        } catch (error) {
+                          updateCommentContentCache(post.postId, commentId, previousContent);
+                          toast(
+                            error instanceof Error ? error.message : '댓글 수정에 실패했습니다.',
+                          );
+                          return false;
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+                renderReplyEditor={(commentId) => (
+                  <div className="ml-6">
+                    <CommentComposer
+                      className="mt-2"
+                      placeholder="답글을 입력하세요..."
+                      maxLength={500}
+                      submitLabel="등록"
+                      isSubmitting={isCommentSubmitting}
+                      onCancel={() => setReplyTargetId(null)}
+                      onSubmit={async (content) => {
+                        if (!post) return false;
+                        try {
+                          await createComment({
+                            postId: post.postId,
+                            content,
+                            parentId: commentId,
+                          });
+                          const detailSnapshot = queryClient.getQueryData<PostDetail>(
+                            boardsKeys.detail(post.postId),
+                          );
+                          const nextCount =
+                            (detailSnapshot?.stats.commentCount ?? post.stats.commentCount) + 1;
+                          updateCommentCountCache(post.postId, nextCount);
+                          await refetchComments();
+                          setReplyTargetId(null);
+                          return true;
+                        } catch (error) {
+                          toast(
+                            error instanceof Error ? error.message : '답글 등록에 실패했습니다.',
+                          );
+                          return false;
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+                replyTargetId={replyTargetId}
               />
             )}
           </section>
@@ -472,6 +676,14 @@ export default function BoardDetailPage() {
           onConfirm={handleDeleteConfirm}
           onCancel={handleDeleteCancel}
         />
+        <ConfirmModal
+          isOpen={isCommentDeleteOpen}
+          title="댓글 삭제"
+          message="댓글을 삭제할까요? 삭제된 댓글은 복구할 수 없습니다."
+          confirmText="삭제"
+          onConfirm={handleCommentDeleteConfirm}
+          onCancel={handleCommentDeleteCancel}
+        />
       </main>
       <BoardShareModal
         open={isShareOpen}
@@ -480,7 +692,27 @@ export default function BoardDetailPage() {
         onCopy={handleShareCopy}
       />
       <div className="fixed bottom-0 left-1/2 z-40 w-full max-w-[430px] -translate-x-1/2 bg-white px-3 py-3 shadow-[0_-6px_16px_rgba(15,23,42,0.08)] sm:px-4">
-        <CommentComposer className="mt-0" onSubmit={() => toast('댓글 등록은 준비 중입니다.')} />
+        <CommentComposer
+          className="mt-0"
+          maxLength={500}
+          isSubmitting={isCommentSubmitting}
+          onSubmit={async (content) => {
+            if (!post) return false;
+            try {
+              await createComment({ postId: post.postId, content });
+              const detailSnapshot = queryClient.getQueryData<PostDetail>(
+                boardsKeys.detail(post.postId),
+              );
+              const nextCount = (detailSnapshot?.stats.commentCount ?? post.stats.commentCount) + 1;
+              updateCommentCountCache(post.postId, nextCount);
+              await refetchComments();
+              return true;
+            } catch (error) {
+              toast(error instanceof Error ? error.message : '댓글 등록에 실패했습니다.');
+              return false;
+            }
+          }}
+        />
       </div>
     </>
   );
