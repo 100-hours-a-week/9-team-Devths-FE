@@ -4,6 +4,7 @@ import { Bell, Heart, MessageCircle, Search, Share2 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import CommentList from '@/components/board/detail/CommentList';
 import PostContent from '@/components/board/detail/PostContent';
 import PostHeader from '@/components/board/detail/PostHeader';
 import ConfirmModal from '@/components/common/ConfirmModal';
@@ -15,6 +16,8 @@ import { useBoardDetailQuery } from '@/lib/hooks/boards/useBoardDetailQuery';
 import { toast } from '@/lib/toast/store';
 import { formatCountCompact } from '@/lib/utils/board';
 import BoardPostDetailSkeleton from '@/screens/board/detail/BoardPostDetailSkeleton';
+
+import type { CommentThread } from '@/types/boardDetail';
 
 export default function BoardDetailPage() {
   const router = useRouter();
@@ -197,6 +200,50 @@ export default function BoardDetailPage() {
     likeOverride?.postId === post.postId ? likeOverride.isLiked : post.isLiked;
   const resolvedLikeCount =
     likeOverride?.postId === post.postId ? likeOverride.likeCount : post.stats.likeCount;
+  const mockThreads: CommentThread[] = [
+    {
+      comment: {
+        commentId: 1,
+        parentId: null,
+        content: '정말 유용한 정보네요! 저도 도전해봐야겠어요',
+        author: { userId: 2, nickname: '김개발', profileImageUrl: null },
+        createdAt: '2026-02-10T09:00:00.000Z',
+        isDeleted: false,
+      },
+      replies: [
+        {
+          commentId: 4,
+          parentId: 1,
+          content: '좋게 봐주셔서 감사해요!',
+          author: { userId: 1, nickname: '작성자', profileImageUrl: null },
+          createdAt: '2026-02-10T09:12:00.000Z',
+          isDeleted: false,
+        },
+      ],
+    },
+    {
+      comment: {
+        commentId: 2,
+        parentId: null,
+        content: '혹시 난이도는 어느 정도였나요?',
+        author: { userId: 3, nickname: '이백엔드', profileImageUrl: null },
+        createdAt: '2026-02-10T08:40:00.000Z',
+        isDeleted: false,
+      },
+      replies: [],
+    },
+    {
+      comment: {
+        commentId: 3,
+        parentId: null,
+        content: '프로그래머스 Lv2~Lv3 정도였습니다',
+        author: { userId: 1, nickname: '작성자', profileImageUrl: null },
+        createdAt: '2026-02-10T08:20:00.000Z',
+        isDeleted: false,
+      },
+      replies: [],
+    },
+  ];
 
   return (
     <>
@@ -265,46 +312,7 @@ export default function BoardDetailPage() {
           <p className="text-sm font-semibold text-neutral-800">
             댓글 {formatCountCompact(post.stats.commentCount)}개
           </p>
-          <div className="space-y-2">
-            {[
-              {
-                id: 1,
-                author: '김개발',
-                time: '1시간 전',
-                content: '정말 유용한 정보네요! 저도 도전해봐야겠어요',
-              },
-              {
-                id: 2,
-                author: '이백엔드',
-                time: '2시간 전',
-                content: '혹시 난이도는 어느정도였나요?',
-              },
-              {
-                id: 3,
-                author: '김개발',
-                time: '1시간 전',
-                content: '프로그래머스 Lv2~Lv3 정도였습니다',
-              },
-            ].map((comment) => (
-              <div
-                key={comment.id}
-                className="rounded-2xl border border-neutral-100 bg-white px-3 py-3"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 bg-neutral-200 text-[11px] font-semibold text-neutral-600">
-                      {comment.author.slice(0, 1)}
-                    </div>
-                    <div>
-                      <div className="text-xs font-semibold text-neutral-800">{comment.author}</div>
-                      <div className="text-[11px] text-neutral-400">{comment.time}</div>
-                    </div>
-                  </div>
-                </div>
-                <p className="mt-2 text-xs text-neutral-600">{comment.content}</p>
-              </div>
-            ))}
-          </div>
+          <CommentList threads={mockThreads} />
         </section>
       </div>
 
