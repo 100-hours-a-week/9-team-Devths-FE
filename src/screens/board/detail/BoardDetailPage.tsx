@@ -631,11 +631,29 @@ export default function BoardDetailPage() {
                       placeholder="답글을 입력하세요..."
                       maxLength={500}
                       submitLabel="등록"
+                      isSubmitting={isCommentSubmitting}
                       onCancel={() => setReplyTargetId(null)}
-                      onSubmit={() => {
-                        toast('답글 등록은 준비 중입니다.');
-                        setReplyTargetId(null);
-                        return true;
+                      onSubmit={async (content) => {
+                        if (!post) return false;
+                        try {
+                          await createComment({
+                            postId: post.postId,
+                            content,
+                            parentId: commentId,
+                          });
+                          const detailSnapshot = queryClient.getQueryData<PostDetail>(
+                            boardsKeys.detail(post.postId),
+                          );
+                          const nextCount =
+                            (detailSnapshot?.stats.commentCount ?? post.stats.commentCount) + 1;
+                          updateCommentCountCache(post.postId, nextCount);
+                          await refetchComments();
+                          setReplyTargetId(null);
+                          return true;
+                        } catch (error) {
+                          toast(error instanceof Error ? error.message : '답글 등록에 실패했습니다.');
+                          return false;
+                        }
                       }}
                     />
                   </div>
