@@ -109,12 +109,15 @@ export default function BoardDetailPage() {
   );
 
   const handleBackClick = useCallback(() => {
+    void queryClient.invalidateQueries({
+      predicate: (query) => query.queryKey[0] === 'boards' && query.queryKey[1] === 'list',
+    });
     if (typeof window !== 'undefined' && window.history.length > 1) {
       router.back();
       return;
     }
     router.push('/board');
-  }, [router]);
+  }, [queryClient, router]);
 
   useEffect(() => {
     setFrameOptions({ showBottomNav: false });
@@ -221,17 +224,6 @@ export default function BoardDetailPage() {
       );
     },
     [queryClient],
-  );
-
-  const getDeleteImpactCount = useCallback(
-    (commentId: number) => {
-      const thread = commentThreads.find((item) => item.comment.commentId === commentId);
-      if (thread) {
-        return 1 + thread.replies.length;
-      }
-      return 1;
-    },
-    [commentThreads],
   );
 
   const updateCommentContentCache = useCallback(
@@ -414,10 +406,9 @@ export default function BoardDetailPage() {
     try {
       await deleteComment({ postId: post.postId, commentId: pendingDeleteCommentId });
       const detailSnapshot = queryClient.getQueryData<PostDetail>(boardsKeys.detail(post.postId));
-      const deleteImpact = getDeleteImpactCount(pendingDeleteCommentId);
       const nextCount = Math.max(
         0,
-        (detailSnapshot?.stats.commentCount ?? post.stats.commentCount) - deleteImpact,
+        (detailSnapshot?.stats.commentCount ?? post.stats.commentCount) - 1,
       );
       updateCommentCountCache(post.postId, nextCount);
       await refetchComments();

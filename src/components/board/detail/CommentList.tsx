@@ -66,7 +66,7 @@ export default function CommentList({
               createdAt={thread.comment.createdAt}
               content={thread.comment.content}
               isDeleted={thread.comment.isDeleted}
-              showReply={!disableActions}
+              showReply={!disableActions && !thread.comment.isDeleted}
               onReplyClick={onReplyClick ? () => onReplyClick(thread.comment.commentId) : undefined}
               showOptions={
                 !disableActions &&
