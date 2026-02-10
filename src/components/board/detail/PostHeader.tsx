@@ -12,6 +12,7 @@ type PostHeaderProps = {
   createdAt: string;
   showOptions?: boolean;
   onOptionsClick?: () => void;
+  optionsButtonRef?: React.Ref<HTMLButtonElement>;
 };
 
 export default function PostHeader({
@@ -19,6 +20,7 @@ export default function PostHeader({
   createdAt,
   showOptions = false,
   onOptionsClick,
+  optionsButtonRef,
 }: PostHeaderProps) {
   return (
     <div className="flex items-start justify-between gap-3">
@@ -55,6 +57,7 @@ export default function PostHeader({
         <button
           type="button"
           onClick={onOptionsClick}
+          ref={optionsButtonRef}
           className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-neutral-100"
           aria-label="게시글 옵션"
         >

@@ -3,13 +3,15 @@
 import { Bell, Search } from 'lucide-react';
 import { Heart, MessageCircle, Share2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import PostContent from '@/components/board/detail/PostContent';
 import PostHeader from '@/components/board/detail/PostHeader';
+import ConfirmModal from '@/components/common/ConfirmModal';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
+import { toast } from '@/lib/toast/store';
 
 import type { BoardAuthor, BoardTag } from '@/types/board';
 
@@ -18,6 +20,10 @@ export default function BoardDetailPage() {
   const { setOptions, resetOptions } = useHeader();
   const { requestNavigation } = useNavigationGuard();
   const currentUserId = getUserIdFromAccessToken();
+  const [isOptionsOpen, setIsOptionsOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const optionsButtonRef = useRef<HTMLButtonElement>(null);
+  const optionsMenuRef = useRef<HTMLDivElement>(null);
 
   const handleSearchClick = useCallback(() => {
     requestNavigation(() => router.push('/board/search'));
@@ -82,15 +88,89 @@ export default function BoardDetailPage() {
   };
   const isAuthor = currentUserId !== null && currentUserId === mockPost.author.userId;
 
+  const handleOptionsToggle = () => {
+    if (!isAuthor) return;
+    setIsOptionsOpen((prev) => !prev);
+  };
+
+  const handleEditClick = () => {
+    setIsOptionsOpen(false);
+    toast('게시글 수정은 준비 중입니다.');
+  };
+
+  const handleDeleteClick = () => {
+    setIsOptionsOpen(false);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    setIsDeleteConfirmOpen(false);
+  };
+
+  const handleDeleteCancel = () => {
+    setIsDeleteConfirmOpen(false);
+  };
+
+  useEffect(() => {
+    if (!isOptionsOpen) return;
+
+    const handleMouseDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (optionsMenuRef.current?.contains(target)) return;
+      if (optionsButtonRef.current?.contains(target)) return;
+      setIsOptionsOpen(false);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOptionsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOptionsOpen]);
+
+
   return (
     <main className="px-3 pt-4 pb-6">
       <div className="space-y-3">
         <article className="rounded-2xl bg-white px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
-          <PostHeader
-            author={mockPost.author}
-            createdAt={mockPost.createdAt}
-            showOptions={isAuthor}
-          />
+          <div className="relative">
+            <PostHeader
+              author={mockPost.author}
+              createdAt={mockPost.createdAt}
+              showOptions={isAuthor}
+              onOptionsClick={handleOptionsToggle}
+              optionsButtonRef={optionsButtonRef}
+            />
+            {isAuthor && isOptionsOpen ? (
+              <div
+                ref={optionsMenuRef}
+                className="absolute top-9 right-0 z-10 w-32 rounded-xl border border-neutral-200 bg-white py-1 text-sm text-neutral-700 shadow-[0_10px_30px_rgba(15,23,42,0.12)]"
+              >
+                <button
+                  type="button"
+                  onClick={handleEditClick}
+                  className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-neutral-50"
+                >
+                  수정
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteClick}
+                  className="flex w-full items-center justify-between px-3 py-2 text-left text-red-500 hover:bg-red-50"
+                >
+                  삭제
+                </button>
+              </div>
+            ) : null}
+          </div>
           <PostContent title={mockPost.title} content={mockPost.content} tags={mockPost.tags} />
 
           <div className="mt-4 flex items-center gap-5 text-[11px] text-neutral-500">
@@ -157,6 +237,15 @@ export default function BoardDetailPage() {
           </div>
         </section>
       </div>
+
+      <ConfirmModal
+        isOpen={isDeleteConfirmOpen}
+        title="게시글 삭제"
+        message="게시글을 삭제할까요? 삭제된 게시글은 복구할 수 없습니다."
+        confirmText="삭제"
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+      />
     </main>
   );
 }
