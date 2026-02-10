@@ -1,7 +1,13 @@
 import { api } from '@/lib/api/client';
 
 import type { BoardInterest, BoardPostSummary, BoardSort, BoardTag } from '@/types/board';
-import type { PostDetail, PostDetailResponse } from '@/types/boardDetail';
+import type {
+  CommentItem,
+  CommentItemResponse,
+  CommentListResponse,
+  PostDetail,
+  PostDetailResponse,
+} from '@/types/boardDetail';
 import type { CursorPage } from '@/types/pagination';
 
 type ListBoardPostsParams = {
@@ -62,6 +68,21 @@ function mapPostDetail(detail: PostDetailResponse): PostDetail {
     createdAt: detail.createdAt,
     updatedAt: detail.updatedAt,
     isLiked: detail.isLiked,
+  };
+}
+
+function mapCommentItem(comment: CommentItemResponse): CommentItem {
+  return {
+    commentId: comment.commentId,
+    parentId: comment.parentId ?? null,
+    content: comment.content ?? null,
+    author: {
+      userId: comment.user.userId,
+      nickname: comment.user.nickname,
+      profileImageUrl: comment.user.profileImage ?? null,
+    },
+    createdAt: comment.createdAt,
+    isDeleted: comment.isDeleted,
   };
 }
 
@@ -156,6 +177,40 @@ export async function getBoardPostDetail(postId: number): Promise<PostDetail> {
   }
 
   return mapPostDetail(result.json.data);
+}
+
+export async function listBoardComments(
+  postId: number,
+  size = 50,
+  lastId?: number | null,
+): Promise<CursorPage<CommentItem>> {
+  const queryParams = new URLSearchParams();
+  queryParams.set('size', size.toString());
+  if (lastId !== null && lastId !== undefined) {
+    queryParams.set('lastId', lastId.toString());
+  }
+
+  const path = queryParams.toString()
+    ? `/api/posts/${postId}/comments?${queryParams.toString()}`
+    : `/api/posts/${postId}/comments`;
+  const result = await api.get<CommentListResponse>(path, { credentials: 'include' });
+
+  if (!result.ok || !result.json) {
+    throw new Error('댓글을 불러오지 못했습니다.');
+  }
+
+  if (!('data' in result.json) || !result.json.data) {
+    throw new Error('Invalid response format');
+  }
+
+  const data = result.json.data;
+  const items = data.comments.map(mapCommentItem);
+
+  return {
+    items,
+    lastId: data.lastId ?? null,
+    hasNext: data.hasNext,
+  };
 }
 
 export async function likeBoardPost(postId: number): Promise<PostLikeResponse> {

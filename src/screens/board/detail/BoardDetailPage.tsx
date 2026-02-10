@@ -12,12 +12,12 @@ import { useHeader } from '@/components/layout/HeaderContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import { likeBoardPost, unlikeBoardPost } from '@/lib/api/boards';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
+import { useBoardCommentsQuery } from '@/lib/hooks/boards/useBoardCommentsQuery';
 import { useBoardDetailQuery } from '@/lib/hooks/boards/useBoardDetailQuery';
 import { toast } from '@/lib/toast/store';
 import { formatCountCompact } from '@/lib/utils/board';
+import { groupCommentsByThread } from '@/lib/utils/comments';
 import BoardPostDetailSkeleton from '@/screens/board/detail/BoardPostDetailSkeleton';
-
-import type { CommentThread } from '@/types/boardDetail';
 
 export default function BoardDetailPage() {
   const router = useRouter();
@@ -43,6 +43,12 @@ export default function BoardDetailPage() {
     isError,
     refetch,
   } = useBoardDetailQuery(Number.isFinite(postId) ? postId : null);
+  const {
+    data: commentsPage,
+    isLoading: isCommentsLoading,
+    isError: isCommentsError,
+    refetch: refetchComments,
+  } = useBoardCommentsQuery(Number.isFinite(postId) ? postId : null, 50);
 
   const handleSearchClick = useCallback(() => {
     requestNavigation(() => router.push('/board/search'));
@@ -200,50 +206,7 @@ export default function BoardDetailPage() {
     likeOverride?.postId === post.postId ? likeOverride.isLiked : post.isLiked;
   const resolvedLikeCount =
     likeOverride?.postId === post.postId ? likeOverride.likeCount : post.stats.likeCount;
-  const mockThreads: CommentThread[] = [
-    {
-      comment: {
-        commentId: 1,
-        parentId: null,
-        content: '정말 유용한 정보네요! 저도 도전해봐야겠어요',
-        author: { userId: 2, nickname: '김개발', profileImageUrl: null },
-        createdAt: '2026-02-10T09:00:00.000Z',
-        isDeleted: false,
-      },
-      replies: [
-        {
-          commentId: 4,
-          parentId: 1,
-          content: '좋게 봐주셔서 감사해요!',
-          author: { userId: 1, nickname: '작성자', profileImageUrl: null },
-          createdAt: '2026-02-10T09:12:00.000Z',
-          isDeleted: false,
-        },
-      ],
-    },
-    {
-      comment: {
-        commentId: 2,
-        parentId: null,
-        content: '혹시 난이도는 어느 정도였나요?',
-        author: { userId: 3, nickname: '이백엔드', profileImageUrl: null },
-        createdAt: '2026-02-10T08:40:00.000Z',
-        isDeleted: false,
-      },
-      replies: [],
-    },
-    {
-      comment: {
-        commentId: 3,
-        parentId: null,
-        content: '프로그래머스 Lv2~Lv3 정도였습니다',
-        author: { userId: 1, nickname: '작성자', profileImageUrl: null },
-        createdAt: '2026-02-10T08:20:00.000Z',
-        isDeleted: false,
-      },
-      replies: [],
-    },
-  ];
+  const commentThreads = groupCommentsByThread(commentsPage?.items ?? []);
 
   return (
     <>
@@ -253,68 +216,85 @@ export default function BoardDetailPage() {
       >
         <div className="space-y-3">
           <article className="rounded-2xl bg-white px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
-          <div className="relative">
-            <PostHeader
-              author={post.author}
-              createdAt={post.createdAt}
-              showOptions={isAuthor}
-              onOptionsClick={handleOptionsToggle}
-              optionsButtonRef={optionsButtonRef}
-            />
-            {isAuthor && isOptionsOpen ? (
-              <div
-                ref={optionsMenuRef}
-                className="absolute top-9 right-0 z-10 w-32 rounded-xl border border-neutral-200 bg-white py-1 text-sm text-neutral-700 shadow-[0_10px_30px_rgba(15,23,42,0.12)]"
-              >
-                <button
-                  type="button"
-                  onClick={handleEditClick}
-                  className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-neutral-50"
+            <div className="relative">
+              <PostHeader
+                author={post.author}
+                createdAt={post.createdAt}
+                showOptions={isAuthor}
+                onOptionsClick={handleOptionsToggle}
+                optionsButtonRef={optionsButtonRef}
+              />
+              {isAuthor && isOptionsOpen ? (
+                <div
+                  ref={optionsMenuRef}
+                  className="absolute top-9 right-0 z-10 w-32 rounded-xl border border-neutral-200 bg-white py-1 text-sm text-neutral-700 shadow-[0_10px_30px_rgba(15,23,42,0.12)]"
                 >
-                  수정
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDeleteClick}
-                  className="flex w-full items-center justify-between px-3 py-2 text-left text-red-500 hover:bg-red-50"
-                >
-                  삭제
-                </button>
-              </div>
-            ) : null}
-          </div>
-          <PostContent title={post.title} content={post.content} tags={post.tags} />
-
-          <div className="mt-4 flex items-center gap-5 text-[11px] text-neutral-500">
-            <button
-              type="button"
-              className={`flex items-center gap-1 ${
-                resolvedIsLiked ? 'text-[#05C075]' : 'text-neutral-500'
-              }`}
-              aria-label="좋아요"
-              onClick={handleLikeToggle}
-            >
-              <Heart className={`h-3.5 w-3.5 ${resolvedIsLiked ? 'fill-[#05C075]' : ''}`} />
-              <span>{formatCountCompact(resolvedLikeCount)}</span>
-            </button>
-            <div className="flex items-center gap-1">
-              <MessageCircle className="h-3.5 w-3.5" />
-              <span>{formatCountCompact(post.stats.commentCount)}</span>
+                  <button
+                    type="button"
+                    onClick={handleEditClick}
+                    className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-neutral-50"
+                  >
+                    수정
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeleteClick}
+                    className="flex w-full items-center justify-between px-3 py-2 text-left text-red-500 hover:bg-red-50"
+                  >
+                    삭제
+                  </button>
+                </div>
+              ) : null}
             </div>
-            <button type="button" className="flex items-center gap-1" aria-label="공유">
-              <Share2 className="h-3.5 w-3.5" />
-              <span>{formatCountCompact(post.stats.shareCount)}</span>
-            </button>
-          </div>
-        </article>
+            <PostContent title={post.title} content={post.content} tags={post.tags} />
+
+            <div className="mt-4 flex items-center gap-5 text-[11px] text-neutral-500">
+              <button
+                type="button"
+                className={`flex items-center gap-1 ${
+                  resolvedIsLiked ? 'text-[#05C075]' : 'text-neutral-500'
+                }`}
+                aria-label="좋아요"
+                onClick={handleLikeToggle}
+              >
+                <Heart className={`h-3.5 w-3.5 ${resolvedIsLiked ? 'fill-[#05C075]' : ''}`} />
+                <span>{formatCountCompact(resolvedLikeCount)}</span>
+              </button>
+              <div className="flex items-center gap-1">
+                <MessageCircle className="h-3.5 w-3.5" />
+                <span>{formatCountCompact(post.stats.commentCount)}</span>
+              </div>
+              <button type="button" className="flex items-center gap-1" aria-label="공유">
+                <Share2 className="h-3.5 w-3.5" />
+                <span>{formatCountCompact(post.stats.shareCount)}</span>
+              </button>
+            </div>
+          </article>
 
           <section className="space-y-2">
-          <p className="text-sm font-semibold text-neutral-800">
-            댓글 {formatCountCompact(post.stats.commentCount)}개
-          </p>
-          <CommentList threads={mockThreads} />
-        </section>
-      </div>
+            <p className="text-sm font-semibold text-neutral-800">
+              댓글 {formatCountCompact(post.stats.commentCount)}개
+            </p>
+            {isCommentsLoading ? (
+              <p className="rounded-2xl bg-white px-4 py-4 text-center text-xs text-neutral-500">
+                댓글을 불러오는 중...
+              </p>
+            ) : isCommentsError ? (
+              <div className="rounded-2xl bg-white px-4 py-4 text-center text-xs text-neutral-500">
+                <p>댓글을 불러오지 못했습니다.</p>
+                <button
+                  type="button"
+                  onClick={() => void refetchComments()}
+                  className="mt-3 rounded-full border border-neutral-200 bg-white px-3 py-1 text-[11px] font-semibold text-neutral-700 hover:bg-neutral-50"
+                >
+                  다시 시도
+                </button>
+              </div>
+            ) : (
+              <CommentList threads={commentThreads} />
+            )}
+          </section>
+        </div>
 
         <ConfirmModal
           isOpen={isDeleteConfirmOpen}
