@@ -9,4 +9,5 @@ type BoardListParams = {
 export const boardsKeys = {
   all: ['boards'] as const,
   list: (params: BoardListParams) => [...boardsKeys.all, 'list', params] as const,
+  detail: (postId: number) => [...boardsKeys.all, 'detail', postId] as const,
 };

@@ -1,8 +1,7 @@
 'use client';
 
-import { Bell, Search } from 'lucide-react';
-import { Heart, MessageCircle, Share2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { Bell, Heart, MessageCircle, Search, Share2 } from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import PostContent from '@/components/board/detail/PostContent';
@@ -11,19 +10,25 @@ import ConfirmModal from '@/components/common/ConfirmModal';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
+import { useBoardDetailQuery } from '@/lib/hooks/boards/useBoardDetailQuery';
 import { toast } from '@/lib/toast/store';
-
-import type { BoardAuthor, BoardTag } from '@/types/board';
+import BoardPostDetailSkeleton from '@/screens/board/detail/BoardPostDetailSkeleton';
 
 export default function BoardDetailPage() {
   const router = useRouter();
   const { setOptions, resetOptions } = useHeader();
   const { requestNavigation } = useNavigationGuard();
+  const params = useParams();
+  const postIdParam = Array.isArray(params?.postId) ? params?.postId[0] : params?.postId;
+  const postId = postIdParam ? Number(postIdParam) : null;
   const currentUserId = getUserIdFromAccessToken();
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const optionsButtonRef = useRef<HTMLButtonElement>(null);
   const optionsMenuRef = useRef<HTMLDivElement>(null);
+  const { data: post, isLoading, isError, refetch } = useBoardDetailQuery(
+    Number.isFinite(postId) ? postId : null,
+  );
 
   const handleSearchClick = useCallback(() => {
     requestNavigation(() => router.push('/board/search'));
@@ -67,26 +72,7 @@ export default function BoardDetailPage() {
     return () => resetOptions();
   }, [resetOptions, rightSlot, setOptions]);
 
-  const mockPost = {
-    postId: 1,
-    title: '카카오 프론트엔드 1차 코딩 후기',
-    content:
-      '오늘 카카오 공채 1차 코딩테스트를 봤습니다. 3문제 출제됐고 난이도는 어려운 편이었습니다.',
-    tags: ['코딩테스트'] as BoardTag[],
-    createdAt: '2026-02-10T08:00:00.000Z',
-    author: {
-      userId: 1,
-      nickname: '김개발',
-      profileImageUrl: null,
-      interests: ['프론트엔드'] as BoardAuthor['interests'],
-    },
-    stats: {
-      likeCount: 124,
-      commentCount: 23,
-      shareCount: 8,
-    },
-  };
-  const isAuthor = currentUserId !== null && currentUserId === mockPost.author.userId;
+  const isAuthor = Boolean(post && currentUserId !== null && currentUserId === post.author.userId);
 
   const handleOptionsToggle = () => {
     if (!isAuthor) return;
@@ -136,6 +122,26 @@ export default function BoardDetailPage() {
     };
   }, [isOptionsOpen]);
 
+  if (isLoading) {
+    return <BoardPostDetailSkeleton />;
+  }
+
+  if (isError || !post) {
+    return (
+      <main className="px-3 pt-4 pb-6">
+        <div className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-neutral-500 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
+          <p>게시글을 불러오지 못했습니다.</p>
+          <button
+            type="button"
+            onClick={() => void refetch()}
+            className="mt-3 rounded-full border border-neutral-200 bg-white px-4 py-1 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+          >
+            다시 시도
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="px-3 pt-4 pb-6">
@@ -143,8 +149,8 @@ export default function BoardDetailPage() {
         <article className="rounded-2xl bg-white px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
           <div className="relative">
             <PostHeader
-              author={mockPost.author}
-              createdAt={mockPost.createdAt}
+              author={post.author}
+              createdAt={post.createdAt}
               showOptions={isAuthor}
               onOptionsClick={handleOptionsToggle}
               optionsButtonRef={optionsButtonRef}
@@ -171,20 +177,20 @@ export default function BoardDetailPage() {
               </div>
             ) : null}
           </div>
-          <PostContent title={mockPost.title} content={mockPost.content} tags={mockPost.tags} />
+          <PostContent title={post.title} content={post.content} tags={post.tags} />
 
           <div className="mt-4 flex items-center gap-5 text-[11px] text-neutral-500">
             <button type="button" className="flex items-center gap-1" aria-label="좋아요">
               <Heart className="h-3.5 w-3.5" />
-              <span>{mockPost.stats.likeCount}</span>
+              <span>{post.stats.likeCount}</span>
             </button>
             <div className="flex items-center gap-1">
               <MessageCircle className="h-3.5 w-3.5" />
-              <span>{mockPost.stats.commentCount}</span>
+              <span>{post.stats.commentCount}</span>
             </div>
             <button type="button" className="flex items-center gap-1" aria-label="공유">
               <Share2 className="h-3.5 w-3.5" />
-              <span>{mockPost.stats.shareCount}</span>
+              <span>{post.stats.shareCount}</span>
             </button>
           </div>
         </article>
@@ -194,7 +200,9 @@ export default function BoardDetailPage() {
         </div>
 
         <section className="space-y-2">
-          <p className="text-sm font-semibold text-neutral-800">댓글 3개</p>
+          <p className="text-sm font-semibold text-neutral-800">
+            댓글 {post.stats.commentCount}개
+          </p>
           <div className="space-y-2">
             {[
               {

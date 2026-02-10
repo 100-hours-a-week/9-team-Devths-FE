@@ -1,6 +1,7 @@
 import { api } from '@/lib/api/client';
 
 import type { BoardInterest, BoardPostSummary, BoardSort, BoardTag } from '@/types/board';
+import type { PostDetail, PostDetailResponse } from '@/types/boardDetail';
 import type { CursorPage } from '@/types/pagination';
 
 type ListBoardPostsParams = {
@@ -34,6 +35,30 @@ type PostListResponse = {
   lastId: number | null;
   hasNext: boolean;
 };
+
+function mapPostDetail(detail: PostDetailResponse): PostDetail {
+  return {
+    postId: detail.postId,
+    title: detail.title,
+    content: detail.content,
+    attachments: detail.attachments ?? [],
+    author: {
+      userId: detail.user.userId,
+      nickname: detail.user.nickname,
+      profileImageUrl: detail.user.profileImage ?? null,
+      interests: (detail.user.interests ?? []) as BoardInterest[],
+    },
+    stats: {
+      likeCount: detail.likeCount,
+      commentCount: detail.commentCount,
+      shareCount: detail.shareCount,
+    },
+    tags: (detail.tags ?? []) as BoardTag[],
+    createdAt: detail.createdAt,
+    updatedAt: detail.updatedAt,
+    isLiked: detail.isLiked,
+  };
+}
 
 type CreateBoardPostRequest = {
   title: string;
@@ -112,4 +137,18 @@ export async function createBoardPost(payload: CreateBoardPostRequest) {
   }
 
   return result.json.data;
+}
+
+export async function getBoardPostDetail(postId: number): Promise<PostDetail> {
+  const result = await api.get<PostDetailResponse>(`/api/posts/${postId}`, { credentials: 'include' });
+
+  if (!result.ok || !result.json) {
+    throw new Error('게시글을 불러오지 못했습니다.');
+  }
+
+  if (!('data' in result.json) || !result.json.data) {
+    throw new Error('Invalid response format');
+  }
+
+  return mapPostDetail(result.json.data);
 }
