@@ -4,6 +4,7 @@ import { Bell, Heart, MessageCircle, Search, Share2 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import BoardShareModal from '@/components/board/detail/BoardShareModal';
 import CommentList from '@/components/board/detail/CommentList';
 import PostContent from '@/components/board/detail/PostContent';
 import PostHeader from '@/components/board/detail/PostHeader';
@@ -29,6 +30,7 @@ export default function BoardDetailPage() {
   const currentUserId = getUserIdFromAccessToken();
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
   const [likeOverride, setLikeOverride] = useState<{
     postId: number;
     isLiked: boolean;
@@ -156,6 +158,18 @@ export default function BoardDetailPage() {
     setIsDeleteConfirmOpen(false);
   };
 
+  const handleShareOpen = () => {
+    setIsShareOpen(true);
+  };
+
+  const handleShareClose = () => {
+    setIsShareOpen(false);
+  };
+
+  const handleShareCopy = () => {
+    setIsShareOpen(false);
+  };
+
   useEffect(() => {
     if (!isOptionsOpen) return;
 
@@ -207,6 +221,10 @@ export default function BoardDetailPage() {
   const resolvedLikeCount =
     likeOverride?.postId === post.postId ? likeOverride.likeCount : post.stats.likeCount;
   const commentThreads = groupCommentsByThread(commentsPage?.items ?? []);
+  const shareUrl =
+    typeof window === 'undefined'
+      ? ''
+      : `${window.location.origin}/board/${encodeURIComponent(post.postId)}`;
 
   return (
     <>
@@ -264,10 +282,15 @@ export default function BoardDetailPage() {
                 <MessageCircle className="h-3.5 w-3.5" />
                 <span>{formatCountCompact(post.stats.commentCount)}</span>
               </div>
-              <button type="button" className="flex items-center gap-1" aria-label="공유">
-                <Share2 className="h-3.5 w-3.5" />
-                <span>{formatCountCompact(post.stats.shareCount)}</span>
-              </button>
+            <button
+              type="button"
+              className="flex items-center gap-1"
+              aria-label="공유"
+              onClick={handleShareOpen}
+            >
+              <Share2 className="h-3.5 w-3.5" />
+              <span>{formatCountCompact(post.stats.shareCount)}</span>
+            </button>
             </div>
           </article>
 
@@ -305,6 +328,12 @@ export default function BoardDetailPage() {
           onCancel={handleDeleteCancel}
         />
       </main>
+      <BoardShareModal
+        open={isShareOpen}
+        onClose={handleShareClose}
+        shareUrl={shareUrl}
+        onCopy={handleShareCopy}
+      />
       <div className="fixed bottom-[calc(var(--bottom-nav-h)+12px)] left-1/2 z-40 w-full max-w-[430px] -translate-x-1/2 px-4 sm:px-6">
         <div className="rounded-xl bg-[#F1F5F9] px-3 py-2 text-xs text-neutral-500 shadow-[0_8px_20px_rgba(15,23,42,0.08)]">
           개인정보(연락처, 계좌번호 등) 공유에 주의하세요
