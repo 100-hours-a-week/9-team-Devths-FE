@@ -12,7 +12,14 @@ import FileTooLargeModal from '@/components/signup/FileTooLargeModal';
 import { INTEREST_OPTIONS, type InterestValue } from '@/constants/interests';
 import { postPresignedSignup } from '@/lib/api/files';
 import { postSignup } from '@/lib/api/users';
-import { clearSignupContext, getSignupEmail, getTempToken, setAccessToken } from '@/lib/auth/token';
+import {
+  clearAuthRedirect,
+  clearSignupContext,
+  getAuthRedirect,
+  getSignupEmail,
+  getTempToken,
+  setAccessToken,
+} from '@/lib/auth/token';
 import { toast } from '@/lib/toast/store';
 import { uploadToPresignedUrl } from '@/lib/upload/s3Presigned';
 import { getNicknameErrorMessage } from '@/lib/validators/nickname';
@@ -174,7 +181,13 @@ export default function SignupPage() {
 
       clearSignupContext();
 
-      router.replace('/llm');
+      const redirect = getAuthRedirect();
+      if (redirect) {
+        clearAuthRedirect();
+        router.replace(redirect);
+      } else {
+        router.replace('/llm');
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : '회원가입 처리 중 오류가 발생했습니다.';
       toast(msg);
