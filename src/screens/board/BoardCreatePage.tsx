@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import BoardAttachmentCard from '@/components/board/BoardAttachmentCard';
+import BoardAttachmentMaskModal from '@/components/board/BoardAttachmentMaskModal';
 import BoardAttachmentPreviewModal from '@/components/board/BoardAttachmentPreviewModal';
 import BoardMarkdownPreview from '@/components/board/BoardMarkdownPreview';
 import BoardTagSelector from '@/components/board/BoardTagSelector';
@@ -40,10 +41,12 @@ export default function BoardCreatePage() {
     attachments,
     addAttachments,
     updateAttachment,
+    replaceAttachmentFile,
     removeAttachment,
     clearAttachments,
   } = useBoardAttachments();
   const [previewAttachment, setPreviewAttachment] = useState<BoardAttachment | null>(null);
+  const [maskAttachment, setMaskAttachment] = useState<BoardAttachment | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const titleError = useMemo(() => validateBoardCreateTitle(title), [title]);
@@ -157,7 +160,7 @@ export default function BoardCreatePage() {
       return;
     }
 
-    setBlockedNavigationHandler((action) => {
+    setBlockedNavigationHandler(() => (action: () => void) => {
       pendingNavigationRef.current = action;
       setExitConfirmOpen(true);
     });
@@ -192,6 +195,22 @@ export default function BoardCreatePage() {
     fileInputRef.current?.click();
   }, []);
 
+  const handleCloseFileTooLarge = useCallback(() => setFileTooLargeOpen(false), []);
+  const handleCloseUnsupportedFile = useCallback(() => setUnsupportedFileOpen(false), []);
+  const handleClosePartialFail = useCallback(() => setPartialFailOpen(false), []);
+  const handleClosePreview = useCallback(() => setPreviewAttachment(null), []);
+  const handleCloseMask = useCallback(() => setMaskAttachment(null), []);
+  const handlePreviewAttachment = useCallback((target: BoardAttachment) => {
+    setPreviewAttachment(target);
+  }, []);
+  const handleMaskAttachment = useCallback((target: BoardAttachment) => {
+    if (target.type !== 'IMAGE') {
+      toast('이미지 파일만 마스킹할 수 있어요.');
+      return;
+    }
+    setMaskAttachment(target);
+  }, []);
+
   const uploadAttachments = useCallback(
     async (targets: BoardAttachment[]) => {
       await Promise.all(
@@ -199,7 +218,7 @@ export default function BoardCreatePage() {
           try {
             const result = await uploadFile({
               file: attachment.file,
-              category: 'ATTACHMENT',
+              category: 'AI_CHAT_ATTACHMENT',
               refType: 'POST',
               refId: null,
               sortOrder: index + 1,
@@ -212,6 +231,18 @@ export default function BoardCreatePage() {
       );
     },
     [updateAttachment],
+  );
+
+  const handleMaskComplete = useCallback(
+    (file: File, previewUrl: string) => {
+      if (!maskAttachment) return;
+      const updated = replaceAttachmentFile(maskAttachment.id, file, previewUrl);
+      setMaskAttachment(null);
+      if (updated) {
+        void uploadAttachments([updated]);
+      }
+    },
+    [maskAttachment, replaceAttachmentFile, uploadAttachments],
   );
 
   const openErrorModal = useCallback((errors: Array<{ code: string }>, hasSuccess: boolean) => {
@@ -398,7 +429,8 @@ export default function BoardCreatePage() {
                   key={attachment.id}
                   attachment={attachment}
                   onRemove={removeAttachment}
-                  onPreview={(target) => setPreviewAttachment(target)}
+                  onPreview={handlePreviewAttachment}
+                  onMask={handleMaskAttachment}
                 />
               ))}
             </div>
@@ -422,20 +454,30 @@ export default function BoardCreatePage() {
         </div>
       </section>
 
-      <BoardFileTooLargeModal open={fileTooLargeOpen} onClose={() => setFileTooLargeOpen(false)} />
+      <BoardFileTooLargeModal open={fileTooLargeOpen} onClose={handleCloseFileTooLarge} />
       <BoardUnsupportedFileModal
         open={unsupportedFileOpen}
-        onClose={() => setUnsupportedFileOpen(false)}
+        onClose={handleCloseUnsupportedFile}
       />
       <BoardPartialAttachFailModal
         open={partialFailOpen}
-        onClose={() => setPartialFailOpen(false)}
+        onClose={handleClosePartialFail}
       />
-      <BoardAttachmentPreviewModal
-        open={previewAttachment !== null}
-        onClose={() => setPreviewAttachment(null)}
-        attachment={previewAttachment}
-      />
+      {previewAttachment ? (
+        <BoardAttachmentPreviewModal
+          key={previewAttachment.id}
+          attachment={previewAttachment}
+          onClose={handleClosePreview}
+        />
+      ) : null}
+      {maskAttachment ? (
+        <BoardAttachmentMaskModal
+          key={maskAttachment.id}
+          attachment={maskAttachment}
+          onClose={handleCloseMask}
+          onComplete={handleMaskComplete}
+        />
+      ) : null}
       <ConfirmModal
         isOpen={exitConfirmOpen}
         title="작성 중인 내용이 있습니다"
