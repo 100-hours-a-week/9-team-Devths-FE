@@ -21,7 +21,7 @@ import {
 } from '@/constants/boardCreate';
 import { useBoardAttachments } from '@/lib/hooks/boards/useBoardAttachments';
 import { validateFiles } from '@/lib/validators/attachment';
-import { validateBoardCreateTitle } from '@/lib/validators/boardCreate';
+import { validateBoardCreateContent, validateBoardCreateTitle } from '@/lib/validators/boardCreate';
 
 import type { BoardTag } from '@/types/board';
 import type { BoardAttachment } from '@/types/boardCreate';
@@ -38,6 +38,13 @@ export default function BoardCreatePage() {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const titleError = useMemo(() => validateBoardCreateTitle(title), [title]);
+  const contentError = useMemo(() => validateBoardCreateContent(content), [content]);
+  const isSubmitEnabled = useMemo(
+    () => !titleError && !contentError,
+    [contentError, titleError],
+  );
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitTimeoutRef = useRef<number | null>(null);
   const [fileTooLargeOpen, setFileTooLargeOpen] = useState(false);
   const [unsupportedFileOpen, setUnsupportedFileOpen] = useState(false);
   const [partialFailOpen, setPartialFailOpen] = useState(false);
@@ -54,17 +61,34 @@ export default function BoardCreatePage() {
     router.push('/board');
   }, [router]);
 
+  const handleSubmit = useCallback(() => {
+    if (!isSubmitEnabled || isSubmitting) return;
+    setIsSubmitting(true);
+    if (submitTimeoutRef.current) {
+      window.clearTimeout(submitTimeoutRef.current);
+    }
+    submitTimeoutRef.current = window.setTimeout(() => {
+      setIsSubmitting(false);
+      submitTimeoutRef.current = null;
+    }, 400);
+  }, [isSubmitEnabled, isSubmitting]);
+
   const rightSlot = useMemo(
     () => (
       <button
         type="button"
-        disabled
-        className="rounded-full bg-neutral-100 px-3 py-1.5 text-xs font-semibold text-neutral-400"
+        onClick={handleSubmit}
+        disabled={!isSubmitEnabled || isSubmitting}
+        className={
+          !isSubmitEnabled || isSubmitting
+            ? 'rounded-full bg-neutral-100 px-3 py-1.5 text-xs font-semibold text-neutral-400'
+            : 'rounded-full bg-[#05C075] px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-[#05C075]/30 transition hover:bg-[#04A865]'
+        }
       >
-        등록
+        {isSubmitting ? '등록 중...' : '등록'}
       </button>
     ),
-    [],
+    [handleSubmit, isSubmitEnabled, isSubmitting],
   );
 
   useEffect(() => {
@@ -77,6 +101,14 @@ export default function BoardCreatePage() {
 
     return () => resetOptions();
   }, [handleBackClick, resetOptions, rightSlot, setOptions]);
+
+  useEffect(() => {
+    return () => {
+      if (submitTimeoutRef.current) {
+        window.clearTimeout(submitTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     setBlocked(isDirty);
