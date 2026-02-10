@@ -20,6 +20,7 @@ import {
   BOARD_TITLE_MAX_LENGTH,
 } from '@/constants/boardCreate';
 import { useBoardAttachments } from '@/lib/hooks/boards/useBoardAttachments';
+import { uploadFile } from '@/lib/upload/uploadFile';
 import { validateFiles } from '@/lib/validators/attachment';
 import { validateBoardCreateContent, validateBoardCreateTitle } from '@/lib/validators/boardCreate';
 
@@ -33,7 +34,13 @@ export default function BoardCreatePage() {
   const [content, setContent] = useState('');
   const [isPreview, setIsPreview] = useState(false);
   const [tags, setTags] = useState<BoardTag[]>([]);
-  const { attachments, addAttachments, removeAttachment, clearAttachments } = useBoardAttachments();
+  const {
+    attachments,
+    addAttachments,
+    updateAttachment,
+    removeAttachment,
+    clearAttachments,
+  } = useBoardAttachments();
   const [previewAttachment, setPreviewAttachment] = useState<BoardAttachment | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -164,6 +171,28 @@ export default function BoardCreatePage() {
     fileInputRef.current?.click();
   }, []);
 
+  const uploadAttachments = useCallback(
+    async (targets: BoardAttachment[]) => {
+      await Promise.all(
+        targets.map(async (attachment, index) => {
+          try {
+            const result = await uploadFile({
+              file: attachment.file,
+              category: 'ATTACHMENT',
+              refType: 'POST',
+              refId: null,
+              sortOrder: index + 1,
+            });
+            updateAttachment(attachment.id, { fileId: result.fileId, status: 'READY' });
+          } catch {
+            updateAttachment(attachment.id, { status: 'FAILED' });
+          }
+        }),
+      );
+    },
+    [updateAttachment],
+  );
+
   const openErrorModal = useCallback((errors: Array<{ code: string }>, hasSuccess: boolean) => {
     if (hasSuccess && errors.length > 0) {
       setPartialFailOpen(true);
@@ -200,14 +229,15 @@ export default function BoardCreatePage() {
         existingFiles,
       );
       if (okFiles.length > 0) {
-        addAttachments(okFiles, 'IMAGE');
+        const newAttachments = addAttachments(okFiles, 'IMAGE');
+        void uploadAttachments(newAttachments);
       }
       if (errors.length > 0) {
         openErrorModal(errors, okFiles.length > 0);
       }
       event.target.value = '';
     },
-    [addAttachments, attachments, openErrorModal],
+    [addAttachments, attachments, openErrorModal, uploadAttachments],
   );
 
   const handleFilesChange = useCallback(
@@ -223,14 +253,15 @@ export default function BoardCreatePage() {
         existingFiles,
       );
       if (okFiles.length > 0) {
-        addAttachments(okFiles, 'PDF');
+        const newAttachments = addAttachments(okFiles, 'PDF');
+        void uploadAttachments(newAttachments);
       }
       if (errors.length > 0) {
         openErrorModal(errors, okFiles.length > 0);
       }
       event.target.value = '';
     },
-    [addAttachments, attachments, openErrorModal],
+    [addAttachments, attachments, openErrorModal, uploadAttachments],
   );
 
   return (

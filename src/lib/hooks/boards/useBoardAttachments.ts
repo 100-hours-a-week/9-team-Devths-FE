@@ -10,17 +10,22 @@ export function useBoardAttachments() {
   const [attachments, setAttachments] = useState<BoardAttachment[]>([]);
 
   const addAttachments = useCallback((files: File[], type: BoardAttachmentType) => {
-    setAttachments((prev) => [
-      ...prev,
-      ...files.map((file) => ({
-        id: createAttachmentId(file),
-        type,
-        name: file.name,
-        size: file.size,
-        file,
-        status: 'PENDING' as const,
-      })),
-    ]);
+    const newAttachments = files.map((file) => ({
+      id: createAttachmentId(file),
+      type,
+      name: file.name,
+      size: file.size,
+      file,
+      status: 'PENDING' as const,
+    }));
+    setAttachments((prev) => [...prev, ...newAttachments]);
+    return newAttachments;
+  }, []);
+
+  const updateAttachment = useCallback((id: string, patch: Partial<BoardAttachment>) => {
+    setAttachments((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, ...patch } : item)),
+    );
   }, []);
 
   const removeAttachment = useCallback((id: string) => {
@@ -35,6 +40,7 @@ export function useBoardAttachments() {
     attachments,
     setAttachments,
     addAttachments,
+    updateAttachment,
     removeAttachment,
     clearAttachments,
   };
