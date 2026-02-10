@@ -1,5 +1,7 @@
 'use client';
 
+import { renderMarkdownToHtml } from '@/lib/utils/markdown';
+
 import type { BoardTag } from '@/types/board';
 
 type PostContentProps = {
@@ -9,12 +11,20 @@ type PostContentProps = {
 };
 
 export default function PostContent({ title, content, tags = [] }: PostContentProps) {
+  const trimmed = content.trim();
+  const html = trimmed.length > 0 ? renderMarkdownToHtml(content) : '';
+
   return (
     <div className="mt-3">
       <h1 className="text-base font-semibold text-neutral-900">{title}</h1>
-      <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-neutral-700">
-        {content}
-      </p>
+      {trimmed.length > 0 ? (
+        <div
+          className="markdown-preview mt-2 text-sm"
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      ) : (
+        <p className="mt-2 text-sm text-neutral-400">내용이 없습니다.</p>
+      )}
 
       {tags.length > 0 ? (
         <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[#1FAE73]">
