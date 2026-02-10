@@ -1,12 +1,13 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import BoardMarkdownPreview from '@/components/board/BoardMarkdownPreview';
 import BoardTagSelector from '@/components/board/BoardTagSelector';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { BOARD_TITLE_MAX_LENGTH } from '@/constants/boardCreate';
+import { BOARD_FILE_MIME_TYPES, BOARD_IMAGE_MIME_TYPES } from '@/constants/boardCreate';
 import { useBoardAttachments } from '@/lib/hooks/boards/useBoardAttachments';
 import { validateBoardCreateTitle } from '@/lib/validators/boardCreate';
 
@@ -19,7 +20,9 @@ export default function BoardCreatePage() {
   const [content, setContent] = useState('');
   const [isPreview, setIsPreview] = useState(false);
   const [tags, setTags] = useState<BoardTag[]>([]);
-  const { attachments } = useBoardAttachments();
+  const { attachments, addAttachments } = useBoardAttachments();
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const titleError = useMemo(() => validateBoardCreateTitle(title), [title]);
 
   const handleBackClick = useCallback(() => {
@@ -49,6 +52,34 @@ export default function BoardCreatePage() {
 
     return () => resetOptions();
   }, [handleBackClick, resetOptions, rightSlot, setOptions]);
+
+  const handlePickImages = useCallback(() => {
+    imageInputRef.current?.click();
+  }, []);
+
+  const handlePickFiles = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleImagesChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(event.target.files || []);
+      if (files.length === 0) return;
+      addAttachments(files, 'IMAGE');
+      event.target.value = '';
+    },
+    [addAttachments],
+  );
+
+  const handleFilesChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(event.target.files || []);
+      if (files.length === 0) return;
+      addAttachments(files, 'PDF');
+      event.target.value = '';
+    },
+    [addAttachments],
+  );
 
   return (
     <main className="px-3 pt-4 pb-6">
@@ -126,11 +157,52 @@ export default function BoardCreatePage() {
 
         <BoardTagSelector value={tags} onChange={setTags} />
 
-        <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-4 text-sm text-neutral-400">
-          첨부 영역이 여기에 들어갈 예정입니다.
-          {attachments.length > 0 ? (
-            <p className="mt-2 text-xs text-neutral-400">현재 첨부 {attachments.length}개</p>
-          ) : null}
+        <div className="space-y-2">
+          <span className="text-sm font-semibold text-neutral-900">첨부</span>
+          <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-4">
+            <div className="flex flex-col gap-2 text-sm text-neutral-500">
+              <button
+                type="button"
+                onClick={handlePickImages}
+                className="inline-flex items-center justify-between rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+              >
+                사진 업로드
+                <span className="text-xs text-neutral-400">
+                  {BOARD_IMAGE_MIME_TYPES.join(', ')}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={handlePickFiles}
+                className="inline-flex items-center justify-between rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+              >
+                파일 업로드
+                <span className="text-xs text-neutral-400">{BOARD_FILE_MIME_TYPES.join(', ')}</span>
+              </button>
+            </div>
+            <p className="mt-3 text-xs text-neutral-400">
+              첨부 파일은 최대 10MB, PDF/JPG/JPEG/PNG 형식을 지원합니다.
+            </p>
+            {attachments.length > 0 ? (
+              <p className="mt-2 text-xs text-neutral-400">현재 첨부 {attachments.length}개</p>
+            ) : null}
+          </div>
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept={BOARD_IMAGE_MIME_TYPES.join(',')}
+            multiple
+            onChange={handleImagesChange}
+            className="hidden"
+          />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={BOARD_FILE_MIME_TYPES.join(',')}
+            multiple
+            onChange={handleFilesChange}
+            className="hidden"
+          />
         </div>
       </section>
     </main>
