@@ -5,7 +5,7 @@ import CommentComposer from '@/components/board/detail/CommentComposer';
 type CommentEditorProps = {
   placeholder?: string;
   defaultValue?: string;
-  onSubmit?: (content: string) => void | Promise<void> | boolean;
+  onSubmit?: (content: string) => boolean | void | Promise<boolean | void>;
   className?: string;
   maxLength?: number;
   isSubmitting?: boolean;

@@ -102,7 +102,7 @@ export default function CommentItem({
             {isOptionsOpen ? (
               <div
                 ref={optionsMenuRef}
-                className="absolute right-0 top-8 z-10 w-24 rounded-xl border border-neutral-200 bg-white py-1 text-sm text-neutral-700 shadow-[0_8px_20px_rgba(15,23,42,0.12)]"
+                className="absolute top-8 right-0 z-10 w-24 rounded-xl border border-neutral-200 bg-white py-1 text-sm text-neutral-700 shadow-[0_8px_20px_rgba(15,23,42,0.12)]"
               >
                 <button
                   type="button"

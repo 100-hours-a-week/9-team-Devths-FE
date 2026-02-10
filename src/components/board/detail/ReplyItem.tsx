@@ -63,9 +63,7 @@ export default function ReplyItem({
   }, [isOptionsOpen]);
 
   return (
-    <div
-      className={cn('border-b border-neutral-200 py-3', (isLast || isEditing) && 'border-b-0')}
-    >
+    <div className={cn('border-b border-neutral-200 py-3', (isLast || isEditing) && 'border-b-0')}>
       <div className="ml-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -101,7 +99,7 @@ export default function ReplyItem({
               {isOptionsOpen ? (
                 <div
                   ref={optionsMenuRef}
-                  className="absolute right-0 top-7 z-10 w-24 rounded-xl border border-neutral-200 bg-white py-1 text-sm text-neutral-700 shadow-[0_8px_20px_rgba(15,23,42,0.12)]"
+                  className="absolute top-7 right-0 z-10 w-24 rounded-xl border border-neutral-200 bg-white py-1 text-sm text-neutral-700 shadow-[0_8px_20px_rgba(15,23,42,0.12)]"
                 >
                   <button
                     type="button"

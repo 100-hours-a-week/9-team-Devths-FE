@@ -1,6 +1,7 @@
+import { Suspense } from 'react';
+
 import AppFrame from '@/components/layout/AppFrame';
 
-import { Suspense } from 'react';
 import type { ReactNode } from 'react';
 
 type AppLayoutProps = {

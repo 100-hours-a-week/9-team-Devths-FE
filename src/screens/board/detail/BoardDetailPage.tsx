@@ -64,12 +64,9 @@ export default function BoardDetailPage() {
     isError: isCommentsError,
     refetch: refetchComments,
   } = useBoardCommentsQuery(Number.isFinite(postId) ? postId : null, 50);
-  const { mutateAsync: createComment, isPending: isCommentSubmitting } =
-    useCreateCommentMutation();
-  const { mutateAsync: deleteComment, isPending: isCommentDeleting } =
-    useDeleteCommentMutation();
-  const { mutateAsync: updateComment, isPending: isCommentUpdating } =
-    useUpdateCommentMutation();
+  const { mutateAsync: createComment, isPending: isCommentSubmitting } = useCreateCommentMutation();
+  const { mutateAsync: deleteComment, isPending: isCommentDeleting } = useDeleteCommentMutation();
+  const { mutateAsync: updateComment, isPending: isCommentUpdating } = useUpdateCommentMutation();
   const [pendingDeleteCommentId, setPendingDeleteCommentId] = useState<number | null>(null);
   const [isCommentDeleteOpen, setIsCommentDeleteOpen] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
@@ -416,7 +413,7 @@ export default function BoardDetailPage() {
     }
   };
 
-  const handleCommentEditOpen = (commentId: number, content: string | null) => {
+  const handleCommentEditOpen = (commentId: number, _content: string | null) => {
     if (isCommentDeleting) return;
     setPendingDeleteCommentId(null);
     setIsCommentDeleteOpen(false);
@@ -597,18 +594,18 @@ export default function BoardDetailPage() {
                   isCommentDeleting ||
                   isCommentDeleteOpen
                 }
-                renderEditor={(commentId, content, depth) => (
+                renderEditor={(commentId, _content, depth) => (
                   <div className={depth === 2 ? 'ml-6' : undefined}>
                     <CommentComposer
                       className="mt-2"
-                      defaultValue={content ?? ''}
+                      defaultValue={_content ?? ''}
                       maxLength={500}
                       submitLabel="저장"
                       onCancel={handleCommentEditCancel}
                       isSubmitting={isCommentUpdating}
                       onSubmit={async (nextContent) => {
                         if (!post) return false;
-                        const previousContent = content ?? '';
+                        const previousContent = _content ?? '';
                         updateCommentContentCache(post.postId, commentId, nextContent);
                         try {
                           await updateComment({
@@ -620,7 +617,9 @@ export default function BoardDetailPage() {
                           return true;
                         } catch (error) {
                           updateCommentContentCache(post.postId, commentId, previousContent);
-                          toast(error instanceof Error ? error.message : '댓글 수정에 실패했습니다.');
+                          toast(
+                            error instanceof Error ? error.message : '댓글 수정에 실패했습니다.',
+                          );
                           return false;
                         }
                       }}
@@ -654,7 +653,9 @@ export default function BoardDetailPage() {
                           setReplyTargetId(null);
                           return true;
                         } catch (error) {
-                          toast(error instanceof Error ? error.message : '답글 등록에 실패했습니다.');
+                          toast(
+                            error instanceof Error ? error.message : '답글 등록에 실패했습니다.',
+                          );
                           return false;
                         }
                       }}
@@ -667,22 +668,22 @@ export default function BoardDetailPage() {
           </section>
         </div>
 
-      <ConfirmModal
-        isOpen={isDeleteConfirmOpen}
-        title="게시글 삭제"
-        message="게시글을 삭제할까요? 삭제된 게시글은 복구할 수 없습니다."
-        confirmText="삭제"
-        onConfirm={handleDeleteConfirm}
-        onCancel={handleDeleteCancel}
-      />
-      <ConfirmModal
-        isOpen={isCommentDeleteOpen}
-        title="댓글 삭제"
-        message="댓글을 삭제할까요? 삭제된 댓글은 복구할 수 없습니다."
-        confirmText="삭제"
-        onConfirm={handleCommentDeleteConfirm}
-        onCancel={handleCommentDeleteCancel}
-      />
+        <ConfirmModal
+          isOpen={isDeleteConfirmOpen}
+          title="게시글 삭제"
+          message="게시글을 삭제할까요? 삭제된 게시글은 복구할 수 없습니다."
+          confirmText="삭제"
+          onConfirm={handleDeleteConfirm}
+          onCancel={handleDeleteCancel}
+        />
+        <ConfirmModal
+          isOpen={isCommentDeleteOpen}
+          title="댓글 삭제"
+          message="댓글을 삭제할까요? 삭제된 댓글은 복구할 수 없습니다."
+          confirmText="삭제"
+          onConfirm={handleCommentDeleteConfirm}
+          onCancel={handleCommentDeleteCancel}
+        />
       </main>
       <BoardShareModal
         open={isShareOpen}
@@ -702,8 +703,7 @@ export default function BoardDetailPage() {
               const detailSnapshot = queryClient.getQueryData<PostDetail>(
                 boardsKeys.detail(post.postId),
               );
-              const nextCount =
-                (detailSnapshot?.stats.commentCount ?? post.stats.commentCount) + 1;
+              const nextCount = (detailSnapshot?.stats.commentCount ?? post.stats.commentCount) + 1;
               updateCommentCountCache(post.postId, nextCount);
               await refetchComments();
               return true;

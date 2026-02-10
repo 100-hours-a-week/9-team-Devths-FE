@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 type CommentComposerProps = {
-  onSubmit?: (content: string) => void | Promise<void> | boolean;
+  onSubmit?: (content: string) => boolean | void | Promise<boolean | void>;
   placeholder?: string;
   defaultValue?: string;
   className?: string;
