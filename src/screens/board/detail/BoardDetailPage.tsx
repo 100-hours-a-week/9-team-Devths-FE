@@ -25,6 +25,8 @@ export default function BoardDetailPage() {
   const currentUserId = getUserIdFromAccessToken();
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isLiked, setIsLiked] = useState<boolean | null>(null);
+  const [likeCount, setLikeCount] = useState<number | null>(null);
   const optionsButtonRef = useRef<HTMLButtonElement>(null);
   const optionsMenuRef = useRef<HTMLDivElement>(null);
   const {
@@ -81,6 +83,15 @@ export default function BoardDetailPage() {
   const handleOptionsToggle = () => {
     if (!isAuthor) return;
     setIsOptionsOpen((prev) => !prev);
+  };
+
+  const handleLikeToggle = () => {
+    if (!post) return;
+    const nextLiked = !(isLiked ?? post.isLiked);
+    const baseCount = likeCount ?? post.stats.likeCount;
+    const nextCount = nextLiked ? baseCount + 1 : Math.max(0, baseCount - 1);
+    setIsLiked(nextLiked);
+    setLikeCount(nextCount);
   };
 
   const handleEditClick = () => {
@@ -147,6 +158,9 @@ export default function BoardDetailPage() {
     );
   }
 
+  const resolvedIsLiked = isLiked ?? post.isLiked;
+  const resolvedLikeCount = likeCount ?? post.stats.likeCount;
+
   return (
     <main className="px-3 pt-4 pb-6">
       <div className="space-y-3">
@@ -184,9 +198,16 @@ export default function BoardDetailPage() {
           <PostContent title={post.title} content={post.content} tags={post.tags} />
 
           <div className="mt-4 flex items-center gap-5 text-[11px] text-neutral-500">
-            <button type="button" className="flex items-center gap-1" aria-label="좋아요">
-              <Heart className="h-3.5 w-3.5" />
-              <span>{formatCountCompact(post.stats.likeCount)}</span>
+            <button
+              type="button"
+              className={`flex items-center gap-1 ${
+                resolvedIsLiked ? 'text-[#05C075]' : 'text-neutral-500'
+              }`}
+              aria-label="좋아요"
+              onClick={handleLikeToggle}
+            >
+              <Heart className={`h-3.5 w-3.5 ${resolvedIsLiked ? 'fill-[#05C075]' : ''}`} />
+              <span>{formatCountCompact(resolvedLikeCount)}</span>
             </button>
             <div className="flex items-center gap-1">
               <MessageCircle className="h-3.5 w-3.5" />
