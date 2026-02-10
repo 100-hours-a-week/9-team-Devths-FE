@@ -427,7 +427,6 @@ export default function BoardDetailPage() {
                 onClick={handleShareOpen}
               >
                 <Share2 className="h-3.5 w-3.5" />
-                <span>{formatCountCompact(post.stats.shareCount)}</span>
               </button>
             </div>
           </article>

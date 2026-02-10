@@ -104,10 +104,6 @@ export default function BoardPostCard({ post, onClick, onAuthorClick }: BoardPos
           <MessageCircle className="h-3.5 w-3.5" />
           <span>{formatCountCompact(post.stats.commentCount)}</span>
         </div>
-        <div className="flex items-center gap-1">
-          <Share2 className="h-3.5 w-3.5" />
-          <span>{formatCountCompact(post.stats.shareCount)}</span>
-        </div>
       </div>
     </article>
   );

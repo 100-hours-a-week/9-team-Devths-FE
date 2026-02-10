@@ -38,10 +38,9 @@ export default function BoardPostDetailSkeleton() {
                 <MessageCircle className="h-4 w-4" />
                 <span className="h-3 w-6 rounded-full bg-neutral-100" />
               </div>
-              <div className="inline-flex items-center gap-1">
-                <Share2 className="h-4 w-4" />
-                <span className="h-3 w-6 rounded-full bg-neutral-100" />
-              </div>
+            <div className="inline-flex items-center gap-1">
+              <Share2 className="h-4 w-4" />
+            </div>
             </div>
           </div>
 
