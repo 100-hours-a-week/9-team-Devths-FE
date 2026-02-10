@@ -5,10 +5,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import BoardMarkdownPreview from '@/components/board/BoardMarkdownPreview';
 import BoardTagSelector from '@/components/board/BoardTagSelector';
+import BoardFileTooLargeModal from '@/components/board/modals/BoardFileTooLargeModal';
+import BoardPartialAttachFailModal from '@/components/board/modals/BoardPartialAttachFailModal';
+import BoardUnsupportedFileModal from '@/components/board/modals/BoardUnsupportedFileModal';
 import { useHeader } from '@/components/layout/HeaderContext';
-import { BOARD_TITLE_MAX_LENGTH } from '@/constants/boardCreate';
-import { BOARD_FILE_MIME_TYPES, BOARD_IMAGE_MIME_TYPES } from '@/constants/boardCreate';
+import {
+  BOARD_ATTACHMENT_CONSTRAINTS,
+  BOARD_FILE_MIME_TYPES,
+  BOARD_IMAGE_MIME_TYPES,
+  BOARD_TITLE_MAX_LENGTH,
+} from '@/constants/boardCreate';
 import { useBoardAttachments } from '@/lib/hooks/boards/useBoardAttachments';
+import { validateFiles } from '@/lib/validators/attachment';
 import { validateBoardCreateTitle } from '@/lib/validators/boardCreate';
 
 import type { BoardTag } from '@/types/board';
@@ -24,6 +32,9 @@ export default function BoardCreatePage() {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const titleError = useMemo(() => validateBoardCreateTitle(title), [title]);
+  const [fileTooLargeOpen, setFileTooLargeOpen] = useState(false);
+  const [unsupportedFileOpen, setUnsupportedFileOpen] = useState(false);
+  const [partialFailOpen, setPartialFailOpen] = useState(false);
 
   const handleBackClick = useCallback(() => {
     router.push('/board');
@@ -61,24 +72,73 @@ export default function BoardCreatePage() {
     fileInputRef.current?.click();
   }, []);
 
+  const openErrorModal = useCallback((errors: Array<{ code: string }>, hasSuccess: boolean) => {
+    if (hasSuccess && errors.length > 0) {
+      setPartialFailOpen(true);
+      return;
+    }
+
+    const hasTooLarge = errors.some((error) => error.code === 'FILE_TOO_LARGE');
+    if (hasTooLarge) {
+      setFileTooLargeOpen(true);
+      return;
+    }
+
+    const hasInvalidType = errors.some((error) => error.code === 'INVALID_MIME_TYPE');
+    if (hasInvalidType) {
+      setUnsupportedFileOpen(true);
+      return;
+    }
+
+    if (errors.length > 0) {
+      setPartialFailOpen(true);
+    }
+  }, []);
+
   const handleImagesChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(event.target.files || []);
       if (files.length === 0) return;
-      addAttachments(files, 'IMAGE');
+      const existingImages = attachments.filter((item) => item.type === 'IMAGE').length;
+      const existingFiles = attachments.filter((item) => item.type === 'PDF').length;
+      const { okFiles, errors } = validateFiles(
+        files,
+        BOARD_ATTACHMENT_CONSTRAINTS,
+        existingImages,
+        existingFiles,
+      );
+      if (okFiles.length > 0) {
+        addAttachments(okFiles, 'IMAGE');
+      }
+      if (errors.length > 0) {
+        openErrorModal(errors, okFiles.length > 0);
+      }
       event.target.value = '';
     },
-    [addAttachments],
+    [addAttachments, attachments, openErrorModal],
   );
 
   const handleFilesChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(event.target.files || []);
       if (files.length === 0) return;
-      addAttachments(files, 'PDF');
+      const existingImages = attachments.filter((item) => item.type === 'IMAGE').length;
+      const existingFiles = attachments.filter((item) => item.type === 'PDF').length;
+      const { okFiles, errors } = validateFiles(
+        files,
+        BOARD_ATTACHMENT_CONSTRAINTS,
+        existingImages,
+        existingFiles,
+      );
+      if (okFiles.length > 0) {
+        addAttachments(okFiles, 'PDF');
+      }
+      if (errors.length > 0) {
+        openErrorModal(errors, okFiles.length > 0);
+      }
       event.target.value = '';
     },
-    [addAttachments],
+    [addAttachments, attachments, openErrorModal],
   );
 
   return (
@@ -205,6 +265,16 @@ export default function BoardCreatePage() {
           />
         </div>
       </section>
+
+      <BoardFileTooLargeModal open={fileTooLargeOpen} onClose={() => setFileTooLargeOpen(false)} />
+      <BoardUnsupportedFileModal
+        open={unsupportedFileOpen}
+        onClose={() => setUnsupportedFileOpen(false)}
+      />
+      <BoardPartialAttachFailModal
+        open={partialFailOpen}
+        onClose={() => setPartialFailOpen(false)}
+      />
     </main>
   );
 }
