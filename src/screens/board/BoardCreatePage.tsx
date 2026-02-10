@@ -52,10 +52,7 @@ export default function BoardCreatePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const titleError = useMemo(() => validateBoardCreateTitle(title), [title]);
   const contentError = useMemo(() => validateBoardCreateContent(content), [content]);
-  const isSubmitEnabled = useMemo(
-    () => !titleError && !contentError,
-    [contentError, titleError],
-  );
+  const isSubmitEnabled = useMemo(() => !titleError && !contentError, [contentError, titleError]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fileTooLargeOpen, setFileTooLargeOpen] = useState(false);
   const [unsupportedFileOpen, setUnsupportedFileOpen] = useState(false);
@@ -106,8 +103,7 @@ export default function BoardCreatePage() {
       queryClient.invalidateQueries({ queryKey: ['boards', 'list'], exact: false });
       router.push('/board');
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : '게시글 등록에 실패했습니다.';
+      const message = error instanceof Error ? error.message : '게시글 등록에 실패했습니다.';
       toast(message);
     } finally {
       setIsSubmitting(false);
@@ -142,7 +138,6 @@ export default function BoardCreatePage() {
 
     return () => resetOptions();
   }, [handleBackClick, resetOptions, rightSlot, setOptions]);
-
 
   useEffect(() => {
     setBlocked(isDirty);
@@ -458,14 +453,8 @@ export default function BoardCreatePage() {
       </section>
 
       <BoardFileTooLargeModal open={fileTooLargeOpen} onClose={handleCloseFileTooLarge} />
-      <BoardUnsupportedFileModal
-        open={unsupportedFileOpen}
-        onClose={handleCloseUnsupportedFile}
-      />
-      <BoardPartialAttachFailModal
-        open={partialFailOpen}
-        onClose={handleClosePartialFail}
-      />
+      <BoardUnsupportedFileModal open={unsupportedFileOpen} onClose={handleCloseUnsupportedFile} />
+      <BoardPartialAttachFailModal open={partialFailOpen} onClose={handleClosePartialFail} />
       {previewAttachment ? (
         <BoardAttachmentPreviewModal
           key={previewAttachment.id}

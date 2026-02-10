@@ -36,30 +36,27 @@ export function useBoardAttachments() {
     );
   }, []);
 
-  const replaceAttachmentFile = useCallback(
-    (id: string, file: File, previewUrl: string) => {
-      let updated: BoardAttachment | null = null;
-      setAttachments((prev) =>
-        prev.map((item) => {
-          if (item.id !== id) return item;
-          if (item.previewUrl && item.previewUrl !== previewUrl) {
-            URL.revokeObjectURL(item.previewUrl);
-          }
-          updated = {
-            ...item,
-            file,
-            size: file.size,
-            previewUrl,
-            fileId: undefined,
-            status: 'PENDING' as const,
-          };
-          return updated;
-        }),
-      );
-      return updated;
-    },
-    [],
-  );
+  const replaceAttachmentFile = useCallback((id: string, file: File, previewUrl: string) => {
+    let updated: BoardAttachment | null = null;
+    setAttachments((prev) =>
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        if (item.previewUrl && item.previewUrl !== previewUrl) {
+          URL.revokeObjectURL(item.previewUrl);
+        }
+        updated = {
+          ...item,
+          file,
+          size: file.size,
+          previewUrl,
+          fileId: undefined,
+          status: 'PENDING' as const,
+        };
+        return updated;
+      }),
+    );
+    return updated;
+  }, []);
 
   const removeAttachment = useCallback((id: string) => {
     setAttachments((prev) => {

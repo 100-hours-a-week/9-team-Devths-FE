@@ -29,7 +29,10 @@ export function validateBoardCreateContent(value: string): string | null {
   return null;
 }
 
-export function validateBoardCreateForm(title: string, content: string): BoardCreateValidationResult {
+export function validateBoardCreateForm(
+  title: string,
+  content: string,
+): BoardCreateValidationResult {
   const titleError = validateBoardCreateTitle(title);
   const contentError = validateBoardCreateContent(content);
 
