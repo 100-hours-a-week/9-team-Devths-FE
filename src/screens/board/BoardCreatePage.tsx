@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import BoardAttachmentCard from '@/components/board/BoardAttachmentCard';
 import BoardMarkdownPreview from '@/components/board/BoardMarkdownPreview';
 import BoardTagSelector from '@/components/board/BoardTagSelector';
 import BoardFileTooLargeModal from '@/components/board/modals/BoardFileTooLargeModal';
@@ -28,7 +29,7 @@ export default function BoardCreatePage() {
   const [content, setContent] = useState('');
   const [isPreview, setIsPreview] = useState(false);
   const [tags, setTags] = useState<BoardTag[]>([]);
-  const { attachments, addAttachments } = useBoardAttachments();
+  const { attachments, addAttachments, removeAttachment } = useBoardAttachments();
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const titleError = useMemo(() => validateBoardCreateTitle(title), [title]);
@@ -247,6 +248,17 @@ export default function BoardCreatePage() {
               <p className="mt-2 text-xs text-neutral-400">현재 첨부 {attachments.length}개</p>
             ) : null}
           </div>
+          {attachments.length > 0 ? (
+            <div className="mt-3 grid gap-3">
+              {attachments.map((attachment) => (
+                <BoardAttachmentCard
+                  key={attachment.id}
+                  attachment={attachment}
+                  onRemove={removeAttachment}
+                />
+              ))}
+            </div>
+          ) : null}
           <input
             ref={imageInputRef}
             type="file"
