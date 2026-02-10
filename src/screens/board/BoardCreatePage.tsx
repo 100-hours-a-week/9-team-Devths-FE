@@ -10,7 +10,9 @@ import BoardTagSelector from '@/components/board/BoardTagSelector';
 import BoardFileTooLargeModal from '@/components/board/modals/BoardFileTooLargeModal';
 import BoardPartialAttachFailModal from '@/components/board/modals/BoardPartialAttachFailModal';
 import BoardUnsupportedFileModal from '@/components/board/modals/BoardUnsupportedFileModal';
+import ConfirmModal from '@/components/common/ConfirmModal';
 import { useHeader } from '@/components/layout/HeaderContext';
+import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import {
   BOARD_ATTACHMENT_CONSTRAINTS,
   BOARD_FILE_MIME_TYPES,
@@ -31,7 +33,7 @@ export default function BoardCreatePage() {
   const [content, setContent] = useState('');
   const [isPreview, setIsPreview] = useState(false);
   const [tags, setTags] = useState<BoardTag[]>([]);
-  const { attachments, addAttachments, removeAttachment } = useBoardAttachments();
+  const { attachments, addAttachments, removeAttachment, clearAttachments } = useBoardAttachments();
   const [previewAttachment, setPreviewAttachment] = useState<BoardAttachment | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -39,6 +41,14 @@ export default function BoardCreatePage() {
   const [fileTooLargeOpen, setFileTooLargeOpen] = useState(false);
   const [unsupportedFileOpen, setUnsupportedFileOpen] = useState(false);
   const [partialFailOpen, setPartialFailOpen] = useState(false);
+  const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
+  const pendingNavigationRef = useRef<(() => void) | null>(null);
+  const { setBlocked, setBlockMessage, setBlockedNavigationHandler } = useNavigationGuard();
+
+  const isDirty = useMemo(
+    () => title.trim().length > 0 || content.trim().length > 0,
+    [content, title],
+  );
 
   const handleBackClick = useCallback(() => {
     router.push('/board');
@@ -67,6 +77,52 @@ export default function BoardCreatePage() {
 
     return () => resetOptions();
   }, [handleBackClick, resetOptions, rightSlot, setOptions]);
+
+  useEffect(() => {
+    setBlocked(isDirty);
+    if (isDirty) {
+      setBlockMessage('작성 중인 내용이 있습니다.');
+    } else {
+      setBlockMessage('답변 생성 중에는 이동할 수 없습니다.');
+    }
+    return () => {
+      setBlocked(false);
+      setBlockMessage('답변 생성 중에는 이동할 수 없습니다.');
+    };
+  }, [isDirty, setBlocked, setBlockMessage]);
+
+  useEffect(() => {
+    if (!isDirty) {
+      setBlockedNavigationHandler(null);
+      return;
+    }
+
+    setBlockedNavigationHandler((action) => {
+      pendingNavigationRef.current = action;
+      setExitConfirmOpen(true);
+    });
+
+    return () => setBlockedNavigationHandler(null);
+  }, [isDirty, setBlockedNavigationHandler]);
+
+  const handleExitConfirm = useCallback(() => {
+    setExitConfirmOpen(false);
+    setTitle('');
+    setContent('');
+    setTags([]);
+    setIsPreview(false);
+    clearAttachments();
+    const action = pendingNavigationRef.current;
+    pendingNavigationRef.current = null;
+    if (action) {
+      action();
+    }
+  }, [clearAttachments]);
+
+  const handleExitCancel = useCallback(() => {
+    pendingNavigationRef.current = null;
+    setExitConfirmOpen(false);
+  }, []);
 
   const handlePickImages = useCallback(() => {
     imageInputRef.current?.click();
@@ -295,6 +351,15 @@ export default function BoardCreatePage() {
         open={previewAttachment !== null}
         onClose={() => setPreviewAttachment(null)}
         attachment={previewAttachment}
+      />
+      <ConfirmModal
+        isOpen={exitConfirmOpen}
+        title="작성 중인 내용이 있습니다"
+        message="작성 중인 내용을 저장하지 않고 나가시겠습니까?"
+        confirmText="나가기"
+        cancelText="취소"
+        onConfirm={handleExitConfirm}
+        onCancel={handleExitCancel}
       />
     </main>
   );
