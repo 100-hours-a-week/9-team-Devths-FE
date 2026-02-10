@@ -7,6 +7,7 @@ import type { BoardAttachment } from '@/types/boardCreate';
 type BoardAttachmentCardProps = {
   attachment: BoardAttachment;
   onRemove: (id: string) => void;
+  onPreview?: (attachment: BoardAttachment) => void;
 };
 
 function formatFileSize(bytes: number) {
@@ -18,7 +19,11 @@ function formatFileSize(bytes: number) {
   return `${kb.toFixed(1)}KB`;
 }
 
-export default function BoardAttachmentCard({ attachment, onRemove }: BoardAttachmentCardProps) {
+export default function BoardAttachmentCard({
+  attachment,
+  onRemove,
+  onPreview,
+}: BoardAttachmentCardProps) {
   const isPdf = attachment.type === 'PDF';
 
   return (
@@ -51,6 +56,7 @@ export default function BoardAttachmentCard({ attachment, onRemove }: BoardAttac
       <div className="flex gap-2">
         <button
           type="button"
+          onClick={() => onPreview?.(attachment)}
           className="flex-1 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
         >
           {isPdf ? '보기' : '크게 보기'}

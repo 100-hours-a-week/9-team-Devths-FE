@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import BoardAttachmentCard from '@/components/board/BoardAttachmentCard';
+import BoardAttachmentPreviewModal from '@/components/board/BoardAttachmentPreviewModal';
 import BoardMarkdownPreview from '@/components/board/BoardMarkdownPreview';
 import BoardTagSelector from '@/components/board/BoardTagSelector';
 import BoardFileTooLargeModal from '@/components/board/modals/BoardFileTooLargeModal';
@@ -21,6 +22,7 @@ import { validateFiles } from '@/lib/validators/attachment';
 import { validateBoardCreateTitle } from '@/lib/validators/boardCreate';
 
 import type { BoardTag } from '@/types/board';
+import type { BoardAttachment } from '@/types/boardCreate';
 
 export default function BoardCreatePage() {
   const router = useRouter();
@@ -30,6 +32,7 @@ export default function BoardCreatePage() {
   const [isPreview, setIsPreview] = useState(false);
   const [tags, setTags] = useState<BoardTag[]>([]);
   const { attachments, addAttachments, removeAttachment } = useBoardAttachments();
+  const [previewAttachment, setPreviewAttachment] = useState<BoardAttachment | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const titleError = useMemo(() => validateBoardCreateTitle(title), [title]);
@@ -255,6 +258,7 @@ export default function BoardCreatePage() {
                   key={attachment.id}
                   attachment={attachment}
                   onRemove={removeAttachment}
+                  onPreview={(target) => setPreviewAttachment(target)}
                 />
               ))}
             </div>
@@ -286,6 +290,11 @@ export default function BoardCreatePage() {
       <BoardPartialAttachFailModal
         open={partialFailOpen}
         onClose={() => setPartialFailOpen(false)}
+      />
+      <BoardAttachmentPreviewModal
+        open={previewAttachment !== null}
+        onClose={() => setPreviewAttachment(null)}
+        attachment={previewAttachment}
       />
     </main>
   );
