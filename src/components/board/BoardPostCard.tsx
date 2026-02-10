@@ -1,6 +1,7 @@
 'use client';
 
 import { Heart, MessageCircle, Share2 } from 'lucide-react';
+import Image from 'next/image';
 
 import { formatCountCompact, formatRelativeTime } from '@/lib/utils/board';
 
@@ -38,10 +39,20 @@ export default function BoardPostCard({ post, onClick, onAuthorClick }: BoardPos
         <button
           type="button"
           onClick={handleAuthorClick}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-200 text-sm font-semibold text-neutral-600"
+          className="relative flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 bg-neutral-200 text-sm font-semibold text-neutral-600"
           aria-label={`${post.author.nickname} 프로필 보기`}
         >
-          {post.author.nickname.slice(0, 1)}
+          {post.author.profileImageUrl ? (
+            <Image
+              src={post.author.profileImageUrl}
+              alt={`${post.author.nickname} 프로필 이미지`}
+              fill
+              sizes="40px"
+              className="rounded-full object-cover"
+            />
+          ) : (
+            <span>{post.author.nickname.slice(0, 1)}</span>
+          )}
         </button>
 
         <div className="min-w-0 flex-1">

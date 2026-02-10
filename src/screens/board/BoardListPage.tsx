@@ -1,8 +1,8 @@
 'use client';
 
-import { Bell, Plus, Search } from 'lucide-react';
+import { Bell, Loader2, Plus, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import BoardPostCard from '@/components/board/BoardPostCard';
 import BoardSortTabs from '@/components/board/BoardSortTabs';
@@ -18,6 +18,8 @@ import { useUnreadCountQuery } from '@/lib/hooks/notifications/useUnreadCountQue
 import type { BoardSort, BoardTag } from '@/types/board';
 
 const PAGE_SIZE = 10;
+const PULL_MAX = 120;
+const PULL_THRESHOLD = 72;
 
 export default function BoardListPage() {
   const router = useRouter();
@@ -30,6 +32,12 @@ export default function BoardListPage() {
   const [isTagOpen, setIsTagOpen] = useState(false);
   const [isMiniProfileOpen, setIsMiniProfileOpen] = useState(false);
   const [selectedAuthorId, setSelectedAuthorId] = useState<number | null>(null);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isPulling, setIsPulling] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isReadyToRefresh, setIsReadyToRefresh] = useState(false);
+  const isRefreshingRef = useRef(false);
+  const isReadyToRefreshRef = useRef(false);
 
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useBoardListInfiniteQuery({
@@ -83,6 +91,29 @@ export default function BoardListPage() {
     setIsMiniProfileOpen(true);
   };
 
+  const handlePostClick = useCallback(
+    (postId: number) => {
+      requestNavigation(() => router.push(`/board/${postId}`));
+    },
+    [requestNavigation, router],
+  );
+
+  const triggerRefresh = useCallback(async () => {
+    if (isRefreshingRef.current) return;
+    isRefreshingRef.current = true;
+    setIsRefreshing(true);
+    setPullDistance(PULL_THRESHOLD);
+    try {
+      await refetch();
+    } finally {
+      isRefreshingRef.current = false;
+      isReadyToRefreshRef.current = false;
+      setIsRefreshing(false);
+      setIsReadyToRefresh(false);
+      setPullDistance(0);
+    }
+  }, [refetch]);
+
   const rightSlot = useMemo(
     () => (
       <div className="flex items-center gap-1">
@@ -127,6 +158,72 @@ export default function BoardListPage() {
     void fetchNextPage();
   }, [fetchNextPage, filteredPosts.length, hasNextPage, isError, isFetchingNextPage, isLoading]);
 
+  useEffect(() => {
+    const getScrollTop = () =>
+      window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+
+    let startY = 0;
+    let tracking = false;
+
+    const handleTouchStart = (event: TouchEvent) => {
+      if (isRefreshingRef.current) return;
+      if (getScrollTop() > 1) return;
+      const touch = event.touches[0];
+      if (!touch) return;
+      tracking = true;
+      startY = touch.clientY;
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      if (!tracking) return;
+      const touch = event.touches[0];
+      if (!touch) return;
+      const delta = touch.clientY - startY;
+      if (delta <= 0) {
+        setPullDistance(0);
+        setIsPulling(false);
+        isReadyToRefreshRef.current = false;
+        setIsReadyToRefresh(false);
+        return;
+      }
+      if (getScrollTop() > 1) {
+        setIsPulling(false);
+        return;
+      }
+      const distance = Math.min(delta * 0.6, PULL_MAX);
+      setPullDistance(distance);
+      setIsPulling(true);
+      isReadyToRefreshRef.current = distance >= PULL_THRESHOLD;
+      setIsReadyToRefresh(isReadyToRefreshRef.current);
+      if (event.cancelable) event.preventDefault();
+    };
+
+    const handleTouchEnd = () => {
+      if (!tracking) return;
+      tracking = false;
+      setIsPulling(false);
+      if (isReadyToRefreshRef.current) {
+        void triggerRefresh();
+        return;
+      }
+      setPullDistance(0);
+      isReadyToRefreshRef.current = false;
+      setIsReadyToRefresh(false);
+    };
+
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchend', handleTouchEnd);
+    window.addEventListener('touchcancel', handleTouchEnd);
+
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('touchcancel', handleTouchEnd);
+    };
+  }, [triggerRefresh]);
+
   return (
     <>
       <main className="px-3 pt-4 pb-3">
@@ -141,42 +238,73 @@ export default function BoardListPage() {
           />
         </div>
 
-        <div className="mt-4 space-y-3">
-          {isLoading ? (
-            <div className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-neutral-500 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
-              게시글을 불러오는 중...
-            </div>
-          ) : isError ? (
-            <div className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-neutral-500 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
-              <p>네트워크 오류가 발생했어요.</p>
-              <button
-                type="button"
-                onClick={() => void refetch()}
-                className="mt-3 rounded-full border border-neutral-200 bg-white px-4 py-1 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
-              >
-                다시 시도
-              </button>
-            </div>
-          ) : filteredPosts.length === 0 ? (
-            <p className="px-4 py-6 text-center text-sm text-neutral-500">
-              {selectedTags.length > 0
-                ? '선택한 태그에 해당하는 글이 없어요.'
-                : '아직 게시글이 없어요.'}
-            </p>
-          ) : (
-            <>
-              {filteredPosts.map((post) => (
-                <BoardPostCard key={post.postId} post={post} onAuthorClick={handleAuthorClick} />
-              ))}
-              <div className="px-4 pt-2">
-                <ListLoadMoreSentinel
-                  onLoadMore={() => void fetchNextPage()}
-                  hasNextPage={hasNextPage ?? false}
-                  isFetchingNextPage={isFetchingNextPage}
-                />
+        <div className="relative mt-4">
+          <div
+            className="absolute right-0 left-0 flex items-center justify-center gap-2 text-xs text-neutral-500"
+            style={{
+              transform: `translateY(${Math.min(pullDistance, PULL_THRESHOLD)}px)`,
+              opacity: pullDistance > 0 || isRefreshing ? 1 : 0,
+              transition: isPulling ? 'none' : 'opacity 150ms ease, transform 150ms ease',
+            }}
+          >
+            <Loader2 className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>
+              {isRefreshing
+                ? '새로고침 중...'
+                : isReadyToRefresh
+                  ? '놓으면 새로고침'
+                  : '당겨서 새로고침'}
+            </span>
+          </div>
+
+          <div
+            className="space-y-3"
+            style={{
+              transform: pullDistance ? `translateY(${pullDistance}px)` : undefined,
+              transition: isPulling || isRefreshing ? 'none' : 'transform 180ms ease',
+            }}
+          >
+            {isLoading ? (
+              <div className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-neutral-500 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
+                게시글을 불러오는 중...
               </div>
-            </>
-          )}
+            ) : isError ? (
+              <div className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-neutral-500 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
+                <p>네트워크 오류가 발생했어요.</p>
+                <button
+                  type="button"
+                  onClick={() => void refetch()}
+                  className="mt-3 rounded-full border border-neutral-200 bg-white px-4 py-1 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+                >
+                  다시 시도
+                </button>
+              </div>
+            ) : filteredPosts.length === 0 ? (
+              <p className="px-4 py-6 text-center text-sm text-neutral-500">
+                {selectedTags.length > 0
+                  ? '선택한 태그에 해당하는 글이 없어요.'
+                  : '아직 게시글이 없어요.'}
+              </p>
+            ) : (
+              <>
+                {filteredPosts.map((post) => (
+                  <BoardPostCard
+                    key={post.postId}
+                    post={post}
+                    onClick={handlePostClick}
+                    onAuthorClick={handleAuthorClick}
+                  />
+                ))}
+                <div className="px-4 pt-2">
+                  <ListLoadMoreSentinel
+                    onLoadMore={() => void fetchNextPage()}
+                    hasNextPage={hasNextPage ?? false}
+                    isFetchingNextPage={isFetchingNextPage}
+                  />
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </main>
 
