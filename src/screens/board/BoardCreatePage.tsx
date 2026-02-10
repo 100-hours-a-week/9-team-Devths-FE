@@ -7,6 +7,7 @@ import BoardMarkdownPreview from '@/components/board/BoardMarkdownPreview';
 import BoardTagSelector from '@/components/board/BoardTagSelector';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { BOARD_TITLE_MAX_LENGTH } from '@/constants/boardCreate';
+import { useBoardAttachments } from '@/lib/hooks/boards/useBoardAttachments';
 import { validateBoardCreateTitle } from '@/lib/validators/boardCreate';
 
 import type { BoardTag } from '@/types/board';
@@ -18,6 +19,7 @@ export default function BoardCreatePage() {
   const [content, setContent] = useState('');
   const [isPreview, setIsPreview] = useState(false);
   const [tags, setTags] = useState<BoardTag[]>([]);
+  const { attachments } = useBoardAttachments();
   const titleError = useMemo(() => validateBoardCreateTitle(title), [title]);
 
   const handleBackClick = useCallback(() => {
@@ -126,6 +128,9 @@ export default function BoardCreatePage() {
 
         <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-4 text-sm text-neutral-400">
           첨부 영역이 여기에 들어갈 예정입니다.
+          {attachments.length > 0 ? (
+            <p className="mt-2 text-xs text-neutral-400">현재 첨부 {attachments.length}개</p>
+          ) : null}
         </div>
       </section>
     </main>
