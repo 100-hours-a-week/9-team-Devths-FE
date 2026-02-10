@@ -7,9 +7,10 @@ import type { CommentThread } from '@/types/boardDetail';
 
 type CommentListProps = {
   threads: CommentThread[];
+  onReplyClick?: (commentId: number) => void;
 };
 
-export default function CommentList({ threads }: CommentListProps) {
+export default function CommentList({ threads, onReplyClick }: CommentListProps) {
   if (threads.length === 0) {
     return (
       <p className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-neutral-500">
@@ -27,6 +28,8 @@ export default function CommentList({ threads }: CommentListProps) {
             createdAt={thread.comment.createdAt}
             content={thread.comment.content}
             isDeleted={thread.comment.isDeleted}
+            showReply
+            onReplyClick={onReplyClick ? () => onReplyClick(thread.comment.commentId) : undefined}
           />
           {thread.replies.map((reply) => (
             <ReplyItem

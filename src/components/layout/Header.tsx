@@ -71,9 +71,9 @@ export default function Header({
                 priority
               />
             </button>
-          ) : (
+          ) : title ? (
             <h1 className="text-base font-semibold text-neutral-900">{title}</h1>
-          )}
+          ) : null}
         </div>
 
         <div

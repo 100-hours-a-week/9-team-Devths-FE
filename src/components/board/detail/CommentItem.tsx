@@ -11,11 +11,20 @@ type CommentItemProps = {
   createdAt: string;
   content: string | null;
   isDeleted?: boolean;
+  showReply?: boolean;
+  onReplyClick?: () => void;
 };
 
-export default function CommentItem({ author, createdAt, content, isDeleted }: CommentItemProps) {
+export default function CommentItem({
+  author,
+  createdAt,
+  content,
+  isDeleted,
+  showReply = false,
+  onReplyClick,
+}: CommentItemProps) {
   return (
-    <div className="rounded-2xl border border-neutral-100 bg-white px-3 py-3">
+    <div className="rounded-2xl border border-neutral-200 bg-white px-3 py-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="relative flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 bg-neutral-200 text-[11px] font-semibold text-neutral-600">
@@ -40,6 +49,15 @@ export default function CommentItem({ author, createdAt, content, isDeleted }: C
       <p className="mt-2 text-xs text-neutral-600">
         {isDeleted ? '삭제된 댓글입니다.' : content}
       </p>
+      {showReply ? (
+        <button
+          type="button"
+          onClick={onReplyClick}
+          className="mt-2 text-[11px] font-medium text-neutral-400 hover:text-neutral-600"
+        >
+          답글
+        </button>
+      ) : null}
     </div>
   );
 }

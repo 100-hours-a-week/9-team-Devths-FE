@@ -3,12 +3,9 @@ import { MessageCircle, Share2, ThumbsUp } from 'lucide-react';
 export default function BoardPostDetailSkeleton() {
   return (
     <>
-      <main
-        className="px-3 pt-4 pb-6"
-        style={{ paddingBottom: 'calc(var(--bottom-nav-h) + 88px)' }}
-      >
+      <main className="pt-0 pb-6" style={{ paddingBottom: '84px' }}>
         <div className="space-y-3">
-          <div className="rounded-2xl bg-white px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
+          <div className="border-b border-neutral-200 px-0 pb-4 pt-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="h-9 w-9 rounded-full bg-neutral-100" />
@@ -48,7 +45,11 @@ export default function BoardPostDetailSkeleton() {
           </div>
         </div>
 
-          <div className="space-y-2">
+          <div className="bg-[#F1F5F9] px-0 py-2 text-xs text-neutral-500">
+            개인정보(연락처, 계좌번호 등) 공유에 주의하세요
+          </div>
+
+          <div className="space-y-2 px-0">
             <div className="h-3 w-20 rounded-full bg-neutral-100" />
             <div className="space-y-2">
               {Array.from({ length: 3 }).map((_, index) => (
@@ -73,9 +74,10 @@ export default function BoardPostDetailSkeleton() {
           </div>
         </div>
       </main>
-      <div className="fixed bottom-[calc(var(--bottom-nav-h)+12px)] left-1/2 z-40 w-full max-w-[430px] -translate-x-1/2 px-4 sm:px-6">
-        <div className="rounded-xl bg-[#F1F5F9] px-3 py-2 text-xs text-neutral-500 shadow-[0_8px_20px_rgba(15,23,42,0.08)]">
-          개인정보(연락처, 계좌번호 등) 공유에 주의하세요
+      <div className="fixed bottom-0 left-1/2 z-40 w-full max-w-[430px] -translate-x-1/2 bg-white px-4 py-3 shadow-[0_-6px_16px_rgba(15,23,42,0.08)]">
+        <div className="flex items-center gap-2">
+          <div className="h-9 flex-1 rounded-full border border-neutral-200 bg-neutral-50" />
+          <div className="h-9 w-14 rounded-full bg-neutral-200" />
         </div>
       </div>
     </>

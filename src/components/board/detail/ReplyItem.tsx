@@ -15,7 +15,7 @@ type ReplyItemProps = {
 
 export default function ReplyItem({ author, createdAt, content, isDeleted }: ReplyItemProps) {
   return (
-    <div className="ml-6 rounded-2xl border border-neutral-100 bg-white px-3 py-3">
+    <div className="ml-6 rounded-2xl border border-neutral-200 bg-white px-3 py-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="relative flex h-6 w-6 items-center justify-center rounded-full border border-neutral-200 bg-neutral-200 text-[10px] font-semibold text-neutral-600">

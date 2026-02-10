@@ -5,10 +5,12 @@ import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import BoardShareModal from '@/components/board/detail/BoardShareModal';
+import CommentComposer from '@/components/board/detail/CommentComposer';
 import CommentList from '@/components/board/detail/CommentList';
 import PostContent from '@/components/board/detail/PostContent';
 import PostHeader from '@/components/board/detail/PostHeader';
 import ConfirmModal from '@/components/common/ConfirmModal';
+import { useAppFrame } from '@/components/layout/AppFrameContext';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import { deleteBoardPost, likeBoardPost, unlikeBoardPost } from '@/lib/api/boards';
@@ -22,6 +24,7 @@ import BoardPostDetailSkeleton from '@/screens/board/detail/BoardPostDetailSkele
 
 export default function BoardDetailPage() {
   const router = useRouter();
+  const { setOptions: setFrameOptions, resetOptions: resetFrameOptions } = useAppFrame();
   const { setOptions, resetOptions } = useHeader();
   const { requestNavigation } = useNavigationGuard();
   const params = useParams();
@@ -84,15 +87,28 @@ export default function BoardDetailPage() {
     [handleNotificationsClick, handleSearchClick],
   );
 
+  const handleBackClick = useCallback(() => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push('/board');
+  }, [router]);
+
   useEffect(() => {
+    setFrameOptions({ showBottomNav: false });
     setOptions({
-      title: 'Devths',
-      showBackButton: false,
+      title: '',
+      showBackButton: true,
+      onBackClick: handleBackClick,
       rightSlot,
     });
 
-    return () => resetOptions();
-  }, [resetOptions, rightSlot, setOptions]);
+    return () => {
+      resetOptions();
+      resetFrameOptions();
+    };
+  }, [handleBackClick, resetFrameOptions, resetOptions, rightSlot, setFrameOptions, setOptions]);
 
   const isAuthor = Boolean(post && currentUserId !== null && currentUserId === post.author.userId);
 
@@ -243,7 +259,7 @@ export default function BoardDetailPage() {
 
   if (isError || !post) {
     return (
-      <main className="px-3 pt-4 pb-6">
+      <main className="-mx-4 pt-0 pb-6 sm:-mx-6">
         <div className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-neutral-500 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
           <p>게시글을 불러오지 못했습니다.</p>
           <button
@@ -270,12 +286,9 @@ export default function BoardDetailPage() {
 
   return (
     <>
-      <main
-        className="px-3 pt-4 pb-6"
-        style={{ paddingBottom: 'calc(var(--bottom-nav-h) + 88px)' }}
-      >
+      <main className="pt-4 pb-6" style={{ paddingBottom: '84px' }}>
         <div className="space-y-3">
-          <article className="rounded-2xl bg-white px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
+          <article className="border-b border-neutral-200 px-0 pt-3 pb-4">
             <div className="relative">
               <PostHeader
                 author={post.author}
@@ -324,19 +337,23 @@ export default function BoardDetailPage() {
                 <MessageCircle className="h-3.5 w-3.5" />
                 <span>{formatCountCompact(post.stats.commentCount)}</span>
               </div>
-            <button
-              type="button"
-              className="flex items-center gap-1"
-              aria-label="공유"
-              onClick={handleShareOpen}
-            >
-              <Share2 className="h-3.5 w-3.5" />
-              <span>{formatCountCompact(post.stats.shareCount)}</span>
-            </button>
+              <button
+                type="button"
+                className="flex items-center gap-1"
+                aria-label="공유"
+                onClick={handleShareOpen}
+              >
+                <Share2 className="h-3.5 w-3.5" />
+                <span>{formatCountCompact(post.stats.shareCount)}</span>
+              </button>
             </div>
           </article>
 
-          <section className="space-y-2">
+          <div className="bg-[#F1F5F9] px-0 py-2 text-xs text-neutral-500">
+            개인정보(연락처, 계좌번호 등) 공유에 주의하세요
+          </div>
+
+          <section className="space-y-2 px-0">
             <p className="text-sm font-semibold text-neutral-800">
               댓글 {formatCountCompact(post.stats.commentCount)}개
             </p>
@@ -356,7 +373,10 @@ export default function BoardDetailPage() {
                 </button>
               </div>
             ) : (
-              <CommentList threads={commentThreads} />
+              <CommentList
+                threads={commentThreads}
+                onReplyClick={() => toast('답글 기능은 준비 중입니다.')}
+              />
             )}
           </section>
         </div>
@@ -376,10 +396,8 @@ export default function BoardDetailPage() {
         shareUrl={shareUrl}
         onCopy={handleShareCopy}
       />
-      <div className="fixed bottom-[calc(var(--bottom-nav-h)+12px)] left-1/2 z-40 w-full max-w-[430px] -translate-x-1/2 px-4 sm:px-6">
-        <div className="rounded-xl bg-[#F1F5F9] px-3 py-2 text-xs text-neutral-500 shadow-[0_8px_20px_rgba(15,23,42,0.08)]">
-          개인정보(연락처, 계좌번호 등) 공유에 주의하세요
-        </div>
+      <div className="fixed bottom-0 left-1/2 z-40 w-full max-w-[430px] -translate-x-1/2 bg-white px-4 py-3 shadow-[0_-6px_16px_rgba(15,23,42,0.08)]">
+        <CommentComposer className="mt-0" onSubmit={() => toast('댓글 등록은 준비 중입니다.')} />
       </div>
     </>
   );
