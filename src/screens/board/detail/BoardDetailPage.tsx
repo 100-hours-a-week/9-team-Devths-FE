@@ -71,6 +71,7 @@ export default function BoardDetailPage() {
     useDeleteCommentMutation();
   const [pendingDeleteCommentId, setPendingDeleteCommentId] = useState<number | null>(null);
   const [isCommentDeleteOpen, setIsCommentDeleteOpen] = useState(false);
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
 
   const handleSearchClick = useCallback(() => {
     requestNavigation(() => router.push('/board/search'));
@@ -360,6 +361,7 @@ export default function BoardDetailPage() {
 
   const handleCommentDeleteOpen = (commentId: number) => {
     if (isCommentDeleting) return;
+    setEditingCommentId(null);
     setPendingDeleteCommentId(commentId);
     setIsCommentDeleteOpen(true);
   };
@@ -386,6 +388,17 @@ export default function BoardDetailPage() {
     } catch (error) {
       toast(error instanceof Error ? error.message : '댓글 삭제에 실패했습니다.');
     }
+  };
+
+  const handleCommentEditOpen = (commentId: number, content: string | null) => {
+    if (isCommentDeleting) return;
+    setPendingDeleteCommentId(null);
+    setIsCommentDeleteOpen(false);
+    setEditingCommentId(commentId);
+  };
+
+  const handleCommentEditCancel = () => {
+    setEditingCommentId(null);
   };
 
   useEffect(() => {
@@ -542,6 +555,25 @@ export default function BoardDetailPage() {
                 onReplyClick={() => toast('답글 기능은 준비 중입니다.')}
                 currentUserId={currentUserId}
                 onDeleteClick={handleCommentDeleteOpen}
+                onEditClick={handleCommentEditOpen}
+                isEditingCommentId={editingCommentId}
+                disableActions={editingCommentId !== null}
+                renderEditor={(commentId, content, depth) => (
+                  <div className={depth === 2 ? 'ml-6' : undefined}>
+                    <CommentComposer
+                      className="mt-2"
+                      defaultValue={content ?? ''}
+                      maxLength={500}
+                      submitLabel="저장"
+                      onCancel={handleCommentEditCancel}
+                      onSubmit={() => {
+                        toast('댓글 수정은 준비 중입니다.');
+                        handleCommentEditCancel();
+                        return true;
+                      }}
+                    />
+                  </div>
+                )}
               />
             )}
           </section>

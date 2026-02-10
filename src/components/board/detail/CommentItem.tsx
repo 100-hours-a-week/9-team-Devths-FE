@@ -18,6 +18,8 @@ type CommentItemProps = {
   onReplyClick?: () => void;
   showOptions?: boolean;
   onDeleteClick?: () => void;
+  onEditClick?: () => void;
+  isEditing?: boolean;
   isLast?: boolean;
 };
 
@@ -30,12 +32,14 @@ export default function CommentItem({
   onReplyClick,
   showOptions = false,
   onDeleteClick,
+  onEditClick,
+  isEditing = false,
   isLast = false,
 }: CommentItemProps) {
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
   const optionsButtonRef = useRef<HTMLButtonElement>(null);
   const optionsMenuRef = useRef<HTMLDivElement>(null);
-  const canShowOptions = showOptions && !isDeleted;
+  const canShowOptions = showOptions && !isDeleted && !isEditing;
 
   useEffect(() => {
     if (!isOptionsOpen) return;
@@ -63,7 +67,12 @@ export default function CommentItem({
   }, [isOptionsOpen]);
 
   return (
-    <div className={cn('border-b border-neutral-200 py-3', isLast && 'border-b-0')}>
+    <div
+      className={cn(
+        'border-b border-neutral-200 py-3',
+        (isLast || isEditing) && 'border-b-0',
+      )}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="relative flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 bg-neutral-200 text-[11px] font-semibold text-neutral-600">
@@ -104,6 +113,16 @@ export default function CommentItem({
                   type="button"
                   onClick={() => {
                     setIsOptionsOpen(false);
+                    onEditClick?.();
+                  }}
+                  className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-neutral-50"
+                >
+                  수정
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsOptionsOpen(false);
                     onDeleteClick?.();
                   }}
                   className="flex w-full items-center justify-between px-3 py-2 text-left text-red-500 hover:bg-red-50"
@@ -115,8 +134,12 @@ export default function CommentItem({
           </div>
         ) : null}
       </div>
-      <p className="mt-2 text-xs text-neutral-600">{isDeleted ? '삭제된 댓글입니다.' : content}</p>
-      {showReply ? (
+      {isEditing ? null : (
+        <p className="mt-2 text-xs text-neutral-600">
+          {isDeleted ? '삭제된 댓글입니다.' : content}
+        </p>
+      )}
+      {showReply && !isEditing ? (
         <button
           type="button"
           onClick={onReplyClick}
