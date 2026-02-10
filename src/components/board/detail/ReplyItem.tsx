@@ -37,9 +37,7 @@ export default function ReplyItem({ author, createdAt, content, isDeleted }: Rep
           </div>
         </div>
       </div>
-      <p className="mt-2 text-xs text-neutral-600">
-        {isDeleted ? '삭제된 댓글입니다.' : content}
-      </p>
+      <p className="mt-2 text-xs text-neutral-600">{isDeleted ? '삭제된 댓글입니다.' : content}</p>
     </div>
   );
 }

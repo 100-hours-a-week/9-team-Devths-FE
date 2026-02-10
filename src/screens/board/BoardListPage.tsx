@@ -240,7 +240,7 @@ export default function BoardListPage() {
 
         <div className="relative mt-4">
           <div
-            className="absolute left-0 right-0 flex items-center justify-center gap-2 text-xs text-neutral-500"
+            className="absolute right-0 left-0 flex items-center justify-center gap-2 text-xs text-neutral-500"
             style={{
               transform: `translateY(${Math.min(pullDistance, PULL_THRESHOLD)}px)`,
               opacity: pullDistance > 0 || isRefreshing ? 1 : 0,
@@ -287,14 +287,14 @@ export default function BoardListPage() {
               </p>
             ) : (
               <>
-              {filteredPosts.map((post) => (
-                <BoardPostCard
-                  key={post.postId}
-                  post={post}
-                  onClick={handlePostClick}
-                  onAuthorClick={handleAuthorClick}
-                />
-              ))}
+                {filteredPosts.map((post) => (
+                  <BoardPostCard
+                    key={post.postId}
+                    post={post}
+                    onClick={handlePostClick}
+                    onAuthorClick={handleAuthorClick}
+                  />
+                ))}
                 <div className="px-4 pt-2">
                   <ListLoadMoreSentinel
                     onLoadMore={() => void fetchNextPage()}

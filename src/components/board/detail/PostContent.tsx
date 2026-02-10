@@ -18,10 +18,7 @@ export default function PostContent({ title, content, tags = [] }: PostContentPr
     <div className="mt-3">
       <h1 className="text-xl font-semibold text-neutral-900">{title}</h1>
       {trimmed.length > 0 ? (
-        <div
-          className="markdown-preview mt-2 text-sm"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+        <div className="markdown-preview mt-2 text-sm" dangerouslySetInnerHTML={{ __html: html }} />
       ) : (
         <p className="mt-2 text-sm text-neutral-400">내용이 없습니다.</p>
       )}

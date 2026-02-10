@@ -5,7 +5,7 @@ export default function BoardPostDetailSkeleton() {
     <>
       <main className="px-1 pt-0 pb-6 sm:px-2" style={{ paddingBottom: '84px' }}>
         <div className="space-y-3">
-          <div className="border-b border-neutral-200 px-0 pb-4 pt-3">
+          <div className="border-b border-neutral-200 px-0 pt-3 pb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="h-9 w-9 rounded-full bg-neutral-100" />

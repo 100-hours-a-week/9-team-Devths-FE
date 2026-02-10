@@ -166,7 +166,9 @@ export async function createBoardPost(payload: CreateBoardPostRequest) {
 }
 
 export async function getBoardPostDetail(postId: number): Promise<PostDetail> {
-  const result = await api.get<PostDetailResponse>(`/api/posts/${postId}`, { credentials: 'include' });
+  const result = await api.get<PostDetailResponse>(`/api/posts/${postId}`, {
+    credentials: 'include',
+  });
 
   if (!result.ok || !result.json) {
     throw new Error('게시글을 불러오지 못했습니다.');

@@ -9,12 +9,7 @@ type BoardShareModalProps = {
   onCopy: () => void;
 };
 
-export default function BoardShareModal({
-  open,
-  onClose,
-  shareUrl,
-  onCopy,
-}: BoardShareModalProps) {
+export default function BoardShareModal({ open, onClose, shareUrl, onCopy }: BoardShareModalProps) {
   return (
     <BaseModal open={open} onClose={onClose} title="게시물 공유" contentClassName="max-w-[380px]">
       <p className="text-xs text-neutral-500">게시물 링크를 복사하여 공유할 수 있습니다.</p>

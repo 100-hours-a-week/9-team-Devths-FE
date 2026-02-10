@@ -10,7 +10,7 @@ export function groupCommentsByThread(comments: CommentItem[]): CommentThread[] 
   const repliesMap = new Map<number, CommentItem[]>();
 
   for (const comment of comments) {
-    if (comment.parentId == null) {
+    if (comment.parentId === null) {
       roots.push(comment);
     } else {
       const list = repliesMap.get(comment.parentId) ?? [];

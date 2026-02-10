@@ -41,7 +41,7 @@ export default function CommentComposer({
       <button
         type="submit"
         disabled={isDisabled}
-        className="rounded-full bg-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-500 disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-400 enabled:bg-[#05C075] enabled:text-white hover:enabled:bg-[#04A865]"
+        className="rounded-full bg-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-500 enabled:bg-[#05C075] enabled:text-white hover:enabled:bg-[#04A865] disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-400"
       >
         등록
       </button>
