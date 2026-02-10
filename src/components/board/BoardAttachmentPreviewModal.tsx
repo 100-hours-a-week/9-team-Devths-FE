@@ -1,35 +1,24 @@
 'use client';
 
 import { Minus, Plus } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import BaseModal from '@/components/common/BaseModal';
+
 import type { BoardAttachment } from '@/types/boardCreate';
 
-type BoardAttachmentPreviewModalProps = {
-  open: boolean;
+type Props = {
+  attachment: BoardAttachment;
   onClose: () => void;
-  attachment: BoardAttachment | null;
 };
 
 const MIN_ZOOM = 50;
 const MAX_ZOOM = 300;
 const STEP = 10;
 
-export default function BoardAttachmentPreviewModal({
-  open,
-  onClose,
-  attachment,
-}: BoardAttachmentPreviewModalProps) {
-  if (!attachment) return null;
-
+export default function BoardAttachmentPreviewModal({ attachment, onClose }: Props) {
   const [zoom, setZoom] = useState(100);
-
-  useEffect(() => {
-    if (open) {
-      setZoom(100);
-    }
-  }, [open]);
+  const previewUrl = attachment.previewUrl;
 
   const handleZoomIn = () => {
     setZoom((prev) => Math.min(MAX_ZOOM, prev + STEP));
@@ -40,9 +29,31 @@ export default function BoardAttachmentPreviewModal({
   };
 
   return (
-    <BaseModal open={open} onClose={onClose} title="미리보기" contentClassName="pb-16">
-      <div className="flex min-h-[220px] items-center justify-center rounded-xl border border-dashed border-neutral-200 bg-neutral-50 text-xs text-neutral-400">
-        {attachment.type === 'PDF' ? 'PDF 미리보기' : '이미지 미리보기'}
+    <BaseModal open onClose={onClose} title="미리보기" contentClassName="pb-16">
+      <div className="flex min-h-[220px] items-center justify-center overflow-hidden rounded-xl border border-dashed border-neutral-200 bg-neutral-50 p-4 text-xs text-neutral-400">
+        {attachment.type === 'PDF' ? (
+          previewUrl ? (
+            <iframe
+              src={`${previewUrl}#page=1&zoom=${zoom}&toolbar=0&navpanes=0&scrollbar=0`}
+              title={`${attachment.name} 미리보기`}
+              className="h-[360px] w-full rounded-lg"
+            />
+          ) : (
+            'PDF 미리보기'
+          )
+        ) : previewUrl ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={previewUrl}
+              alt={attachment.name}
+              style={{ transform: `scale(${zoom / 100})` }}
+              className="max-h-[320px] max-w-full rounded-lg object-contain transition-transform"
+            />
+          </>
+        ) : (
+          '이미지 미리보기'
+        )}
       </div>
 
       <div className="mt-4 flex items-center justify-center gap-3 rounded-full border border-neutral-200 bg-white px-4 py-2 text-xs text-neutral-700">
