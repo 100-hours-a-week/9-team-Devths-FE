@@ -82,6 +82,25 @@ export type CommentItem = {
   isDeleted: boolean;
 };
 
+export type CommentDepth = 1 | 2;
+
+export type CommentCreatePayload = {
+  postId: number;
+  content: string;
+  parentId?: number | null;
+};
+
+export type CommentUpdatePayload = {
+  postId: number;
+  commentId: number;
+  content: string;
+};
+
+export type CommentDeletePayload = {
+  postId: number;
+  commentId: number;
+};
+
 export type CommentThread = {
   comment: CommentItem;
   replies: CommentItem[];
