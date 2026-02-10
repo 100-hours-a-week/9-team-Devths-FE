@@ -64,6 +64,10 @@ export default function BoardDetailPage() {
     isError: isCommentsError,
     refetch: refetchComments,
   } = useBoardCommentsQuery(Number.isFinite(postId) ? postId : null, 50);
+  const commentThreads = useMemo(
+    () => groupCommentsByThread(commentsPage?.items ?? []),
+    [commentsPage?.items],
+  );
   const { mutateAsync: createComment, isPending: isCommentSubmitting } = useCreateCommentMutation();
   const { mutateAsync: deleteComment, isPending: isCommentDeleting } = useDeleteCommentMutation();
   const { mutateAsync: updateComment, isPending: isCommentUpdating } = useUpdateCommentMutation();
@@ -217,6 +221,17 @@ export default function BoardDetailPage() {
       );
     },
     [queryClient],
+  );
+
+  const getDeleteImpactCount = useCallback(
+    (commentId: number) => {
+      const thread = commentThreads.find((item) => item.comment.commentId === commentId);
+      if (thread) {
+        return 1 + thread.replies.length;
+      }
+      return 1;
+    },
+    [commentThreads],
   );
 
   const updateCommentContentCache = useCallback(
@@ -399,9 +414,10 @@ export default function BoardDetailPage() {
     try {
       await deleteComment({ postId: post.postId, commentId: pendingDeleteCommentId });
       const detailSnapshot = queryClient.getQueryData<PostDetail>(boardsKeys.detail(post.postId));
+      const deleteImpact = getDeleteImpactCount(pendingDeleteCommentId);
       const nextCount = Math.max(
         0,
-        (detailSnapshot?.stats.commentCount ?? post.stats.commentCount) - 1,
+        (detailSnapshot?.stats.commentCount ?? post.stats.commentCount) - deleteImpact,
       );
       updateCommentCountCache(post.postId, nextCount);
       await refetchComments();
@@ -482,7 +498,6 @@ export default function BoardDetailPage() {
     likeOverride?.postId === post.postId ? likeOverride.isLiked : post.isLiked;
   const resolvedLikeCount =
     likeOverride?.postId === post.postId ? likeOverride.likeCount : post.stats.likeCount;
-  const commentThreads = groupCommentsByThread(commentsPage?.items ?? []);
   const shareUrl =
     typeof window === 'undefined'
       ? ''
