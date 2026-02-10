@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { Bell, Heart, MessageCircle, Search, Share2 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -15,6 +16,7 @@ import { useHeader } from '@/components/layout/HeaderContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import { deleteBoardPost, likeBoardPost, unlikeBoardPost } from '@/lib/api/boards';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
+import { boardsKeys } from '@/lib/hooks/boards/queryKeys';
 import { useBoardCommentsQuery } from '@/lib/hooks/boards/useBoardCommentsQuery';
 import { useBoardDetailQuery } from '@/lib/hooks/boards/useBoardDetailQuery';
 import { toast } from '@/lib/toast/store';
@@ -22,8 +24,13 @@ import { formatCountCompact } from '@/lib/utils/board';
 import { groupCommentsByThread } from '@/lib/utils/comments';
 import BoardPostDetailSkeleton from '@/screens/board/detail/BoardPostDetailSkeleton';
 
+import type { BoardPostSummary } from '@/types/board';
+import type { PostDetail } from '@/types/boardDetail';
+import type { CursorPage } from '@/types/pagination';
+
 export default function BoardDetailPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { setOptions: setFrameOptions, resetOptions: resetFrameOptions } = useAppFrame();
   const { setOptions, resetOptions } = useHeader();
   const { requestNavigation } = useNavigationGuard();
@@ -117,6 +124,49 @@ export default function BoardDetailPage() {
     setIsOptionsOpen((prev) => !prev);
   };
 
+  const updateLikeCache = useCallback(
+    (targetPostId: number, nextLiked: boolean, nextCount: number) => {
+      queryClient.setQueryData<PostDetail>(boardsKeys.detail(targetPostId), (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          isLiked: nextLiked,
+          stats: {
+            ...prev.stats,
+            likeCount: nextCount,
+          },
+        };
+      });
+
+      queryClient.setQueriesData<InfiniteData<CursorPage<BoardPostSummary>>>(
+        {
+          predicate: (query) => query.queryKey[0] === 'boards' && query.queryKey[1] === 'list',
+        },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.map((item) =>
+                item.postId === targetPostId
+                  ? {
+                      ...item,
+                      stats: {
+                        ...item.stats,
+                        likeCount: nextCount,
+                      },
+                    }
+                  : item,
+              ),
+            })),
+          };
+        },
+      );
+    },
+    [queryClient],
+  );
+
   const handleLikeToggle = async () => {
     if (!post) return;
     if (isLikePending) return;
@@ -128,13 +178,20 @@ export default function BoardDetailPage() {
     const nextLiked = !resolvedIsLiked;
     const nextCount = nextLiked ? resolvedLikeCount + 1 : Math.max(0, resolvedLikeCount - 1);
 
+    const detailSnapshot = queryClient.getQueryData<PostDetail>(boardsKeys.detail(post.postId));
+    const listSnapshots = queryClient.getQueriesData<InfiniteData<CursorPage<BoardPostSummary>>>({
+      predicate: (query) => query.queryKey[0] === 'boards' && query.queryKey[1] === 'list',
+    });
+
     setLikeOverride({ postId: post.postId, isLiked: nextLiked, likeCount: nextCount });
     setIsLikePending(true);
+    updateLikeCache(post.postId, nextLiked, nextCount);
 
     try {
       if (nextLiked) {
         const result = await likeBoardPost(post.postId);
         if (result?.likeCount !== undefined) {
+          updateLikeCache(post.postId, true, result.likeCount);
           setLikeOverride({
             postId: post.postId,
             isLiked: true,
@@ -149,6 +206,12 @@ export default function BoardDetailPage() {
         postId: post.postId,
         isLiked: resolvedIsLiked,
         likeCount: resolvedLikeCount,
+      });
+      if (detailSnapshot) {
+        queryClient.setQueryData(boardsKeys.detail(post.postId), detailSnapshot);
+      }
+      listSnapshots.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
       });
       toast(error instanceof Error ? error.message : '좋아요 처리에 실패했습니다.');
     } finally {
@@ -170,6 +233,21 @@ export default function BoardDetailPage() {
     if (!post) return;
     try {
       await deleteBoardPost(post.postId);
+      queryClient.setQueriesData<InfiniteData<CursorPage<BoardPostSummary>>>(
+        {
+          predicate: (query) => query.queryKey[0] === 'boards' && query.queryKey[1] === 'list',
+        },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.filter((item) => item.postId !== post.postId),
+            })),
+          };
+        },
+      );
       toast('게시글이 삭제되었습니다.');
       setIsDeleteConfirmOpen(false);
       requestNavigation(() => {
@@ -259,7 +337,7 @@ export default function BoardDetailPage() {
 
   if (isError || !post) {
     return (
-      <main className="-mx-4 pt-0 pb-6 sm:-mx-6">
+      <main className="px-1 pt-0 pb-6 sm:px-2">
         <div className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-neutral-500 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
           <p>게시글을 불러오지 못했습니다.</p>
           <button
@@ -286,7 +364,7 @@ export default function BoardDetailPage() {
 
   return (
     <>
-      <main className="pt-4 pb-6" style={{ paddingBottom: '84px' }}>
+      <main className="px-1 pt-4 pb-6 sm:px-2" style={{ paddingBottom: '84px' }}>
         <div className="space-y-3">
           <article className="border-b border-neutral-200 px-0 pt-3 pb-4">
             <div className="relative">
@@ -396,7 +474,7 @@ export default function BoardDetailPage() {
         shareUrl={shareUrl}
         onCopy={handleShareCopy}
       />
-      <div className="fixed bottom-0 left-1/2 z-40 w-full max-w-[430px] -translate-x-1/2 bg-white px-4 py-3 shadow-[0_-6px_16px_rgba(15,23,42,0.08)]">
+      <div className="fixed bottom-0 left-1/2 z-40 w-full max-w-[430px] -translate-x-1/2 bg-white px-3 py-3 shadow-[0_-6px_16px_rgba(15,23,42,0.08)] sm:px-4">
         <CommentComposer className="mt-0" onSubmit={() => toast('댓글 등록은 준비 중입니다.')} />
       </div>
     </>
