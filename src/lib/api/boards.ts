@@ -236,3 +236,11 @@ export async function unlikeBoardPost(postId: number): Promise<void> {
     throw new Error('좋아요 취소에 실패했습니다.');
   }
 }
+
+export async function deleteBoardPost(postId: number): Promise<void> {
+  const result = await api.delete<void>(`/api/posts/${postId}`, { credentials: 'include' });
+
+  if (!result.ok) {
+    throw new Error('게시글 삭제에 실패했습니다.');
+  }
+}

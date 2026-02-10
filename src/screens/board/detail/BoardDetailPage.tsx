@@ -11,7 +11,7 @@ import PostHeader from '@/components/board/detail/PostHeader';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
-import { likeBoardPost, unlikeBoardPost } from '@/lib/api/boards';
+import { deleteBoardPost, likeBoardPost, unlikeBoardPost } from '@/lib/api/boards';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { useBoardCommentsQuery } from '@/lib/hooks/boards/useBoardCommentsQuery';
 import { useBoardDetailQuery } from '@/lib/hooks/boards/useBoardDetailQuery';
@@ -150,8 +150,22 @@ export default function BoardDetailPage() {
     setIsDeleteConfirmOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
-    setIsDeleteConfirmOpen(false);
+  const handleDeleteConfirm = async () => {
+    if (!post) return;
+    try {
+      await deleteBoardPost(post.postId);
+      toast('게시글이 삭제되었습니다.');
+      setIsDeleteConfirmOpen(false);
+      requestNavigation(() => {
+        if (typeof window !== 'undefined' && window.history.length > 1) {
+          router.back();
+          return;
+        }
+        router.push('/board');
+      });
+    } catch (error) {
+      toast(error instanceof Error ? error.message : '게시글 삭제에 실패했습니다.');
+    }
   };
 
   const handleDeleteCancel = () => {
