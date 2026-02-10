@@ -479,7 +479,11 @@ export default function BoardDetailPage() {
         onCopy={handleShareCopy}
       />
       <div className="fixed bottom-0 left-1/2 z-40 w-full max-w-[430px] -translate-x-1/2 bg-white px-3 py-3 shadow-[0_-6px_16px_rgba(15,23,42,0.08)] sm:px-4">
-        <CommentComposer className="mt-0" onSubmit={() => toast('댓글 등록은 준비 중입니다.')} />
+        <CommentComposer
+          className="mt-0"
+          maxLength={500}
+          onSubmit={() => toast('댓글 등록은 준비 중입니다.')}
+        />
       </div>
     </>
   );

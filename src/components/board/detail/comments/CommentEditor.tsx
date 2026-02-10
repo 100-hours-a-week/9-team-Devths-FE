@@ -6,8 +6,21 @@ type CommentEditorProps = {
   placeholder?: string;
   onSubmit?: (content: string) => void | Promise<void> | boolean;
   className?: string;
+  maxLength?: number;
 };
 
-export default function CommentEditor({ placeholder, onSubmit, className }: CommentEditorProps) {
-  return <CommentComposer placeholder={placeholder} onSubmit={onSubmit} className={className} />;
+export default function CommentEditor({
+  placeholder,
+  onSubmit,
+  className,
+  maxLength,
+}: CommentEditorProps) {
+  return (
+    <CommentComposer
+      placeholder={placeholder}
+      onSubmit={onSubmit}
+      className={className}
+      maxLength={maxLength}
+    />
+  );
 }
