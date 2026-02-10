@@ -19,11 +19,9 @@ import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { boardsKeys } from '@/lib/hooks/boards/queryKeys';
 import { useBoardCommentsQuery } from '@/lib/hooks/boards/useBoardCommentsQuery';
 import { useBoardDetailQuery } from '@/lib/hooks/boards/useBoardDetailQuery';
-import {
-  useCreateCommentMutation,
-  useDeleteCommentMutation,
-  useUpdateCommentMutation,
-} from '@/lib/hooks/boards/useCommentMutations';
+import { useCreateCommentMutation } from '@/lib/hooks/boards/useCreateCommentMutation';
+import { useDeleteCommentMutation } from '@/lib/hooks/boards/useDeleteCommentMutation';
+import { useUpdateCommentMutation } from '@/lib/hooks/boards/useUpdateCommentMutation';
 import { toast } from '@/lib/toast/store';
 import { formatCountCompact } from '@/lib/utils/board';
 import { groupCommentsByThread } from '@/lib/utils/comments';
@@ -431,7 +429,7 @@ export default function BoardDetailPage() {
   };
 
   const handleReplyToggle = (commentId: number) => {
-    if (editingCommentId !== null) return;
+    if (editingCommentId !== null || isCommentUpdating || isCommentDeleting) return;
     setPendingDeleteCommentId(null);
     setIsCommentDeleteOpen(false);
     setReplyTargetId((prev) => (prev === commentId ? null : commentId));
@@ -593,7 +591,12 @@ export default function BoardDetailPage() {
                 onDeleteClick={handleCommentDeleteOpen}
                 onEditClick={handleCommentEditOpen}
                 isEditingCommentId={editingCommentId}
-                disableActions={editingCommentId !== null || isCommentUpdating}
+                disableActions={
+                  editingCommentId !== null ||
+                  isCommentUpdating ||
+                  isCommentDeleting ||
+                  isCommentDeleteOpen
+                }
                 renderEditor={(commentId, content, depth) => (
                   <div className={depth === 2 ? 'ml-6' : undefined}>
                     <CommentComposer
