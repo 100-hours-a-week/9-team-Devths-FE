@@ -9,6 +9,7 @@ import PostContent from '@/components/board/detail/PostContent';
 import PostHeader from '@/components/board/detail/PostHeader';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
+import { getUserIdFromAccessToken } from '@/lib/auth/token';
 
 import type { BoardAuthor, BoardTag } from '@/types/board';
 
@@ -16,6 +17,7 @@ export default function BoardDetailPage() {
   const router = useRouter();
   const { setOptions, resetOptions } = useHeader();
   const { requestNavigation } = useNavigationGuard();
+  const currentUserId = getUserIdFromAccessToken();
 
   const handleSearchClick = useCallback(() => {
     requestNavigation(() => router.push('/board/search'));
@@ -78,12 +80,17 @@ export default function BoardDetailPage() {
       shareCount: 8,
     },
   };
+  const isAuthor = currentUserId !== null && currentUserId === mockPost.author.userId;
 
   return (
     <main className="px-3 pt-4 pb-6">
       <div className="space-y-3">
         <article className="rounded-2xl bg-white px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
-          <PostHeader author={mockPost.author} createdAt={mockPost.createdAt} showOptions />
+          <PostHeader
+            author={mockPost.author}
+            createdAt={mockPost.createdAt}
+            showOptions={isAuthor}
+          />
           <PostContent title={mockPost.title} content={mockPost.content} tags={mockPost.tags} />
 
           <div className="mt-4 flex items-center gap-5 text-[11px] text-neutral-500">
