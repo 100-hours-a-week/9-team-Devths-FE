@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -62,6 +63,7 @@ export default function BoardCreatePage() {
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
   const pendingNavigationRef = useRef<(() => void) | null>(null);
   const { setBlocked, setBlockMessage, setBlockedNavigationHandler } = useNavigationGuard();
+  const queryClient = useQueryClient();
 
   const isDirty = useMemo(
     () => title.trim().length > 0 || content.trim().length > 0,
@@ -101,6 +103,7 @@ export default function BoardCreatePage() {
       });
 
       toast('게시글이 등록되었습니다.');
+      queryClient.invalidateQueries({ queryKey: ['boards', 'list'], exact: false });
       router.push('/board');
     } catch (error) {
       const message =
@@ -109,7 +112,7 @@ export default function BoardCreatePage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [attachments, isSubmitEnabled, isSubmitting, router, tags, title, content]);
+  }, [attachments, isSubmitEnabled, isSubmitting, queryClient, router, tags, title, content]);
 
   const rightSlot = useMemo(
     () => (
