@@ -397,7 +397,12 @@ export default function BoardDetailPage() {
                 </div>
               ) : null}
             </div>
-            <PostContent title={post.title} content={post.content} tags={post.tags} />
+            <PostContent
+              title={post.title}
+              content={post.content}
+              tags={post.tags}
+              attachments={post.attachments}
+            />
 
             <div className="mt-4 flex items-center gap-5 text-[11px] text-neutral-500">
               <button
