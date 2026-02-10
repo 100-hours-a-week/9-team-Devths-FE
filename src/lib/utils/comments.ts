@@ -6,11 +6,10 @@ function toTimestamp(value: string) {
 }
 
 export function groupCommentsByThread(comments: CommentItem[]): CommentThread[] {
-  const visibleComments = comments.filter((comment) => !comment.isDeleted);
   const roots: CommentItem[] = [];
   const repliesMap = new Map<number, CommentItem[]>();
 
-  for (const comment of visibleComments) {
+  for (const comment of comments) {
     if (comment.parentId === null) {
       roots.push(comment);
     } else {

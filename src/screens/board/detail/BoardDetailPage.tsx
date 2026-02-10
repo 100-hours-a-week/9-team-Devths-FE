@@ -64,6 +64,10 @@ export default function BoardDetailPage() {
     isError: isCommentsError,
     refetch: refetchComments,
   } = useBoardCommentsQuery(Number.isFinite(postId) ? postId : null, 50);
+  const commentThreads = useMemo(
+    () => groupCommentsByThread(commentsPage?.items ?? []),
+    [commentsPage?.items],
+  );
   const { mutateAsync: createComment, isPending: isCommentSubmitting } = useCreateCommentMutation();
   const { mutateAsync: deleteComment, isPending: isCommentDeleting } = useDeleteCommentMutation();
   const { mutateAsync: updateComment, isPending: isCommentUpdating } = useUpdateCommentMutation();
@@ -105,12 +109,15 @@ export default function BoardDetailPage() {
   );
 
   const handleBackClick = useCallback(() => {
+    void queryClient.invalidateQueries({
+      predicate: (query) => query.queryKey[0] === 'boards' && query.queryKey[1] === 'list',
+    });
     if (typeof window !== 'undefined' && window.history.length > 1) {
       router.back();
       return;
     }
     router.push('/board');
-  }, [router]);
+  }, [queryClient, router]);
 
   useEffect(() => {
     setFrameOptions({ showBottomNav: false });
@@ -482,7 +489,6 @@ export default function BoardDetailPage() {
     likeOverride?.postId === post.postId ? likeOverride.isLiked : post.isLiked;
   const resolvedLikeCount =
     likeOverride?.postId === post.postId ? likeOverride.likeCount : post.stats.likeCount;
-  const commentThreads = groupCommentsByThread(commentsPage?.items ?? []);
   const shareUrl =
     typeof window === 'undefined'
       ? ''
