@@ -19,7 +19,9 @@ import {
   BOARD_IMAGE_MIME_TYPES,
   BOARD_TITLE_MAX_LENGTH,
 } from '@/constants/boardCreate';
+import { createBoardPost } from '@/lib/api/boards';
 import { useBoardAttachments } from '@/lib/hooks/boards/useBoardAttachments';
+import { toast } from '@/lib/toast/store';
 import { uploadFile } from '@/lib/upload/uploadFile';
 import { validateFiles } from '@/lib/validators/attachment';
 import { validateBoardCreateContent, validateBoardCreateTitle } from '@/lib/validators/boardCreate';
@@ -51,7 +53,6 @@ export default function BoardCreatePage() {
     [contentError, titleError],
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const submitTimeoutRef = useRef<number | null>(null);
   const [fileTooLargeOpen, setFileTooLargeOpen] = useState(false);
   const [unsupportedFileOpen, setUnsupportedFileOpen] = useState(false);
   const [partialFailOpen, setPartialFailOpen] = useState(false);
@@ -68,17 +69,44 @@ export default function BoardCreatePage() {
     router.push('/board');
   }, [router]);
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     if (!isSubmitEnabled || isSubmitting) return;
-    setIsSubmitting(true);
-    if (submitTimeoutRef.current) {
-      window.clearTimeout(submitTimeoutRef.current);
+    const hasPending = attachments.some((attachment) => attachment.status === 'PENDING');
+    if (hasPending) {
+      toast('첨부 파일 업로드가 완료될 때까지 기다려 주세요.');
+      return;
     }
-    submitTimeoutRef.current = window.setTimeout(() => {
+    const hasFailed = attachments.some((attachment) => attachment.status === 'FAILED');
+    if (hasFailed) {
+      toast('업로드에 실패한 파일이 있습니다. 삭제 후 다시 시도해 주세요.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const trimmedTitle = title.trim();
+      const trimmedContent = content.trim();
+      const fileIds = attachments
+        .filter((attachment) => attachment.status === 'READY' && attachment.fileId)
+        .map((attachment) => attachment.fileId!) as number[];
+
+      await createBoardPost({
+        title: trimmedTitle,
+        content: trimmedContent,
+        tags: tags.length > 0 ? tags : undefined,
+        fileIds: fileIds.length > 0 ? fileIds : undefined,
+      });
+
+      toast('게시글이 등록되었습니다.');
+      router.push('/board');
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : '게시글 등록에 실패했습니다.';
+      toast(message);
+    } finally {
       setIsSubmitting(false);
-      submitTimeoutRef.current = null;
-    }, 400);
-  }, [isSubmitEnabled, isSubmitting]);
+    }
+  }, [attachments, isSubmitEnabled, isSubmitting, router, tags, title, content]);
 
   const rightSlot = useMemo(
     () => (
@@ -109,13 +137,6 @@ export default function BoardCreatePage() {
     return () => resetOptions();
   }, [handleBackClick, resetOptions, rightSlot, setOptions]);
 
-  useEffect(() => {
-    return () => {
-      if (submitTimeoutRef.current) {
-        window.clearTimeout(submitTimeoutRef.current);
-      }
-    };
-  }, []);
 
   useEffect(() => {
     setBlocked(isDirty);
