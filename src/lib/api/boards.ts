@@ -51,6 +51,16 @@ type CommentCreateResponse = {
   commentId: number;
 };
 
+type CommentUpdateRequest = {
+  content: string;
+};
+
+type CommentUpdateResponse = {
+  commentId: number;
+};
+
+type CommentDeleteResponse = void;
+
 type PostLikeResponse = {
   postId: number;
   likeCount: number;
@@ -241,6 +251,41 @@ export async function createBoardComment(
   }
 
   return result.json.data;
+}
+
+export async function updateBoardComment(
+  postId: number,
+  commentId: number,
+  payload: CommentUpdateRequest,
+): Promise<CommentUpdateResponse> {
+  const result = await api.put<CommentUpdateResponse>(
+    `/api/posts/${postId}/comments/${commentId}`,
+    payload,
+    {
+      credentials: 'include',
+    },
+  );
+
+  if (!result.ok || !result.json) {
+    throw new Error('댓글 수정에 실패했습니다.');
+  }
+
+  if (!('data' in result.json) || !result.json.data) {
+    throw new Error('Invalid response format');
+  }
+
+  return result.json.data;
+}
+
+export async function deleteBoardComment(postId: number, commentId: number): Promise<void> {
+  const result = await api.delete<CommentDeleteResponse>(
+    `/api/posts/${postId}/comments/${commentId}`,
+    { credentials: 'include' },
+  );
+
+  if (!result.ok) {
+    throw new Error('댓글 삭제에 실패했습니다.');
+  }
 }
 
 export async function likeBoardPost(postId: number): Promise<PostLikeResponse> {

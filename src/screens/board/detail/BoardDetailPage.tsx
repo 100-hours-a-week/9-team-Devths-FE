@@ -19,7 +19,10 @@ import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { boardsKeys } from '@/lib/hooks/boards/queryKeys';
 import { useBoardCommentsQuery } from '@/lib/hooks/boards/useBoardCommentsQuery';
 import { useBoardDetailQuery } from '@/lib/hooks/boards/useBoardDetailQuery';
-import { useCreateCommentMutation } from '@/lib/hooks/boards/useCommentMutations';
+import {
+  useCreateCommentMutation,
+  useDeleteCommentMutation,
+} from '@/lib/hooks/boards/useCommentMutations';
 import { toast } from '@/lib/toast/store';
 import { formatCountCompact } from '@/lib/utils/board';
 import { groupCommentsByThread } from '@/lib/utils/comments';
@@ -64,6 +67,10 @@ export default function BoardDetailPage() {
   } = useBoardCommentsQuery(Number.isFinite(postId) ? postId : null, 50);
   const { mutateAsync: createComment, isPending: isCommentSubmitting } =
     useCreateCommentMutation();
+  const { mutateAsync: deleteComment, isPending: isCommentDeleting } =
+    useDeleteCommentMutation();
+  const [pendingDeleteCommentId, setPendingDeleteCommentId] = useState<number | null>(null);
+  const [isCommentDeleteOpen, setIsCommentDeleteOpen] = useState(false);
 
   const handleSearchClick = useCallback(() => {
     requestNavigation(() => router.push('/board/search'));
@@ -351,6 +358,36 @@ export default function BoardDetailPage() {
     }
   };
 
+  const handleCommentDeleteOpen = (commentId: number) => {
+    if (isCommentDeleting) return;
+    setPendingDeleteCommentId(commentId);
+    setIsCommentDeleteOpen(true);
+  };
+
+  const handleCommentDeleteCancel = () => {
+    setPendingDeleteCommentId(null);
+    setIsCommentDeleteOpen(false);
+  };
+
+  const handleCommentDeleteConfirm = async () => {
+    if (!post || pendingDeleteCommentId === null) return;
+    try {
+      await deleteComment({ postId: post.postId, commentId: pendingDeleteCommentId });
+      const detailSnapshot = queryClient.getQueryData<PostDetail>(boardsKeys.detail(post.postId));
+      const nextCount = Math.max(
+        0,
+        (detailSnapshot?.stats.commentCount ?? post.stats.commentCount) - 1,
+      );
+      updateCommentCountCache(post.postId, nextCount);
+      await refetchComments();
+      toast('댓글이 삭제되었습니다.');
+      setIsCommentDeleteOpen(false);
+      setPendingDeleteCommentId(null);
+    } catch (error) {
+      toast(error instanceof Error ? error.message : '댓글 삭제에 실패했습니다.');
+    }
+  };
+
   useEffect(() => {
     if (!isOptionsOpen) return;
 
@@ -504,20 +541,28 @@ export default function BoardDetailPage() {
                 threads={commentThreads}
                 onReplyClick={() => toast('답글 기능은 준비 중입니다.')}
                 currentUserId={currentUserId}
-                onDeleteClick={() => toast('댓글 삭제는 준비 중입니다.')}
+                onDeleteClick={handleCommentDeleteOpen}
               />
             )}
           </section>
         </div>
 
-        <ConfirmModal
-          isOpen={isDeleteConfirmOpen}
-          title="게시글 삭제"
-          message="게시글을 삭제할까요? 삭제된 게시글은 복구할 수 없습니다."
-          confirmText="삭제"
-          onConfirm={handleDeleteConfirm}
-          onCancel={handleDeleteCancel}
-        />
+      <ConfirmModal
+        isOpen={isDeleteConfirmOpen}
+        title="게시글 삭제"
+        message="게시글을 삭제할까요? 삭제된 게시글은 복구할 수 없습니다."
+        confirmText="삭제"
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+      />
+      <ConfirmModal
+        isOpen={isCommentDeleteOpen}
+        title="댓글 삭제"
+        message="댓글을 삭제할까요? 삭제된 댓글은 복구할 수 없습니다."
+        confirmText="삭제"
+        onConfirm={handleCommentDeleteConfirm}
+        onCancel={handleCommentDeleteCancel}
+      />
       </main>
       <BoardShareModal
         open={isShareOpen}

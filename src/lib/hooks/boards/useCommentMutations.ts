@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 
-import { createBoardComment } from '@/lib/api/boards';
+import { createBoardComment, deleteBoardComment, updateBoardComment } from '@/lib/api/boards';
 import type {
   CommentCreatePayload,
   CommentDeletePayload,
@@ -20,16 +20,16 @@ export function useCreateCommentMutation() {
 
 export function useUpdateCommentMutation() {
   return useMutation({
-    mutationFn: async (_payload: CommentUpdatePayload) => {
-      throw new Error('Not implemented');
+    mutationFn: async (payload: CommentUpdatePayload) => {
+      return updateBoardComment(payload.postId, payload.commentId, { content: payload.content });
     },
   });
 }
 
 export function useDeleteCommentMutation() {
   return useMutation({
-    mutationFn: async (_payload: CommentDeletePayload) => {
-      throw new Error('Not implemented');
+    mutationFn: async (payload: CommentDeletePayload) => {
+      return deleteBoardComment(payload.postId, payload.commentId);
     },
   });
 }
