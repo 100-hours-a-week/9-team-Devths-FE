@@ -75,6 +75,7 @@ export default function BoardDetailPage() {
   const [pendingDeleteCommentId, setPendingDeleteCommentId] = useState<number | null>(null);
   const [isCommentDeleteOpen, setIsCommentDeleteOpen] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [replyTargetId, setReplyTargetId] = useState<number | null>(null);
 
   const handleSearchClick = useCallback(() => {
     requestNavigation(() => router.push('/board/search'));
@@ -388,6 +389,7 @@ export default function BoardDetailPage() {
   const handleCommentDeleteOpen = (commentId: number) => {
     if (isCommentDeleting) return;
     setEditingCommentId(null);
+    setReplyTargetId(null);
     setPendingDeleteCommentId(commentId);
     setIsCommentDeleteOpen(true);
   };
@@ -421,10 +423,18 @@ export default function BoardDetailPage() {
     setPendingDeleteCommentId(null);
     setIsCommentDeleteOpen(false);
     setEditingCommentId(commentId);
+    setReplyTargetId(null);
   };
 
   const handleCommentEditCancel = () => {
     setEditingCommentId(null);
+  };
+
+  const handleReplyToggle = (commentId: number) => {
+    if (editingCommentId !== null) return;
+    setPendingDeleteCommentId(null);
+    setIsCommentDeleteOpen(false);
+    setReplyTargetId((prev) => (prev === commentId ? null : commentId));
   };
 
   useEffect(() => {
@@ -578,7 +588,7 @@ export default function BoardDetailPage() {
             ) : (
               <CommentList
                 threads={commentThreads}
-                onReplyClick={() => toast('답글 기능은 준비 중입니다.')}
+                onReplyClick={handleReplyToggle}
                 currentUserId={currentUserId}
                 onDeleteClick={handleCommentDeleteOpen}
                 onEditClick={handleCommentEditOpen}
@@ -614,6 +624,23 @@ export default function BoardDetailPage() {
                     />
                   </div>
                 )}
+                renderReplyEditor={(commentId) => (
+                  <div className="ml-6">
+                    <CommentComposer
+                      className="mt-2"
+                      placeholder="답글을 입력하세요..."
+                      maxLength={500}
+                      submitLabel="등록"
+                      onCancel={() => setReplyTargetId(null)}
+                      onSubmit={() => {
+                        toast('답글 등록은 준비 중입니다.');
+                        setReplyTargetId(null);
+                        return true;
+                      }}
+                    />
+                  </div>
+                )}
+                replyTargetId={replyTargetId}
               />
             )}
           </section>

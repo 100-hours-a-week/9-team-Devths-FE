@@ -15,6 +15,8 @@ type CommentListProps = {
   isEditingCommentId?: number | null;
   renderEditor?: (commentId: number, content: string | null, depth: 1 | 2) => ReactNode;
   disableActions?: boolean;
+  replyTargetId?: number | null;
+  renderReplyEditor?: (commentId: number) => ReactNode;
 };
 
 export default function CommentList({
@@ -26,6 +28,8 @@ export default function CommentList({
   isEditingCommentId,
   renderEditor,
   disableActions = false,
+  replyTargetId,
+  renderReplyEditor,
 }: CommentListProps) {
   const totalItems = threads.reduce((total, thread) => total + 1 + thread.replies.length, 0);
   let cursor = 0;
@@ -67,6 +71,9 @@ export default function CommentList({
           />
           {isEditingCommentId === thread.comment.commentId
             ? renderEditor?.(thread.comment.commentId, thread.comment.content, 1)
+            : null}
+          {replyTargetId === thread.comment.commentId
+            ? renderReplyEditor?.(thread.comment.commentId)
             : null}
           {thread.replies.map((reply) => (
             <div key={reply.commentId}>

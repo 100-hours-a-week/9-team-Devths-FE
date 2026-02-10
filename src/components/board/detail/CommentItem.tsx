@@ -67,12 +67,7 @@ export default function CommentItem({
   }, [isOptionsOpen]);
 
   return (
-    <div
-      className={cn(
-        'border-b border-neutral-200 py-3',
-        (isLast || isEditing) && 'border-b-0',
-      )}
-    >
+    <div className={cn('border-b border-neutral-200 py-3', (isLast || isEditing) && 'border-b-0')}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="relative flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 bg-neutral-200 text-[11px] font-semibold text-neutral-600">
