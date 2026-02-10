@@ -4,6 +4,7 @@ import { MoreVertical } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 
+import { cn } from '@/lib/utils';
 import { formatRelativeTime } from '@/lib/utils/board';
 
 import type { CommentAuthor } from '@/types/boardDetail';
@@ -15,6 +16,7 @@ type ReplyItemProps = {
   isDeleted?: boolean;
   showOptions?: boolean;
   onDeleteClick?: () => void;
+  isLast?: boolean;
 };
 
 export default function ReplyItem({
@@ -24,6 +26,7 @@ export default function ReplyItem({
   isDeleted,
   showOptions = false,
   onDeleteClick,
+  isLast = false,
 }: ReplyItemProps) {
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
   const optionsButtonRef = useRef<HTMLButtonElement>(null);
@@ -56,7 +59,7 @@ export default function ReplyItem({
   }, [isOptionsOpen]);
 
   return (
-    <div className="ml-6 rounded-2xl border border-neutral-200 bg-white px-3 py-3">
+    <div className={cn('ml-6 border-b border-neutral-200 py-3', isLast && 'border-b-0')}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="relative flex h-6 w-6 items-center justify-center rounded-full border border-neutral-200 bg-neutral-200 text-[10px] font-semibold text-neutral-600">

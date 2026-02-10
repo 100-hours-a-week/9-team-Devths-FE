@@ -4,6 +4,7 @@ import { MoreVertical } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 
+import { cn } from '@/lib/utils';
 import { formatRelativeTime } from '@/lib/utils/board';
 
 import type { CommentAuthor } from '@/types/boardDetail';
@@ -17,6 +18,7 @@ type CommentItemProps = {
   onReplyClick?: () => void;
   showOptions?: boolean;
   onDeleteClick?: () => void;
+  isLast?: boolean;
 };
 
 export default function CommentItem({
@@ -28,6 +30,7 @@ export default function CommentItem({
   onReplyClick,
   showOptions = false,
   onDeleteClick,
+  isLast = false,
 }: CommentItemProps) {
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
   const optionsButtonRef = useRef<HTMLButtonElement>(null);
@@ -60,7 +63,7 @@ export default function CommentItem({
   }, [isOptionsOpen]);
 
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white px-3 py-3">
+    <div className={cn('border-b border-neutral-200 py-3', isLast && 'border-b-0')}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="relative flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 bg-neutral-200 text-[11px] font-semibold text-neutral-600">

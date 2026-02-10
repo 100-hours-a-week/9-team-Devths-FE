@@ -18,6 +18,9 @@ export default function CommentList({
   currentUserId,
   onDeleteClick,
 }: CommentListProps) {
+  const totalItems = threads.reduce((total, thread) => total + 1 + thread.replies.length, 0);
+  let cursor = 0;
+
   if (threads.length === 0) {
     return (
       <p className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-neutral-500">
@@ -43,6 +46,11 @@ export default function CommentList({
             onDeleteClick={
               onDeleteClick ? () => onDeleteClick(thread.comment.commentId) : undefined
             }
+            isLast={(() => {
+              const isLast = cursor + 1 === totalItems && thread.replies.length === 0;
+              cursor += 1;
+              return isLast;
+            })()}
           />
           {thread.replies.map((reply) => (
             <ReplyItem
@@ -53,6 +61,11 @@ export default function CommentList({
               isDeleted={reply.isDeleted}
               showOptions={currentUserId !== null && currentUserId === reply.author.userId}
               onDeleteClick={onDeleteClick ? () => onDeleteClick(reply.commentId) : undefined}
+              isLast={(() => {
+                const isLast = cursor + 1 === totalItems;
+                cursor += 1;
+                return isLast;
+              })()}
             />
           ))}
         </div>
