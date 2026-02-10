@@ -9,6 +9,7 @@ import PostHeader from '@/components/board/detail/PostHeader';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
+import { likeBoardPost, unlikeBoardPost } from '@/lib/api/boards';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { useBoardDetailQuery } from '@/lib/hooks/boards/useBoardDetailQuery';
 import { toast } from '@/lib/toast/store';
@@ -25,8 +26,12 @@ export default function BoardDetailPage() {
   const currentUserId = getUserIdFromAccessToken();
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-  const [isLiked, setIsLiked] = useState<boolean | null>(null);
-  const [likeCount, setLikeCount] = useState<number | null>(null);
+  const [likeOverride, setLikeOverride] = useState<{
+    postId: number;
+    isLiked: boolean;
+    likeCount: number;
+  } | null>(null);
+  const [isLikePending, setIsLikePending] = useState(false);
   const optionsButtonRef = useRef<HTMLButtonElement>(null);
   const optionsMenuRef = useRef<HTMLDivElement>(null);
   const {
@@ -85,13 +90,43 @@ export default function BoardDetailPage() {
     setIsOptionsOpen((prev) => !prev);
   };
 
-  const handleLikeToggle = () => {
+  const handleLikeToggle = async () => {
     if (!post) return;
-    const nextLiked = !(isLiked ?? post.isLiked);
-    const baseCount = likeCount ?? post.stats.likeCount;
-    const nextCount = nextLiked ? baseCount + 1 : Math.max(0, baseCount - 1);
-    setIsLiked(nextLiked);
-    setLikeCount(nextCount);
+    if (isLikePending) return;
+
+    const resolvedIsLiked =
+      likeOverride?.postId === post.postId ? likeOverride.isLiked : post.isLiked;
+    const resolvedLikeCount =
+      likeOverride?.postId === post.postId ? likeOverride.likeCount : post.stats.likeCount;
+    const nextLiked = !resolvedIsLiked;
+    const nextCount = nextLiked ? resolvedLikeCount + 1 : Math.max(0, resolvedLikeCount - 1);
+
+    setLikeOverride({ postId: post.postId, isLiked: nextLiked, likeCount: nextCount });
+    setIsLikePending(true);
+
+    try {
+      if (nextLiked) {
+        const result = await likeBoardPost(post.postId);
+        if (result?.likeCount !== undefined) {
+          setLikeOverride({
+            postId: post.postId,
+            isLiked: true,
+            likeCount: result.likeCount,
+          });
+        }
+      } else {
+        await unlikeBoardPost(post.postId);
+      }
+    } catch (error) {
+      setLikeOverride({
+        postId: post.postId,
+        isLiked: resolvedIsLiked,
+        likeCount: resolvedLikeCount,
+      });
+      toast(error instanceof Error ? error.message : '좋아요 처리에 실패했습니다.');
+    } finally {
+      setIsLikePending(false);
+    }
   };
 
   const handleEditClick = () => {
@@ -158,8 +193,10 @@ export default function BoardDetailPage() {
     );
   }
 
-  const resolvedIsLiked = isLiked ?? post.isLiked;
-  const resolvedLikeCount = likeCount ?? post.stats.likeCount;
+  const resolvedIsLiked =
+    likeOverride?.postId === post.postId ? likeOverride.isLiked : post.isLiked;
+  const resolvedLikeCount =
+    likeOverride?.postId === post.postId ? likeOverride.likeCount : post.stats.likeCount;
 
   return (
     <main className="px-3 pt-4 pb-6">

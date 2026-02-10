@@ -36,6 +36,11 @@ type PostListResponse = {
   hasNext: boolean;
 };
 
+type PostLikeResponse = {
+  postId: number;
+  likeCount: number;
+};
+
 function mapPostDetail(detail: PostDetailResponse): PostDetail {
   return {
     postId: detail.postId,
@@ -151,4 +156,28 @@ export async function getBoardPostDetail(postId: number): Promise<PostDetail> {
   }
 
   return mapPostDetail(result.json.data);
+}
+
+export async function likeBoardPost(postId: number): Promise<PostLikeResponse> {
+  const result = await api.post<PostLikeResponse>(`/api/posts/${postId}/likes`, undefined, {
+    credentials: 'include',
+  });
+
+  if (!result.ok || !result.json) {
+    throw new Error('좋아요에 실패했습니다.');
+  }
+
+  if (!('data' in result.json) || !result.json.data) {
+    throw new Error('Invalid response format');
+  }
+
+  return result.json.data;
+}
+
+export async function unlikeBoardPost(postId: number): Promise<void> {
+  const result = await api.delete<void>(`/api/posts/${postId}/likes`, { credentials: 'include' });
+
+  if (!result.ok) {
+    throw new Error('좋아요 취소에 실패했습니다.');
+  }
 }
