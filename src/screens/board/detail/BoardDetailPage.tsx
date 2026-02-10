@@ -199,9 +199,13 @@ export default function BoardDetailPage() {
     likeOverride?.postId === post.postId ? likeOverride.likeCount : post.stats.likeCount;
 
   return (
-    <main className="px-3 pt-4 pb-6">
-      <div className="space-y-3">
-        <article className="rounded-2xl bg-white px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
+    <>
+      <main
+        className="px-3 pt-4 pb-6"
+        style={{ paddingBottom: 'calc(var(--bottom-nav-h) + 88px)' }}
+      >
+        <div className="space-y-3">
+          <article className="rounded-2xl bg-white px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
           <div className="relative">
             <PostHeader
               author={post.author}
@@ -257,11 +261,7 @@ export default function BoardDetailPage() {
           </div>
         </article>
 
-        <div className="rounded-xl bg-[#F1F5F9] px-3 py-2 text-xs text-neutral-500">
-          개인정보(연락처, 계좌번호 등) 공유에 주의하세요
-        </div>
-
-        <section className="space-y-2">
+          <section className="space-y-2">
           <p className="text-sm font-semibold text-neutral-800">
             댓글 {formatCountCompact(post.stats.commentCount)}개
           </p>
@@ -308,14 +308,20 @@ export default function BoardDetailPage() {
         </section>
       </div>
 
-      <ConfirmModal
-        isOpen={isDeleteConfirmOpen}
-        title="게시글 삭제"
-        message="게시글을 삭제할까요? 삭제된 게시글은 복구할 수 없습니다."
-        confirmText="삭제"
-        onConfirm={handleDeleteConfirm}
-        onCancel={handleDeleteCancel}
-      />
-    </main>
+        <ConfirmModal
+          isOpen={isDeleteConfirmOpen}
+          title="게시글 삭제"
+          message="게시글을 삭제할까요? 삭제된 게시글은 복구할 수 없습니다."
+          confirmText="삭제"
+          onConfirm={handleDeleteConfirm}
+          onCancel={handleDeleteCancel}
+        />
+      </main>
+      <div className="fixed bottom-[calc(var(--bottom-nav-h)+12px)] left-1/2 z-40 w-full max-w-[430px] -translate-x-1/2 px-4 sm:px-6">
+        <div className="rounded-xl bg-[#F1F5F9] px-3 py-2 text-xs text-neutral-500 shadow-[0_8px_20px_rgba(15,23,42,0.08)]">
+          개인정보(연락처, 계좌번호 등) 공유에 주의하세요
+        </div>
+      </div>
+    </>
   );
 }
