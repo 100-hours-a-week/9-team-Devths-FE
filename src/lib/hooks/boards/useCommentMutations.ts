@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 
+import { createBoardComment } from '@/lib/api/boards';
 import type {
   CommentCreatePayload,
   CommentDeletePayload,
@@ -8,8 +9,11 @@ import type {
 
 export function useCreateCommentMutation() {
   return useMutation({
-    mutationFn: async (_payload: CommentCreatePayload) => {
-      throw new Error('Not implemented');
+    mutationFn: async (payload: CommentCreatePayload) => {
+      return createBoardComment(payload.postId, {
+        parentId: payload.parentId ?? null,
+        content: payload.content,
+      });
     },
   });
 }

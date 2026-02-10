@@ -19,6 +19,7 @@ import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { boardsKeys } from '@/lib/hooks/boards/queryKeys';
 import { useBoardCommentsQuery } from '@/lib/hooks/boards/useBoardCommentsQuery';
 import { useBoardDetailQuery } from '@/lib/hooks/boards/useBoardDetailQuery';
+import { useCreateCommentMutation } from '@/lib/hooks/boards/useCommentMutations';
 import { toast } from '@/lib/toast/store';
 import { formatCountCompact } from '@/lib/utils/board';
 import { groupCommentsByThread } from '@/lib/utils/comments';
@@ -61,6 +62,8 @@ export default function BoardDetailPage() {
     isError: isCommentsError,
     refetch: refetchComments,
   } = useBoardCommentsQuery(Number.isFinite(postId) ? postId : null, 50);
+  const { mutateAsync: createComment, isPending: isCommentSubmitting } =
+    useCreateCommentMutation();
 
   const handleSearchClick = useCallback(() => {
     requestNavigation(() => router.push('/board/search'));
@@ -123,6 +126,48 @@ export default function BoardDetailPage() {
     if (!isAuthor) return;
     setIsOptionsOpen((prev) => !prev);
   };
+
+  const updateCommentCountCache = useCallback(
+    (targetPostId: number, nextCount: number) => {
+      queryClient.setQueryData<PostDetail>(boardsKeys.detail(targetPostId), (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          stats: {
+            ...prev.stats,
+            commentCount: nextCount,
+          },
+        };
+      });
+
+      queryClient.setQueriesData<InfiniteData<CursorPage<BoardPostSummary>>>(
+        {
+          predicate: (query) => query.queryKey[0] === 'boards' && query.queryKey[1] === 'list',
+        },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.map((item) =>
+                item.postId === targetPostId
+                  ? {
+                      ...item,
+                      stats: {
+                        ...item.stats,
+                        commentCount: nextCount,
+                      },
+                    }
+                  : item,
+              ),
+            })),
+          };
+        },
+      );
+    },
+    [queryClient],
+  );
 
   const updateLikeCache = useCallback(
     (targetPostId: number, nextLiked: boolean, nextCount: number) => {
@@ -482,7 +527,24 @@ export default function BoardDetailPage() {
         <CommentComposer
           className="mt-0"
           maxLength={500}
-          onSubmit={() => toast('댓글 등록은 준비 중입니다.')}
+          isSubmitting={isCommentSubmitting}
+          onSubmit={async (content) => {
+            if (!post) return false;
+            try {
+              await createComment({ postId: post.postId, content });
+              const detailSnapshot = queryClient.getQueryData<PostDetail>(
+                boardsKeys.detail(post.postId),
+              );
+              const nextCount =
+                (detailSnapshot?.stats.commentCount ?? post.stats.commentCount) + 1;
+              updateCommentCountCache(post.postId, nextCount);
+              await refetchComments();
+              return true;
+            } catch (error) {
+              toast(error instanceof Error ? error.message : '댓글 등록에 실패했습니다.');
+              return false;
+            }
+          }}
         />
       </div>
     </>

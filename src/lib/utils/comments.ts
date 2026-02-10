@@ -19,11 +19,11 @@ export function groupCommentsByThread(comments: CommentItem[]): CommentThread[] 
     }
   }
 
-  roots.sort((a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt));
+  roots.sort((a, b) => toTimestamp(a.createdAt) - toTimestamp(b.createdAt));
 
   return roots.map((root) => {
     const replies = repliesMap.get(root.commentId) ?? [];
-    replies.sort((a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt));
+    replies.sort((a, b) => toTimestamp(a.createdAt) - toTimestamp(b.createdAt));
     return { comment: root, replies };
   });
 }

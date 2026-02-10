@@ -9,6 +9,7 @@ type CommentComposerProps = {
   placeholder?: string;
   className?: string;
   maxLength?: number;
+  isSubmitting?: boolean;
 };
 
 export default function CommentComposer({
@@ -16,10 +17,11 @@ export default function CommentComposer({
   placeholder = '댓글을 입력하세요...',
   className,
   maxLength = 500,
+  isSubmitting = false,
 }: CommentComposerProps) {
   const [value, setValue] = useState('');
   const trimmed = value.trim();
-  const isDisabled = trimmed.length === 0;
+  const isDisabled = trimmed.length === 0 || isSubmitting;
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -38,6 +40,7 @@ export default function CommentComposer({
         onChange={(event) => setValue(event.target.value)}
         placeholder={placeholder}
         maxLength={maxLength}
+        disabled={isSubmitting}
         className="flex-1 rounded-full border border-neutral-200 bg-white px-4 py-2 text-xs text-neutral-700 placeholder:text-neutral-400 focus:border-[#05C075] focus:outline-none"
         aria-label="댓글 입력"
       />
@@ -46,7 +49,7 @@ export default function CommentComposer({
         disabled={isDisabled}
         className="rounded-full bg-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-500 enabled:bg-[#05C075] enabled:text-white hover:enabled:bg-[#04A865] disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-400"
       >
-        등록
+        {isSubmitting ? '등록 중' : '등록'}
       </button>
     </form>
   );

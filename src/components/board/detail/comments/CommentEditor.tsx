@@ -7,6 +7,7 @@ type CommentEditorProps = {
   onSubmit?: (content: string) => void | Promise<void> | boolean;
   className?: string;
   maxLength?: number;
+  isSubmitting?: boolean;
 };
 
 export default function CommentEditor({
@@ -14,6 +15,7 @@ export default function CommentEditor({
   onSubmit,
   className,
   maxLength,
+  isSubmitting,
 }: CommentEditorProps) {
   return (
     <CommentComposer
@@ -21,6 +23,7 @@ export default function CommentEditor({
       onSubmit={onSubmit}
       className={className}
       maxLength={maxLength}
+      isSubmitting={isSubmitting}
     />
   );
 }
