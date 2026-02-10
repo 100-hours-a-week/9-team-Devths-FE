@@ -1,6 +1,8 @@
 'use client';
 
+import { MoreVertical } from 'lucide-react';
 import Image from 'next/image';
+import { useEffect, useRef, useState } from 'react';
 
 import { formatRelativeTime } from '@/lib/utils/board';
 
@@ -11,9 +13,48 @@ type ReplyItemProps = {
   createdAt: string;
   content: string | null;
   isDeleted?: boolean;
+  showOptions?: boolean;
+  onDeleteClick?: () => void;
 };
 
-export default function ReplyItem({ author, createdAt, content, isDeleted }: ReplyItemProps) {
+export default function ReplyItem({
+  author,
+  createdAt,
+  content,
+  isDeleted,
+  showOptions = false,
+  onDeleteClick,
+}: ReplyItemProps) {
+  const [isOptionsOpen, setIsOptionsOpen] = useState(false);
+  const optionsButtonRef = useRef<HTMLButtonElement>(null);
+  const optionsMenuRef = useRef<HTMLDivElement>(null);
+  const canShowOptions = showOptions && !isDeleted;
+
+  useEffect(() => {
+    if (!isOptionsOpen) return;
+
+    const handleMouseDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (optionsMenuRef.current?.contains(target)) return;
+      if (optionsButtonRef.current?.contains(target)) return;
+      setIsOptionsOpen(false);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOptionsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOptionsOpen]);
+
   return (
     <div className="ml-6 rounded-2xl border border-neutral-200 bg-white px-3 py-3">
       <div className="flex items-center justify-between">
@@ -36,6 +77,36 @@ export default function ReplyItem({ author, createdAt, content, isDeleted }: Rep
             <div className="text-[10px] text-neutral-400">{formatRelativeTime(createdAt)}</div>
           </div>
         </div>
+        {canShowOptions ? (
+          <div className="relative">
+            <button
+              type="button"
+              ref={optionsButtonRef}
+              onClick={() => setIsOptionsOpen((prev) => !prev)}
+              className="inline-flex h-6 w-6 items-center justify-center rounded-md hover:bg-neutral-100"
+              aria-label="댓글 옵션"
+            >
+              <MoreVertical className="h-3.5 w-3.5 text-neutral-500" />
+            </button>
+            {isOptionsOpen ? (
+              <div
+                ref={optionsMenuRef}
+                className="absolute right-0 top-7 z-10 w-24 rounded-xl border border-neutral-200 bg-white py-1 text-sm text-neutral-700 shadow-[0_8px_20px_rgba(15,23,42,0.12)]"
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsOptionsOpen(false);
+                    onDeleteClick?.();
+                  }}
+                  className="flex w-full items-center justify-between px-3 py-2 text-left text-red-500 hover:bg-red-50"
+                >
+                  삭제
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
       <p className="mt-2 text-xs text-neutral-600">{isDeleted ? '삭제된 댓글입니다.' : content}</p>
     </div>

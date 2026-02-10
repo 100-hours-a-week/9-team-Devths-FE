@@ -503,6 +503,8 @@ export default function BoardDetailPage() {
               <CommentList
                 threads={commentThreads}
                 onReplyClick={() => toast('답글 기능은 준비 중입니다.')}
+                currentUserId={currentUserId}
+                onDeleteClick={() => toast('댓글 삭제는 준비 중입니다.')}
               />
             )}
           </section>

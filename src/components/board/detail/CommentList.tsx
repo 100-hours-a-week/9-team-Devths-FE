@@ -8,9 +8,16 @@ import type { CommentThread } from '@/types/boardDetail';
 type CommentListProps = {
   threads: CommentThread[];
   onReplyClick?: (commentId: number) => void;
+  currentUserId?: number | null;
+  onDeleteClick?: (commentId: number) => void;
 };
 
-export default function CommentList({ threads, onReplyClick }: CommentListProps) {
+export default function CommentList({
+  threads,
+  onReplyClick,
+  currentUserId,
+  onDeleteClick,
+}: CommentListProps) {
   if (threads.length === 0) {
     return (
       <p className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-neutral-500">
@@ -30,6 +37,12 @@ export default function CommentList({ threads, onReplyClick }: CommentListProps)
             isDeleted={thread.comment.isDeleted}
             showReply
             onReplyClick={onReplyClick ? () => onReplyClick(thread.comment.commentId) : undefined}
+            showOptions={
+              currentUserId !== null && currentUserId === thread.comment.author.userId
+            }
+            onDeleteClick={
+              onDeleteClick ? () => onDeleteClick(thread.comment.commentId) : undefined
+            }
           />
           {thread.replies.map((reply) => (
             <ReplyItem
@@ -38,6 +51,8 @@ export default function CommentList({ threads, onReplyClick }: CommentListProps)
               createdAt={reply.createdAt}
               content={reply.content}
               isDeleted={reply.isDeleted}
+              showOptions={currentUserId !== null && currentUserId === reply.author.userId}
+              onDeleteClick={onDeleteClick ? () => onDeleteClick(reply.commentId) : undefined}
             />
           ))}
         </div>
