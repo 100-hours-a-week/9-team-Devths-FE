@@ -7,6 +7,7 @@ export type BoardAttachment = {
   name: string;
   size: number;
   file: File;
+  previewUrl?: string;
   fileId?: number;
   status: BoardAttachmentStatus;
 };
