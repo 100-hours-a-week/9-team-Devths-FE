@@ -47,6 +47,9 @@ export default function AppFrame({
   const [isAuthed, setIsAuthed] = useState<boolean | null>(null);
   const [isNavigationBlocked, setIsNavigationBlocked] = useState(false);
   const [blockMessage, setBlockMessage] = useState('답변 생성 중에는 이동할 수 없습니다.');
+  const [blockedNavigationHandler, setBlockedNavigationHandler] = useState<
+    ((action: () => void) => void) | null
+  >(null);
 
   useEffect(() => {
     setOptions(defaultOptions);
@@ -104,9 +107,13 @@ export default function AppFrame({
         action();
         return;
       }
+      if (blockedNavigationHandler) {
+        blockedNavigationHandler(action);
+        return;
+      }
       toast(blockMessage);
     },
-    [blockMessage, isNavigationBlocked],
+    [blockMessage, blockedNavigationHandler, isNavigationBlocked],
   );
 
   return isAuthed ? (
@@ -125,6 +132,7 @@ export default function AppFrame({
           blockMessage,
           setBlockMessage,
           requestNavigation,
+          setBlockedNavigationHandler,
         }}
       >
         <HeaderContext.Provider value={{ options, setOptions, resetOptions, defaultOptions }}>

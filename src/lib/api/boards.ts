@@ -35,6 +35,17 @@ type PostListResponse = {
   hasNext: boolean;
 };
 
+type CreateBoardPostRequest = {
+  title: string;
+  content: string;
+  tags?: BoardTag[];
+  fileIds?: number[];
+};
+
+type CreateBoardPostResponse = {
+  postId: number;
+};
+
 function mapPostSummary(post: PostSummaryResponse): BoardPostSummary {
   return {
     postId: post.postId,
@@ -85,4 +96,20 @@ export async function listBoardPosts(
     lastId: data.lastId ?? null,
     hasNext: data.hasNext,
   };
+}
+
+export async function createBoardPost(payload: CreateBoardPostRequest) {
+  const result = await api.post<CreateBoardPostResponse>('/api/posts', payload, {
+    credentials: 'include',
+  });
+
+  if (!result.ok || !result.json) {
+    throw new Error('게시글 등록에 실패했습니다.');
+  }
+
+  if (!('data' in result.json) || !result.json.data) {
+    throw new Error('Invalid response format');
+  }
+
+  return result.json.data;
 }
