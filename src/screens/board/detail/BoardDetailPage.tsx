@@ -22,6 +22,7 @@ import { useBoardDetailQuery } from '@/lib/hooks/boards/useBoardDetailQuery';
 import {
   useCreateCommentMutation,
   useDeleteCommentMutation,
+  useUpdateCommentMutation,
 } from '@/lib/hooks/boards/useCommentMutations';
 import { toast } from '@/lib/toast/store';
 import { formatCountCompact } from '@/lib/utils/board';
@@ -29,7 +30,7 @@ import { groupCommentsByThread } from '@/lib/utils/comments';
 import BoardPostDetailSkeleton from '@/screens/board/detail/BoardPostDetailSkeleton';
 
 import type { BoardPostSummary } from '@/types/board';
-import type { PostDetail } from '@/types/boardDetail';
+import type { CommentItem, PostDetail } from '@/types/boardDetail';
 import type { CursorPage } from '@/types/pagination';
 
 export default function BoardDetailPage() {
@@ -69,6 +70,8 @@ export default function BoardDetailPage() {
     useCreateCommentMutation();
   const { mutateAsync: deleteComment, isPending: isCommentDeleting } =
     useDeleteCommentMutation();
+  const { mutateAsync: updateComment, isPending: isCommentUpdating } =
+    useUpdateCommentMutation();
   const [pendingDeleteCommentId, setPendingDeleteCommentId] = useState<number | null>(null);
   const [isCommentDeleteOpen, setIsCommentDeleteOpen] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
@@ -213,6 +216,29 @@ export default function BoardDetailPage() {
                   : item,
               ),
             })),
+          };
+        },
+      );
+    },
+    [queryClient],
+  );
+
+  const updateCommentContentCache = useCallback(
+    (targetPostId: number, targetCommentId: number, content: string) => {
+      queryClient.setQueriesData<CursorPage<CommentItem>>(
+        {
+          predicate: (query) =>
+            query.queryKey[0] === 'boards' &&
+            query.queryKey[1] === 'comments' &&
+            query.queryKey[2] === targetPostId,
+        },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            items: old.items.map((item) =>
+              item.commentId === targetCommentId ? { ...item, content } : item,
+            ),
           };
         },
       );
@@ -557,7 +583,7 @@ export default function BoardDetailPage() {
                 onDeleteClick={handleCommentDeleteOpen}
                 onEditClick={handleCommentEditOpen}
                 isEditingCommentId={editingCommentId}
-                disableActions={editingCommentId !== null}
+                disableActions={editingCommentId !== null || isCommentUpdating}
                 renderEditor={(commentId, content, depth) => (
                   <div className={depth === 2 ? 'ml-6' : undefined}>
                     <CommentComposer
@@ -566,10 +592,24 @@ export default function BoardDetailPage() {
                       maxLength={500}
                       submitLabel="저장"
                       onCancel={handleCommentEditCancel}
-                      onSubmit={() => {
-                        toast('댓글 수정은 준비 중입니다.');
-                        handleCommentEditCancel();
-                        return true;
+                      isSubmitting={isCommentUpdating}
+                      onSubmit={async (nextContent) => {
+                        if (!post) return false;
+                        const previousContent = content ?? '';
+                        updateCommentContentCache(post.postId, commentId, nextContent);
+                        try {
+                          await updateComment({
+                            postId: post.postId,
+                            commentId,
+                            content: nextContent,
+                          });
+                          handleCommentEditCancel();
+                          return true;
+                        } catch (error) {
+                          updateCommentContentCache(post.postId, commentId, previousContent);
+                          toast(error instanceof Error ? error.message : '댓글 수정에 실패했습니다.');
+                          return false;
+                        }
                       }}
                     />
                   </div>
