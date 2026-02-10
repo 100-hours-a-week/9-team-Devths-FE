@@ -91,6 +91,13 @@ export default function BoardListPage() {
     setIsMiniProfileOpen(true);
   };
 
+  const handlePostClick = useCallback(
+    (postId: number) => {
+      requestNavigation(() => router.push(`/board/${postId}`));
+    },
+    [requestNavigation, router],
+  );
+
   const triggerRefresh = useCallback(async () => {
     if (isRefreshingRef.current) return;
     isRefreshingRef.current = true;
@@ -280,9 +287,14 @@ export default function BoardListPage() {
               </p>
             ) : (
               <>
-                {filteredPosts.map((post) => (
-                  <BoardPostCard key={post.postId} post={post} onAuthorClick={handleAuthorClick} />
-                ))}
+              {filteredPosts.map((post) => (
+                <BoardPostCard
+                  key={post.postId}
+                  post={post}
+                  onClick={handlePostClick}
+                  onAuthorClick={handleAuthorClick}
+                />
+              ))}
                 <div className="px-4 pt-2">
                   <ListLoadMoreSentinel
                     onLoadMore={() => void fetchNextPage()}
