@@ -5,7 +5,7 @@ services:
     container_name: devths-fe
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - '3000:3000'
     networks:
       - devths-network
     healthcheck:
