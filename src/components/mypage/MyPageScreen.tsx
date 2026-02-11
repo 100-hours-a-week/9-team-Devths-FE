@@ -13,6 +13,7 @@ import { postLogout } from '@/lib/api/auth';
 import { clearAccessToken } from '@/lib/auth/token';
 import { useMeQuery } from '@/lib/hooks/users/useMeQuery';
 import { toast } from '@/lib/toast/store';
+import { formatCountToK } from '@/lib/utils/number';
 
 export default function MyPageScreen() {
   const router = useRouter();
@@ -136,6 +137,21 @@ export default function MyPageScreen() {
                 >
                   로그아웃
                 </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 rounded-xl bg-neutral-50 p-2">
+              <div className="rounded-lg bg-white px-3 py-2 text-center">
+                <p className="text-[11px] text-neutral-500">팔로워</p>
+                <p className="mt-1 text-sm font-semibold text-neutral-900">
+                  {formatCountToK(data?.stats.followerCount ?? 0)}
+                </p>
+              </div>
+              <div className="rounded-lg bg-white px-3 py-2 text-center">
+                <p className="text-[11px] text-neutral-500">팔로잉</p>
+                <p className="mt-1 text-sm font-semibold text-neutral-900">
+                  {formatCountToK(data?.stats.followingCount ?? 0)}
+                </p>
               </div>
             </div>
           </div>
