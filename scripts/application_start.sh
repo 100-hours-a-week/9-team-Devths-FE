@@ -16,8 +16,20 @@ fi
 
 source image-info.env
 export ECR_IMAGE=$FULL_IMAGE
+export ENV_FILE=${ENV_FILE:-.env.prod}
 
 echo "🐳 Docker 이미지: $ECR_IMAGE"
+echo "📝 환경 파일: $ENV_FILE"
+
+# 환경 변수 파일 확인
+if [ -f "$ENV_FILE" ]; then
+    echo "✅ $ENV_FILE 파일 발견 (docker-compose가 자동으로 로드합니다)"
+    echo "📝 환경 변수 미리보기:"
+    head -n 3 "$ENV_FILE"
+else
+    echo "⚠️  $ENV_FILE 파일이 없습니다"
+    echo "   환경 변수 없이 실행됩니다"
+fi
 
 # Docker Compose 실행
 echo "🚀 Docker Compose로 컨테이너 시작..."

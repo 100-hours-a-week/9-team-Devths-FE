@@ -1,19 +1,6 @@
 # 1. Build Stage
 FROM node:22-alpine AS builder
 
-# 빌드 시점에 주입받을 변수 정의
-ARG NEXT_PUBLIC_API_BASE_URL
-ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
-ARG NEXT_PUBLIC_GOOGLE_REDIRECT_URI
-ARG NEXT_PUBLIC_GA_MEASUREMENT_ID
-
-# ARG를 ENV로 전환해야 빌드
-ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
-ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID
-ENV NEXT_PUBLIC_GOOGLE_REDIRECT_URI=$NEXT_PUBLIC_GOOGLE_REDIRECT_URI
-ENV NEXT_PUBLIC_GA_MEASUREMENT_ID=$NEXT_PUBLIC_GA_MEASUREMENT_ID
-
-# 디렉토리 생성
 WORKDIR /app
 
 # pnpm 설치 및 의존성 복사
@@ -21,8 +8,10 @@ RUN npm install -g pnpm
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
-# 소스 복사 및 빌드
+# 소스 및 환경 변수 파일 복사
 COPY . .
+
+# Next.js 빌드 (Next.js가 자동으로 .env.production 파일을 읽음)
 RUN pnpm run build
 
 # 2. Runtime Stage (최종 이미지 경량화)

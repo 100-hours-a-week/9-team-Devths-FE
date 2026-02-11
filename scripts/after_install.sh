@@ -33,7 +33,6 @@ echo "  - Full Image: $FULL_IMAGE"
 echo "🔐 ECR 로그인..."
 aws ecr get-login-password --region $AWS_REGION | \
     docker login --username AWS --password-stdin $ECR_REGISTRY
-
 echo "✅ ECR 로그인 완료"
 
 # 5. Docker 이미지 Pull

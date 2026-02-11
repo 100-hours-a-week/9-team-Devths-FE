@@ -171,13 +171,24 @@ jobs:
       - name: Docker Buildx 설정
         uses: docker/setup-buildx-action@v3
 
-      - name: 환경 변수 추출
-        id: extract_args
+      - name: 빌드용 환경 변수 파일 생성
         run: |
-          echo "$ENV_FILE" > .env.build
-          # NEXT_PUBLIC_으로 시작하는 변수들을 쉼표로 연결된 문자열로 변환
-          ARGS=$(grep '^NEXT_PUBLIC_' .env.build | xargs | sed 's/ /,/g')
-          echo "build_args=$ARGS" >> $GITHUB_OUTPUT
+          # 환경 이름 결정
+          if [[ "${{ env.BRANCH_NAME }}" == release/* ]]; then
+            ENV_NAME="stg"
+          else
+            ENV_NAME="dev"
+          fi
+
+          # .env.production 파일 생성 (NODE_ENV=production일 때 Next.js가 읽음)
+          echo "$ENV_FILE" > .env.production
+
+          echo "📝 빌드용 환경 변수 파일 생성 완료"
+          echo "환경: $ENV_NAME"
+          echo "파일: .env.production (Docker 빌드는 항상 NODE_ENV=production)"
+          echo ""
+          echo "파일 내용:"
+          cat .env.production
 
       - name: Docker 이미지 빌드 및 ECR 푸시
         env:
@@ -189,7 +200,6 @@ jobs:
           tags: |
             ${{ env.ECR_REGISTRY }}/${{ env.ECR_TARGET_REPO }}:${{ env.IMAGE_TAG }}
             ${{ env.ECR_REGISTRY }}/${{ env.ECR_TARGET_REPO }}:latest
-          build-args: ${{ steps.extract_args.outputs.build_args }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: false
@@ -217,13 +227,32 @@ jobs:
           cp docker-compose.yml deploy-temp/
           cp promtail-config.yml deploy-temp/
 
+          # 환경 파일명 결정
+          if [[ "${{ env.BRANCH_NAME }}" == release/* ]]; then
+            ENV_FILE_NAME=".env.stg"
+          else
+            ENV_FILE_NAME=".env.dev"
+          fi
+
+          echo "📝 환경 파일: $ENV_FILE_NAME"
+
           # 이미지 정보 파일 생성
           cat > deploy-temp/image-info.env << EOF
           ECR_REGISTRY=$ECR_REGISTRY
           ECR_REPOSITORY=$ECR_REPOSITORY
           IMAGE_TAG=$IMAGE_TAG
           FULL_IMAGE=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          ENV_FILE=$ENV_FILE_NAME
           EOF
+
+          # 런타임 환경 변수 파일 생성 (배포용)
+          echo "📝 런타임용 $ENV_FILE_NAME 파일 생성 중..."
+
+          # NEXT_PUBLIC_ 변수들만 추출하여 런타임용 .env 파일 생성
+          grep '^NEXT_PUBLIC_' .env.production > "deploy-temp/$ENV_FILE_NAME" || true
+
+          echo "✅ 생성된 런타임 환경 변수 파일 ($ENV_FILE_NAME):"
+          cat "deploy-temp/$ENV_FILE_NAME"
 
           # 압축 파일 생성
           cd deploy-temp
