@@ -421,8 +421,8 @@ export default function BoardCreatePage() {
               </button>
             </div>
             <p className="mt-3 text-xs text-neutral-400">
-              사진(JPG/JPEG/PNG)은 최대 10장, 파일(PDF)은 최대 5개까지 첨부할 수 있으며
-              파일당 최대 10MB를 지원합니다.
+              사진(JPG/JPEG/PNG)은 최대 10장, 파일(PDF)은 최대 5개까지 첨부할 수 있으며 파일당 최대
+              10MB를 지원합니다.
             </p>
             {attachments.length > 0 ? (
               <p className="mt-2 text-xs text-neutral-400">현재 첨부 {attachments.length}개</p>

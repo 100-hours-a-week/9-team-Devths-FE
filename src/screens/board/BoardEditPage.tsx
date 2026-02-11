@@ -32,8 +32,8 @@ import { validateFiles } from '@/lib/validators/attachment';
 import { validateBoardCreateContent, validateBoardCreateTitle } from '@/lib/validators/boardCreate';
 
 import type { BoardTag } from '@/types/board';
-import type { PostDetailAttachment } from '@/types/boardDetail';
 import type { BoardAttachment, BoardAttachmentType } from '@/types/boardCreate';
+import type { PostDetailAttachment } from '@/types/boardDetail';
 
 type EditSnapshot = {
   title: string;
@@ -51,7 +51,9 @@ function areEqualNumberList(left: number[], right: number[]) {
   return left.every((value, index) => value === right[index]);
 }
 
-function mapServerAttachmentType(fileType: PostDetailAttachment['fileType']): BoardAttachmentType | null {
+function mapServerAttachmentType(
+  fileType: PostDetailAttachment['fileType'],
+): BoardAttachmentType | null {
   if (fileType === 'IMAGE') return 'IMAGE';
   if (fileType === 'FILE') return 'PDF';
   return null;
@@ -160,7 +162,9 @@ export default function BoardEditPage() {
     () =>
       sortNumberList(
         attachments
-          .filter((attachment) => attachment.status === 'READY' && typeof attachment.fileId === 'number')
+          .filter(
+            (attachment) => attachment.status === 'READY' && typeof attachment.fileId === 'number',
+          )
           .map((attachment) => attachment.fileId as number),
       ),
     [attachments],
@@ -226,7 +230,18 @@ export default function BoardEditPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [attachments, isSubmitEnabled, isSubmitting, postId, queryClient, readyFileIds, router, tags, title, content]);
+  }, [
+    attachments,
+    isSubmitEnabled,
+    isSubmitting,
+    postId,
+    queryClient,
+    readyFileIds,
+    router,
+    tags,
+    title,
+    content,
+  ]);
 
   const rightSlot = useMemo(
     () => (
@@ -571,8 +586,8 @@ export default function BoardEditPage() {
               </button>
             </div>
             <p className="mt-3 text-xs text-neutral-400">
-              사진(JPG/JPEG/PNG)은 최대 10장, 파일(PDF)은 최대 5개까지 첨부할 수 있으며
-              파일당 최대 10MB를 지원합니다.
+              사진(JPG/JPEG/PNG)은 최대 10장, 파일(PDF)은 최대 5개까지 첨부할 수 있으며 파일당 최대
+              10MB를 지원합니다.
             </p>
             {attachments.length > 0 ? (
               <p className="mt-2 text-xs text-neutral-400">현재 첨부 {attachments.length}개</p>

@@ -81,11 +81,7 @@ function getResponseData<T>(
     throw new Error(requestErrorMessage);
   }
 
-  if (
-    typeof result.json !== 'object' ||
-    result.json === null ||
-    !('data' in result.json)
-  ) {
+  if (typeof result.json !== 'object' || result.json === null || !('data' in result.json)) {
     throw new Error('Invalid response format');
   }
 
