@@ -11,6 +11,7 @@ import EditProfileModal from '@/components/mypage/EditProfileModal';
 import WithdrawModal from '@/components/mypage/WithdrawModal';
 import { postLogout } from '@/lib/api/auth';
 import { clearAccessToken } from '@/lib/auth/token';
+import { useMyPostsInfiniteQuery } from '@/lib/hooks/users/useMyPostsInfiniteQuery';
 import { useMeQuery } from '@/lib/hooks/users/useMeQuery';
 import { toast } from '@/lib/toast/store';
 import { formatCountToK } from '@/lib/utils/number';
@@ -19,6 +20,8 @@ export default function MyPageScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data, isLoading, isError } = useMeQuery();
+  const { data: myPostsData, isLoading: isMyPostsLoading, isError: isMyPostsError } =
+    useMyPostsInfiniteQuery({ size: 5 });
   const [activeContentTab, setActiveContentTab] = useState<'posts' | 'comments'>('posts');
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
@@ -69,6 +72,25 @@ export default function MyPageScreen() {
   const handleMoveFollowings = () => {
     if (followingCount <= 0) return;
     router.push('/profile/follows?tab=followings');
+  };
+
+  const myPosts = myPostsData?.pages.flatMap((page) => page.posts) ?? [];
+
+  const formatDateTime = (isoDate: string) => {
+    const date = new Date(isoDate);
+    if (Number.isNaN(date.getTime())) return '-';
+
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const hh = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+
+    return `${yyyy}.${mm}.${dd} ${hh}:${min}`;
+  };
+
+  const handleMovePostDetail = (postId: number) => {
+    router.push(`/board/${postId}`);
   };
 
   return (
@@ -215,15 +237,45 @@ export default function MyPageScreen() {
           </div>
         </div>
 
-        <div className="mt-6 flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-neutral-200 py-16 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100">
-            <Smile className="h-6 w-6 text-neutral-400" />
+        {activeContentTab === 'posts' ? (
+          <div className="mt-4 space-y-2">
+            {isMyPostsLoading ? (
+              Array.from({ length: 3 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3"
+                >
+                  <div className="h-4 w-40 animate-pulse rounded bg-neutral-200" />
+                  <div className="mt-2 h-3 w-28 animate-pulse rounded bg-neutral-200" />
+                </div>
+              ))
+            ) : isMyPostsError ? (
+              <p className="py-8 text-center text-sm text-red-500">
+                내가 쓴 글 목록을 불러오지 못했습니다.
+              </p>
+            ) : (
+              myPosts.map((post) => (
+                <button
+                  key={post.id}
+                  type="button"
+                  onClick={() => handleMovePostDetail(post.id)}
+                  className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left hover:border-[#05C075]"
+                >
+                  <p className="line-clamp-1 text-sm font-semibold text-neutral-900">{post.title}</p>
+                  <p className="mt-1 text-xs text-neutral-500">{formatDateTime(post.createdAt)}</p>
+                </button>
+              ))
+            )}
           </div>
-          <p className="mt-4 text-sm font-semibold text-neutral-700">
-            {activeContentTab === 'posts' ? '내가 쓴 글' : '내가 쓴 댓글'} 기능 업데이트 준비 중
-          </p>
-          <p className="mt-1 text-xs text-neutral-400">다음 버전에 추가될 예정입니다.</p>
-        </div>
+        ) : (
+          <div className="mt-6 flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-neutral-200 py-16 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100">
+              <Smile className="h-6 w-6 text-neutral-400" />
+            </div>
+            <p className="mt-4 text-sm font-semibold text-neutral-700">내가 쓴 댓글 기능 업데이트 준비 중</p>
+            <p className="mt-1 text-xs text-neutral-400">다음 버전에 추가될 예정입니다.</p>
+          </div>
+        )}
       </section>
 
       <EditProfileModal
