@@ -17,6 +17,7 @@ import { useHeader } from '@/components/layout/HeaderContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import {
   BOARD_ATTACHMENT_CONSTRAINTS,
+  BOARD_CONTENT_MAX_LENGTH,
   BOARD_FILE_MIME_TYPES,
   BOARD_IMAGE_MIME_TYPES,
   BOARD_TITLE_MAX_LENGTH,
@@ -532,6 +533,7 @@ export default function BoardEditPage() {
             <textarea
               value={content}
               onChange={(event) => setContent(event.target.value)}
+              maxLength={BOARD_CONTENT_MAX_LENGTH}
               placeholder="마크다운으로 작성해 보세요. 예: # 제목, - 목록, ```코드```"
               className="min-h-[180px] w-full resize-none rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-[#05C075] focus:ring-2 focus:ring-[#05C075]/20 focus:outline-none"
             />
