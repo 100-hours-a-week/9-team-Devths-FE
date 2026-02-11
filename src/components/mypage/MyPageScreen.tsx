@@ -57,6 +57,19 @@ export default function MyPageScreen() {
     }
   };
 
+  const followerCount = data?.stats.followerCount ?? 0;
+  const followingCount = data?.stats.followingCount ?? 0;
+
+  const handleMoveFollowers = () => {
+    if (followerCount <= 0) return;
+    router.push('/profile/follows?tab=followers');
+  };
+
+  const handleMoveFollowings = () => {
+    if (followingCount <= 0) return;
+    router.push('/profile/follows?tab=followings');
+  };
+
   return (
     <main className="flex flex-col px-6 py-4">
       <section className="-mx-6 mt-2 bg-white px-6 py-4">
@@ -141,18 +154,28 @@ export default function MyPageScreen() {
             </div>
 
             <div className="grid grid-cols-2 gap-2 rounded-xl bg-neutral-50 p-2">
-              <div className="rounded-lg bg-white px-3 py-2 text-center">
+              <button
+                type="button"
+                onClick={handleMoveFollowers}
+                disabled={followerCount <= 0}
+                className="rounded-lg bg-white px-3 py-2 text-center disabled:cursor-not-allowed disabled:opacity-50"
+              >
                 <p className="text-[11px] text-neutral-500">팔로워</p>
                 <p className="mt-1 text-sm font-semibold text-neutral-900">
-                  {formatCountToK(data?.stats.followerCount ?? 0)}
+                  {formatCountToK(followerCount)}
                 </p>
-              </div>
-              <div className="rounded-lg bg-white px-3 py-2 text-center">
+              </button>
+              <button
+                type="button"
+                onClick={handleMoveFollowings}
+                disabled={followingCount <= 0}
+                className="rounded-lg bg-white px-3 py-2 text-center disabled:cursor-not-allowed disabled:opacity-50"
+              >
                 <p className="text-[11px] text-neutral-500">팔로잉</p>
                 <p className="mt-1 text-sm font-semibold text-neutral-900">
-                  {formatCountToK(data?.stats.followingCount ?? 0)}
+                  {formatCountToK(followingCount)}
                 </p>
-              </div>
+              </button>
             </div>
           </div>
         )}
