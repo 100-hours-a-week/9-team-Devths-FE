@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
+import ConfirmModal from '@/components/common/ConfirmModal';
 import FollowUserProfileModal, {
   type FollowUserProfileModalData,
 } from '@/components/mypage/FollowUserProfileModal';
@@ -13,6 +14,7 @@ import { fetchUserProfile } from '@/lib/api/users';
 import { useFollowUserMutation } from '@/lib/hooks/users/useFollowUserMutation';
 import { useMyFollowersInfiniteQuery } from '@/lib/hooks/users/useMyFollowersInfiniteQuery';
 import { useMyFollowingsInfiniteQuery } from '@/lib/hooks/users/useMyFollowingsInfiniteQuery';
+import { useUnfollowUserMutation } from '@/lib/hooks/users/useUnfollowUserMutation';
 import { userKeys } from '@/lib/hooks/users/queryKeys';
 import { toast } from '@/lib/toast/store';
 
@@ -38,7 +40,9 @@ export default function FollowListScreen() {
   } = useMyFollowingsInfiniteQuery({ size: 12 });
   const infiniteScrollTriggerRef = useRef<HTMLDivElement | null>(null);
   const [selectedUser, setSelectedUser] = useState<FollowUserProfileModalData | null>(null);
+  const [isUnfollowConfirmOpen, setIsUnfollowConfirmOpen] = useState(false);
   const followMutation = useFollowUserMutation();
+  const unfollowMutation = useUnfollowUserMutation();
   const selectedUserId = selectedUser?.userId;
   const activeTab = searchParams.get('tab') === 'followings' ? 'followings' : 'followers';
   const followers = followerData?.pages.flatMap((page) => page.followers) ?? [];
@@ -90,7 +94,12 @@ export default function FollowListScreen() {
   };
 
   const handleFollowInModal = async () => {
-    if (!modalUser || modalUser.isFollowing) return;
+    if (!modalUser) return;
+
+    if (modalUser.isFollowing) {
+      setIsUnfollowConfirmOpen(true);
+      return;
+    }
 
     try {
       await followMutation.mutateAsync(modalUser.userId);
@@ -99,6 +108,25 @@ export default function FollowListScreen() {
     } catch (error) {
       const err = error as Error & { serverMessage?: string };
       toast(err.serverMessage ?? '팔로우 처리에 실패했습니다.');
+    }
+  };
+
+  const handleUnfollowCancel = () => {
+    if (unfollowMutation.isPending) return;
+    setIsUnfollowConfirmOpen(false);
+  };
+
+  const handleUnfollowConfirm = async () => {
+    if (!modalUser || unfollowMutation.isPending) return;
+
+    try {
+      await unfollowMutation.mutateAsync(modalUser.userId);
+      setSelectedUser((prev) => (prev ? { ...prev, isFollowing: false } : prev));
+      setIsUnfollowConfirmOpen(false);
+      void refetchSelectedUserProfile();
+    } catch (error) {
+      const err = error as Error & { serverMessage?: string };
+      toast(err.serverMessage ?? '언팔로우 처리에 실패했습니다.');
     }
   };
 
@@ -294,13 +322,26 @@ export default function FollowListScreen() {
 
       <FollowUserProfileModal
         open={Boolean(selectedUser)}
-        onClose={() => setSelectedUser(null)}
+        onClose={() => {
+          setSelectedUser(null);
+          setIsUnfollowConfirmOpen(false);
+        }}
         user={modalUser}
         isLoading={isSelectedUserProfileLoading}
         isError={isSelectedUserProfileError}
-        isFollowPending={followMutation.isPending}
+        isFollowPending={followMutation.isPending || unfollowMutation.isPending}
         onRetry={() => void refetchSelectedUserProfile()}
         onClickFollow={() => void handleFollowInModal()}
+      />
+
+      <ConfirmModal
+        isOpen={isUnfollowConfirmOpen}
+        title="팔로우 취소"
+        message={`${modalUser?.nickname ?? ''}님에 대한 팔로우를 취소하시겠습니까?`}
+        confirmText="팔로우 끊기"
+        cancelText="뒤로 가기"
+        onConfirm={() => void handleUnfollowConfirm()}
+        onCancel={handleUnfollowCancel}
       />
     </main>
   );
