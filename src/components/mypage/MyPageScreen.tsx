@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Pencil, Smile, User } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import ConfirmModal from '@/components/common/ConfirmModal';
 import EditProfileModal from '@/components/mypage/EditProfileModal';
@@ -21,11 +21,24 @@ export default function MyPageScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data, isLoading, isError } = useMeQuery();
-  const { data: myPostsData, isLoading: isMyPostsLoading, isError: isMyPostsError } =
-    useMyPostsInfiniteQuery({ size: 5 });
-  const { data: myCommentsData, isLoading: isMyCommentsLoading, isError: isMyCommentsError } =
-    useMyCommentsInfiniteQuery({ size: 5 });
+  const {
+    data: myPostsData,
+    isLoading: isMyPostsLoading,
+    isError: isMyPostsError,
+    hasNextPage: isMyPostsHasNextPage,
+    isFetchingNextPage: isMyPostsFetchingNextPage,
+    fetchNextPage: fetchMyPostsNextPage,
+  } = useMyPostsInfiniteQuery({ size: 5 });
+  const {
+    data: myCommentsData,
+    isLoading: isMyCommentsLoading,
+    isError: isMyCommentsError,
+    hasNextPage: isMyCommentsHasNextPage,
+    isFetchingNextPage: isMyCommentsFetchingNextPage,
+    fetchNextPage: fetchMyCommentsNextPage,
+  } = useMyCommentsInfiniteQuery({ size: 5 });
   const [activeContentTab, setActiveContentTab] = useState<'posts' | 'comments'>('posts');
+  const infiniteScrollTriggerRef = useRef<HTMLDivElement | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
@@ -100,6 +113,39 @@ export default function MyPageScreen() {
   const handleMoveCommentPostDetail = (postId: number) => {
     router.push(`/board/${postId}`);
   };
+
+  useEffect(() => {
+    const target = infiniteScrollTriggerRef.current;
+    if (!target) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry?.isIntersecting) return;
+
+        if (activeContentTab === 'posts') {
+          if (!isMyPostsHasNextPage || isMyPostsFetchingNextPage) return;
+          void fetchMyPostsNextPage();
+          return;
+        }
+
+        if (!isMyCommentsHasNextPage || isMyCommentsFetchingNextPage) return;
+        void fetchMyCommentsNextPage();
+      },
+      { rootMargin: '120px 0px' },
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [
+    activeContentTab,
+    isMyPostsHasNextPage,
+    isMyPostsFetchingNextPage,
+    isMyCommentsHasNextPage,
+    isMyCommentsFetchingNextPage,
+    fetchMyPostsNextPage,
+    fetchMyCommentsNextPage,
+  ]);
 
   return (
     <main className="flex flex-col px-6 py-4">
@@ -262,17 +308,23 @@ export default function MyPageScreen() {
                 내가 쓴 글 목록을 불러오지 못했습니다.
               </p>
             ) : (
-              myPosts.map((post) => (
-                <button
-                  key={post.id}
-                  type="button"
-                  onClick={() => handleMovePostDetail(post.id)}
-                  className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left hover:border-[#05C075]"
-                >
-                  <p className="line-clamp-1 text-sm font-semibold text-neutral-900">{post.title}</p>
-                  <p className="mt-1 text-xs text-neutral-500">{formatDateTime(post.createdAt)}</p>
-                </button>
-              ))
+              <>
+                {myPosts.map((post) => (
+                  <button
+                    key={post.id}
+                    type="button"
+                    onClick={() => handleMovePostDetail(post.id)}
+                    className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left hover:border-[#05C075]"
+                  >
+                    <p className="line-clamp-1 text-sm font-semibold text-neutral-900">{post.title}</p>
+                    <p className="mt-1 text-xs text-neutral-500">{formatDateTime(post.createdAt)}</p>
+                  </button>
+                ))}
+                {isMyPostsHasNextPage ? <div ref={infiniteScrollTriggerRef} className="h-1" /> : null}
+                {isMyPostsFetchingNextPage ? (
+                  <p className="py-2 text-center text-xs text-neutral-400">게시글을 불러오는 중...</p>
+                ) : null}
+              </>
             )}
           </div>
         ) : (
@@ -292,20 +344,30 @@ export default function MyPageScreen() {
                 내가 쓴 댓글 목록을 불러오지 못했습니다.
               </p>
             ) : (
-              myComments.map((comment) => (
-                <button
-                  key={comment.id}
-                  type="button"
-                  onClick={() => handleMoveCommentPostDetail(comment.postId)}
-                  className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left hover:border-[#05C075]"
-                >
-                  <p className="line-clamp-1 text-sm font-semibold text-neutral-900">
-                    {comment.postTitle}
-                  </p>
-                  <p className="mt-1 line-clamp-1 text-xs text-neutral-600">{comment.content}</p>
-                  <p className="mt-1 text-xs text-neutral-500">{formatDateTime(comment.createdAt)}</p>
-                </button>
-              ))
+              <>
+                {myComments.map((comment) => (
+                  <button
+                    key={comment.id}
+                    type="button"
+                    onClick={() => handleMoveCommentPostDetail(comment.postId)}
+                    className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left hover:border-[#05C075]"
+                  >
+                    <p className="line-clamp-1 text-sm font-semibold text-neutral-900">
+                      {comment.postTitle}
+                    </p>
+                    <p className="mt-1 line-clamp-1 text-xs text-neutral-600">{comment.content}</p>
+                    <p className="mt-1 text-xs text-neutral-500">
+                      {formatDateTime(comment.createdAt)}
+                    </p>
+                  </button>
+                ))}
+                {isMyCommentsHasNextPage ? (
+                  <div ref={infiniteScrollTriggerRef} className="h-1" />
+                ) : null}
+                {isMyCommentsFetchingNextPage ? (
+                  <p className="py-2 text-center text-xs text-neutral-400">댓글을 불러오는 중...</p>
+                ) : null}
+              </>
             )}
           </div>
         )}
