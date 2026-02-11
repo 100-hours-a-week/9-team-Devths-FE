@@ -2,7 +2,7 @@
 
 import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { Bell, Heart, MessageCircle, Search, Share2 } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import BoardShareModal from '@/components/board/detail/BoardShareModal';
@@ -37,6 +37,7 @@ export default function BoardDetailPage() {
   const { setOptions: setFrameOptions, resetOptions: resetFrameOptions } = useAppFrame();
   const { setOptions, resetOptions } = useHeader();
   const { requestNavigation } = useNavigationGuard();
+  const searchParams = useSearchParams();
   const params = useParams();
   const postIdParam = Array.isArray(params?.postId) ? params?.postId[0] : params?.postId;
   const postId = postIdParam ? Number(postIdParam) : null;
@@ -112,12 +113,19 @@ export default function BoardDetailPage() {
     void queryClient.invalidateQueries({
       predicate: (query) => query.queryKey[0] === 'boards' && query.queryKey[1] === 'list',
     });
+
+    const from = searchParams?.get('from');
+    if (from === 'edit') {
+      router.push('/board');
+      return;
+    }
+
     if (typeof window !== 'undefined' && window.history.length > 1) {
       router.back();
       return;
     }
     router.push('/board');
-  }, [queryClient, router]);
+  }, [queryClient, router, searchParams]);
 
   useEffect(() => {
     setFrameOptions({ showBottomNav: false });
