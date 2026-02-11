@@ -388,6 +388,11 @@ export default function BoardCreatePage() {
               className="min-h-[180px] w-full resize-none rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-[#05C075] focus:ring-2 focus:ring-[#05C075]/20 focus:outline-none"
             />
           )}
+          <div className="flex items-center justify-end text-xs text-neutral-400">
+            <span>
+              {content.length}/{BOARD_CONTENT_MAX_LENGTH}
+            </span>
+          </div>
         </div>
 
         <BoardTagSelector value={tags} onChange={setTags} />
