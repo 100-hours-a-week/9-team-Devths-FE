@@ -7,6 +7,48 @@ AVAILABLE_DIR="/etc/nginx/sites-available"
 ENABLED_DIR="/etc/nginx/sites-enabled"
 DEPLOY_DIR="/home/ubuntu/fe"
 
+# Turbopack instrumentation alias가 아티팩트 전달 과정에서 누락되는 경우를 보정
+ensure_instrumentation_alias() {
+    local pkg_name="$1"
+    local nft_file="${DEPLOY_DIR}/.next/server/instrumentation.js.nft.json"
+    local alias_name
+    local pkg_json_path
+    local pkg_dir
+    local alias_dir="${DEPLOY_DIR}/.next/node_modules"
+    local alias_path
+
+    if [ ! -f "$nft_file" ]; then
+        return 0
+    fi
+
+    alias_name=$(grep -o "${pkg_name}-[a-f0-9]\\+" "$nft_file" | head -n1 || true)
+    if [ -z "$alias_name" ]; then
+        return 0
+    fi
+
+    pkg_json_path=$(cd "$DEPLOY_DIR" && sudo -u ubuntu node -e "process.stdout.write(require.resolve('${pkg_name}/package.json'))" 2>/dev/null || true)
+    if [ -z "$pkg_json_path" ]; then
+        echo "❌ ${pkg_name} 패키지 경로를 찾을 수 없습니다."
+        return 1
+    fi
+
+    pkg_dir=$(dirname "$pkg_json_path")
+    alias_path="${alias_dir}/${alias_name}"
+
+    sudo -u ubuntu mkdir -p "$alias_dir"
+    if [ -L "$alias_path" ] || [ -e "$alias_path" ]; then
+        return 0
+    fi
+
+    sudo -u ubuntu ln -s "$pkg_dir" "$alias_path"
+    echo "✅ instrumentation alias 복구: ${alias_name} -> ${pkg_dir}"
+}
+
+# 0. instrumentation alias 사전 복구
+echo "🔧 instrumentation alias를 점검합니다..."
+ensure_instrumentation_alias "require-in-the-middle"
+ensure_instrumentation_alias "import-in-the-middle"
+
 # 1. 기존 PM2 프로세스 중지 (존재하는 경우)
 echo "🛑 기존 PM2 프로세스를 중지합니다..."
 sudo -u ubuntu pm2 delete devths-fe 2>/dev/null || echo "기존 프로세스가 없습니다."
