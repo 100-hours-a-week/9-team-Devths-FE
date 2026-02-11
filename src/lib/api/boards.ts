@@ -66,6 +66,37 @@ type PostLikeResponse = {
   likeCount: number;
 };
 
+type BoardPostMutationResponse = {
+  postId: number;
+};
+
+function getResponseData<T>(
+  result: {
+    ok: boolean;
+    json: unknown;
+  },
+  requestErrorMessage: string,
+): T {
+  if (!result.ok || !result.json) {
+    throw new Error(requestErrorMessage);
+  }
+
+  if (
+    typeof result.json !== 'object' ||
+    result.json === null ||
+    !('data' in result.json)
+  ) {
+    throw new Error('Invalid response format');
+  }
+
+  const data = (result.json as { data?: unknown }).data;
+  if (data === undefined || data === null) {
+    throw new Error('Invalid response format');
+  }
+
+  return data as T;
+}
+
 function mapPostDetail(detail: PostDetailResponse): PostDetail {
   return {
     postId: detail.postId,
@@ -105,15 +136,18 @@ function mapCommentItem(comment: CommentItemResponse): CommentItem {
   };
 }
 
-type CreateBoardPostRequest = {
+export type CreateBoardPostRequest = {
   title: string;
   content: string;
   tags?: BoardTag[];
   fileIds?: number[];
 };
 
-type CreateBoardPostResponse = {
-  postId: number;
+export type UpdateBoardPostRequest = {
+  title: string;
+  content: string;
+  tags?: BoardTag[];
+  fileIds?: number[];
 };
 
 function mapPostSummary(post: PostSummaryResponse): BoardPostSummary {
@@ -149,16 +183,7 @@ export async function listBoardPosts(
 
   const path = queryParams.toString() ? `/api/posts?${queryParams.toString()}` : '/api/posts';
   const result = await api.get<PostListResponse>(path, { credentials: 'include' });
-
-  if (!result.ok || !result.json) {
-    throw new Error('Failed to fetch posts');
-  }
-
-  if (!('data' in result.json) || !result.json.data) {
-    throw new Error('Invalid response format');
-  }
-
-  const data = result.json.data;
+  const data = getResponseData<PostListResponse>(result, 'Failed to fetch posts');
   const items = data.posts.map(mapPostSummary);
 
   return {
@@ -169,35 +194,28 @@ export async function listBoardPosts(
 }
 
 export async function createBoardPost(payload: CreateBoardPostRequest) {
-  const result = await api.post<CreateBoardPostResponse>('/api/posts', payload, {
+  const result = await api.post<BoardPostMutationResponse>('/api/posts', payload, {
     credentials: 'include',
   });
 
-  if (!result.ok || !result.json) {
-    throw new Error('게시글 등록에 실패했습니다.');
-  }
+  return getResponseData<BoardPostMutationResponse>(result, '게시글 등록에 실패했습니다.');
+}
 
-  if (!('data' in result.json) || !result.json.data) {
-    throw new Error('Invalid response format');
-  }
+export async function updateBoardPost(postId: number, payload: UpdateBoardPostRequest) {
+  const result = await api.put<BoardPostMutationResponse>(`/api/posts/${postId}`, payload, {
+    credentials: 'include',
+  });
 
-  return result.json.data;
+  return getResponseData<BoardPostMutationResponse>(result, '게시글 수정에 실패했습니다.');
 }
 
 export async function getBoardPostDetail(postId: number): Promise<PostDetail> {
   const result = await api.get<PostDetailResponse>(`/api/posts/${postId}`, {
     credentials: 'include',
   });
+  const data = getResponseData<PostDetailResponse>(result, '게시글을 불러오지 못했습니다.');
 
-  if (!result.ok || !result.json) {
-    throw new Error('게시글을 불러오지 못했습니다.');
-  }
-
-  if (!('data' in result.json) || !result.json.data) {
-    throw new Error('Invalid response format');
-  }
-
-  return mapPostDetail(result.json.data);
+  return mapPostDetail(data);
 }
 
 export async function listBoardComments(
@@ -215,16 +233,7 @@ export async function listBoardComments(
     ? `/api/posts/${postId}/comments?${queryParams.toString()}`
     : `/api/posts/${postId}/comments`;
   const result = await api.get<CommentListResponse>(path, { credentials: 'include' });
-
-  if (!result.ok || !result.json) {
-    throw new Error('댓글을 불러오지 못했습니다.');
-  }
-
-  if (!('data' in result.json) || !result.json.data) {
-    throw new Error('Invalid response format');
-  }
-
-  const data = result.json.data;
+  const data = getResponseData<CommentListResponse>(result, '댓글을 불러오지 못했습니다.');
   const items = data.comments.map(mapCommentItem);
 
   return {
@@ -242,15 +251,7 @@ export async function createBoardComment(
     credentials: 'include',
   });
 
-  if (!result.ok || !result.json) {
-    throw new Error('댓글 등록에 실패했습니다.');
-  }
-
-  if (!('data' in result.json) || !result.json.data) {
-    throw new Error('Invalid response format');
-  }
-
-  return result.json.data;
+  return getResponseData<CommentCreateResponse>(result, '댓글 등록에 실패했습니다.');
 }
 
 export async function updateBoardComment(
@@ -266,15 +267,7 @@ export async function updateBoardComment(
     },
   );
 
-  if (!result.ok || !result.json) {
-    throw new Error('댓글 수정에 실패했습니다.');
-  }
-
-  if (!('data' in result.json) || !result.json.data) {
-    throw new Error('Invalid response format');
-  }
-
-  return result.json.data;
+  return getResponseData<CommentUpdateResponse>(result, '댓글 수정에 실패했습니다.');
 }
 
 export async function deleteBoardComment(postId: number, commentId: number): Promise<void> {
@@ -293,15 +286,7 @@ export async function likeBoardPost(postId: number): Promise<PostLikeResponse> {
     credentials: 'include',
   });
 
-  if (!result.ok || !result.json) {
-    throw new Error('좋아요에 실패했습니다.');
-  }
-
-  if (!('data' in result.json) || !result.json.data) {
-    throw new Error('Invalid response format');
-  }
-
-  return result.json.data;
+  return getResponseData<PostLikeResponse>(result, '좋아요에 실패했습니다.');
 }
 
 export async function unlikeBoardPost(postId: number): Promise<void> {
