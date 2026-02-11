@@ -303,7 +303,8 @@ export default function BoardDetailPage() {
 
   const handleEditClick = () => {
     setIsOptionsOpen(false);
-    toast('게시글 수정은 준비 중입니다.');
+    if (!post) return;
+    requestNavigation(() => router.push(`/board/${post.postId}/edit`));
   };
 
   const handleDeleteClick = () => {
