@@ -1,6 +1,7 @@
 import { api, apiRequest } from '@/lib/api/client';
 
 import type { ApiErrorResponse, ApiResponse } from '@/types/api';
+import type { CursorListResponse } from '@/types/pagination';
 
 export type MeData = {
   userId?: number;
@@ -19,6 +20,49 @@ export type FetchMeResult = {
 
 export async function fetchMe(): Promise<FetchMeResult> {
   const { ok, status, json } = await api.get<MeData>('/api/users/me');
+  return { ok, status, json };
+}
+
+export type MyPostSummaryData = {
+  id: number;
+  title: string;
+  content: string;
+  likeCount: number;
+  commentCount: number;
+  shareCount: number;
+  createdAt: string;
+};
+
+export type MyPostListData = CursorListResponse<MyPostSummaryData, 'posts'>;
+
+export type FetchMyPostsParams = {
+  size?: number;
+  lastId?: number | null;
+};
+
+export type FetchMyPostsResult = {
+  ok: boolean;
+  status: number;
+  json: (ApiResponse<MyPostListData> | ApiErrorResponse) | null;
+};
+
+export async function fetchMyPosts(params?: FetchMyPostsParams): Promise<FetchMyPostsResult> {
+  const queryParams = new URLSearchParams();
+
+  const size = params?.size;
+  if (size !== null && size !== undefined) {
+    queryParams.set('size', String(size));
+  }
+
+  const lastId = params?.lastId;
+  if (lastId !== null && lastId !== undefined) {
+    queryParams.set('lastId', String(lastId));
+  }
+
+  const queryString = queryParams.toString();
+  const path = queryString ? `/api/users/me/posts?${queryString}` : '/api/users/me/posts';
+
+  const { ok, status, json } = await api.get<MyPostListData>(path);
   return { ok, status, json };
 }
 
