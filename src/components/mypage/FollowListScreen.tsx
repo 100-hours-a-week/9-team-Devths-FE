@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
 import { useMyFollowersInfiniteQuery } from '@/lib/hooks/users/useMyFollowersInfiniteQuery';
+import { useMyFollowingsInfiniteQuery } from '@/lib/hooks/users/useMyFollowingsInfiniteQuery';
 
 export default function FollowListScreen() {
   const router = useRouter();
@@ -19,9 +20,18 @@ export default function FollowListScreen() {
     isFetchingNextPage: isFollowersFetchingNextPage,
     fetchNextPage: fetchFollowersNextPage,
   } = useMyFollowersInfiniteQuery({ size: 12 });
+  const {
+    data: followingData,
+    isLoading: isFollowingsLoading,
+    isError: isFollowingsError,
+    hasNextPage: hasFollowingsNextPage,
+    isFetchingNextPage: isFollowingsFetchingNextPage,
+    fetchNextPage: fetchFollowingsNextPage,
+  } = useMyFollowingsInfiniteQuery({ size: 12 });
   const infiniteScrollTriggerRef = useRef<HTMLDivElement | null>(null);
   const activeTab = searchParams.get('tab') === 'followings' ? 'followings' : 'followers';
   const followers = followerData?.pages.flatMap((page) => page.followers) ?? [];
+  const followings = followingData?.pages.flatMap((page) => page.followings) ?? [];
 
   const handleChangeTab = (tab: 'followers' | 'followings') => {
     if (tab === activeTab) return;
@@ -33,8 +43,6 @@ export default function FollowListScreen() {
   };
 
   useEffect(() => {
-    if (activeTab !== 'followers') return;
-
     const target = infiniteScrollTriggerRef.current;
     if (!target) return;
 
@@ -42,15 +50,30 @@ export default function FollowListScreen() {
       (entries) => {
         const entry = entries[0];
         if (!entry?.isIntersecting) return;
-        if (!hasFollowersNextPage || isFollowersFetchingNextPage) return;
-        void fetchFollowersNextPage();
+
+        if (activeTab === 'followers') {
+          if (!hasFollowersNextPage || isFollowersFetchingNextPage) return;
+          void fetchFollowersNextPage();
+          return;
+        }
+
+        if (!hasFollowingsNextPage || isFollowingsFetchingNextPage) return;
+        void fetchFollowingsNextPage();
       },
       { rootMargin: '120px 0px' },
     );
 
     observer.observe(target);
     return () => observer.disconnect();
-  }, [activeTab, hasFollowersNextPage, isFollowersFetchingNextPage, fetchFollowersNextPage]);
+  }, [
+    activeTab,
+    hasFollowersNextPage,
+    isFollowersFetchingNextPage,
+    fetchFollowersNextPage,
+    hasFollowingsNextPage,
+    isFollowingsFetchingNextPage,
+    fetchFollowingsNextPage,
+  ]);
 
   return (
     <main className="flex flex-col px-6 py-4">
@@ -138,12 +161,55 @@ export default function FollowListScreen() {
             )}
           </div>
         ) : (
-          <div className="mt-4 flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-dashed border-neutral-200 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100">
-              <Users className="h-6 w-6 text-neutral-400" />
-            </div>
-            <p className="mt-4 text-sm font-semibold text-neutral-700">팔로잉 목록 준비 중</p>
-            <p className="mt-1 text-xs text-neutral-400">다음 커밋에서 목록 기능이 추가됩니다.</p>
+          <div className="mt-4 space-y-2">
+            {isFollowingsLoading ? (
+              Array.from({ length: 5 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3"
+                >
+                  <div className="h-10 w-10 animate-pulse rounded-full bg-neutral-200" />
+                  <div className="h-4 w-24 animate-pulse rounded bg-neutral-200" />
+                </div>
+              ))
+            ) : isFollowingsError ? (
+              <p className="py-8 text-center text-sm text-red-500">팔로잉 목록을 불러오지 못했습니다.</p>
+            ) : followings.length === 0 ? (
+              <p className="py-8 text-center text-sm text-neutral-500">아직 팔로잉이 없습니다.</p>
+            ) : (
+              <>
+                {followings.map((following) => (
+                  <article
+                    key={following.id}
+                    className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3"
+                  >
+                    {following.profileImage ? (
+                      <Image
+                        src={following.profileImage}
+                        alt={`${following.nickname} 프로필`}
+                        width={40}
+                        height={40}
+                        className="h-10 w-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-200 text-sm font-semibold text-neutral-600">
+                        {following.nickname.slice(0, 1)}
+                      </div>
+                    )}
+
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-neutral-900">
+                        {following.nickname}
+                      </p>
+                    </div>
+                  </article>
+                ))}
+                {hasFollowingsNextPage ? <div ref={infiniteScrollTriggerRef} className="h-1" /> : null}
+                {isFollowingsFetchingNextPage ? (
+                  <p className="py-2 text-center text-xs text-neutral-400">팔로잉을 불러오는 중...</p>
+                ) : null}
+              </>
+            )}
           </div>
         )}
       </section>
