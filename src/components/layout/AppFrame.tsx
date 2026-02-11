@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { AppFrameContext, type AppFrameOptions } from '@/components/layout/AppFrameContext';
@@ -9,7 +9,7 @@ import Header from '@/components/layout/Header';
 import { HeaderContext, type HeaderOptions } from '@/components/layout/HeaderContext';
 import { NavigationGuardContext } from '@/components/layout/NavigationGuardContext';
 import LlmAnalysisTaskWatcher from '@/components/llm/analysis/LlmAnalysisTaskWatcher';
-import { getAccessToken } from '@/lib/auth/token';
+import { getAccessToken, setAuthRedirect } from '@/lib/auth/token';
 import { toast } from '@/lib/toast/store';
 
 import type { CSSProperties, ReactNode } from 'react';
@@ -30,6 +30,8 @@ export default function AppFrame({
   rightSlot,
 }: AppFrameProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const defaultOptions = useMemo<HeaderOptions>(
     () => ({
       title: headerTitle,
@@ -47,6 +49,9 @@ export default function AppFrame({
   const [isAuthed, setIsAuthed] = useState<boolean | null>(null);
   const [isNavigationBlocked, setIsNavigationBlocked] = useState(false);
   const [blockMessage, setBlockMessage] = useState('답변 생성 중에는 이동할 수 없습니다.');
+  const [blockedNavigationHandler, setBlockedNavigationHandler] = useState<
+    ((action: () => void) => void) | null
+  >(null);
 
   useEffect(() => {
     setOptions(defaultOptions);
@@ -58,13 +63,16 @@ export default function AppFrame({
   useEffect(() => {
     const token = getAccessToken();
     if (!token) {
+      const query = searchParams?.toString() ?? '';
+      const redirectPath = `${pathname}${query ? `?${query}` : ''}`;
+      setAuthRedirect(redirectPath);
       setIsAuthed(false);
-      router.replace('/');
+      router.replace(`/?redirect=${encodeURIComponent(redirectPath)}`);
       return;
     }
 
     setIsAuthed(true);
-  }, [router]);
+  }, [pathname, router, searchParams]);
 
   const resetOptions = useCallback(() => {
     setOptions(defaultOptions);
@@ -104,9 +112,13 @@ export default function AppFrame({
         action();
         return;
       }
+      if (blockedNavigationHandler) {
+        blockedNavigationHandler(action);
+        return;
+      }
       toast(blockMessage);
     },
-    [blockMessage, isNavigationBlocked],
+    [blockMessage, blockedNavigationHandler, isNavigationBlocked],
   );
 
   return isAuthed ? (
@@ -125,6 +137,7 @@ export default function AppFrame({
           blockMessage,
           setBlockMessage,
           requestNavigation,
+          setBlockedNavigationHandler,
         }}
       >
         <HeaderContext.Provider value={{ options, setOptions, resetOptions, defaultOptions }}>

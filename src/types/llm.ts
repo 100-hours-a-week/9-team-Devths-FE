@@ -1,9 +1,3 @@
-export type CursorPage<T> = {
-  items: T[];
-  lastId: number | null;
-  hasNext: boolean;
-};
-
 export type AiChatRoom = {
   roomId: number;
   roomUuid: string;
@@ -157,3 +151,5 @@ export type TaskResultData = {
   updatedAt: string;
   isNotified: boolean;
 };
+
+export type { CursorPage } from '@/types/pagination';

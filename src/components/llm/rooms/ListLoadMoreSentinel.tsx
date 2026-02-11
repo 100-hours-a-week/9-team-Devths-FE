@@ -35,7 +35,7 @@ export default function ListLoadMoreSentinel({
   }, [onLoadMore, hasNextPage, isFetchingNextPage]);
 
   return (
-    <div ref={sentinelRef} className="mt-4 text-center">
+    <div ref={sentinelRef} className="mt-4 pb-6 text-center">
       {isFetchingNextPage ? (
         <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-3 py-3 text-[11px] text-neutral-500">
           로딩 중...
