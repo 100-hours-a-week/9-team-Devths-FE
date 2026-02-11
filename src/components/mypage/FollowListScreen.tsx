@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { Users } from 'lucide-react';
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -8,8 +9,10 @@ import { useEffect, useRef, useState } from 'react';
 import FollowUserProfileModal, {
   type FollowUserProfileModalData,
 } from '@/components/mypage/FollowUserProfileModal';
+import { fetchUserProfile } from '@/lib/api/users';
 import { useMyFollowersInfiniteQuery } from '@/lib/hooks/users/useMyFollowersInfiniteQuery';
 import { useMyFollowingsInfiniteQuery } from '@/lib/hooks/users/useMyFollowingsInfiniteQuery';
+import { userKeys } from '@/lib/hooks/users/queryKeys';
 
 export default function FollowListScreen() {
   const router = useRouter();
@@ -33,9 +36,42 @@ export default function FollowListScreen() {
   } = useMyFollowingsInfiniteQuery({ size: 12 });
   const infiniteScrollTriggerRef = useRef<HTMLDivElement | null>(null);
   const [selectedUser, setSelectedUser] = useState<FollowUserProfileModalData | null>(null);
+  const selectedUserId = selectedUser?.userId;
   const activeTab = searchParams.get('tab') === 'followings' ? 'followings' : 'followers';
   const followers = followerData?.pages.flatMap((page) => page.followers) ?? [];
   const followings = followingData?.pages.flatMap((page) => page.followings) ?? [];
+  const {
+    data: selectedUserProfile,
+    isLoading: isSelectedUserProfileLoading,
+    isError: isSelectedUserProfileError,
+    refetch: refetchSelectedUserProfile,
+  } = useQuery({
+    queryKey: userKeys.profile(selectedUserId ?? -1),
+    queryFn: async () => {
+      const result = await fetchUserProfile(selectedUserId!);
+
+      if (!result.ok || !result.json) {
+        throw new Error('Failed to fetch user profile');
+      }
+
+      if ('data' in result.json && result.json.data) {
+        return result.json.data;
+      }
+
+      throw new Error('Invalid response format');
+    },
+    enabled: selectedUserId !== undefined,
+  });
+
+  const modalUser: FollowUserProfileModalData | null = selectedUser
+    ? {
+        userId: selectedUser.userId,
+        nickname: selectedUserProfile?.user.nickname ?? selectedUser.nickname,
+        profileImage: selectedUserProfile?.profileImage?.url ?? selectedUser.profileImage,
+        interests: selectedUserProfile?.interests ?? selectedUser.interests,
+        isFollowing: selectedUserProfile?.isFollowing ?? selectedUser.isFollowing,
+      }
+    : null;
 
   const handleChangeTab = (tab: 'followers' | 'followings') => {
     if (tab === activeTab) return;
@@ -243,7 +279,10 @@ export default function FollowListScreen() {
       <FollowUserProfileModal
         open={Boolean(selectedUser)}
         onClose={() => setSelectedUser(null)}
-        user={selectedUser}
+        user={modalUser}
+        isLoading={isSelectedUserProfileLoading}
+        isError={isSelectedUserProfileError}
+        onRetry={() => void refetchSelectedUserProfile()}
       />
     </main>
   );

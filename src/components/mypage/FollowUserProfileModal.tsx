@@ -17,6 +17,9 @@ type FollowUserProfileModalProps = {
   open: boolean;
   onClose: () => void;
   user: FollowUserProfileModalData | null;
+  isLoading?: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
   onClickChat?: () => void;
   onClickFollow?: () => void;
 };
@@ -25,10 +28,41 @@ export default function FollowUserProfileModal({
   open,
   onClose,
   user,
+  isLoading = false,
+  isError = false,
+  onRetry,
   onClickChat,
   onClickFollow,
 }: FollowUserProfileModalProps) {
   if (!user) return null;
+
+  if (isLoading) {
+    return (
+      <BaseModal open={open} onClose={onClose} contentClassName="pt-8">
+        <div className="flex flex-col items-center gap-3 py-6 text-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-neutral-200 border-t-[#05C075]" />
+          <p className="text-sm font-semibold text-neutral-800">프로필 정보를 불러오는 중...</p>
+        </div>
+      </BaseModal>
+    );
+  }
+
+  if (isError) {
+    return (
+      <BaseModal open={open} onClose={onClose} contentClassName="pt-8">
+        <div className="flex flex-col items-center gap-3 py-6 text-center">
+          <p className="text-sm font-semibold text-neutral-800">프로필 정보를 불러오지 못했습니다.</p>
+          <button
+            type="button"
+            onClick={onRetry}
+            className="rounded-full bg-[#05C075] px-4 py-2 text-sm font-semibold text-white hover:bg-[#04A865]"
+          >
+            다시 시도
+          </button>
+        </div>
+      </BaseModal>
+    );
+  }
 
   return (
     <BaseModal open={open} onClose={onClose} contentClassName="pt-8">
