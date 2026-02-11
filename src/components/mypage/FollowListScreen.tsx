@@ -130,6 +130,14 @@ export default function FollowListScreen() {
     }
   };
 
+  const handleStartChatInModal = () => {
+    if (!modalUser) return;
+
+    const params = new URLSearchParams();
+    params.set('targetUserId', String(modalUser.userId));
+    router.push(`/chat?${params.toString()}`);
+  };
+
   useEffect(() => {
     const target = infiniteScrollTriggerRef.current;
     if (!target) return;
@@ -332,6 +340,7 @@ export default function FollowListScreen() {
         isFollowPending={followMutation.isPending || unfollowMutation.isPending}
         onRetry={() => void refetchSelectedUserProfile()}
         onClickFollow={() => void handleFollowInModal()}
+        onClickChat={handleStartChatInModal}
       />
 
       <ConfirmModal
