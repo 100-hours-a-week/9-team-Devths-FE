@@ -109,6 +109,49 @@ export async function fetchMyComments(
   return { ok, status, json };
 }
 
+export type FollowerSummaryData = {
+  id: number;
+  userId: number;
+  nickname: string;
+  profileImage: string | null;
+  isFollowing: boolean;
+};
+
+export type FollowerListData = CursorListResponse<FollowerSummaryData, 'followers'>;
+
+export type FetchMyFollowersParams = {
+  size?: number;
+  lastId?: number | null;
+};
+
+export type FetchMyFollowersResult = {
+  ok: boolean;
+  status: number;
+  json: (ApiResponse<FollowerListData> | ApiErrorResponse) | null;
+};
+
+export async function fetchMyFollowers(
+  params?: FetchMyFollowersParams,
+): Promise<FetchMyFollowersResult> {
+  const queryParams = new URLSearchParams();
+
+  const size = params?.size;
+  if (size !== null && size !== undefined) {
+    queryParams.set('size', String(size));
+  }
+
+  const lastId = params?.lastId;
+  if (lastId !== null && lastId !== undefined) {
+    queryParams.set('lastId', String(lastId));
+  }
+
+  const queryString = queryParams.toString();
+  const path = queryString ? `/api/users/me/followers?${queryString}` : '/api/users/me/followers';
+
+  const { ok, status, json } = await api.get<FollowerListData>(path);
+  return { ok, status, json };
+}
+
 export type UpdateMeRequest = {
   nickname: string;
   interests?: string[];
