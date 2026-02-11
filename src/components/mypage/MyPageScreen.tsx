@@ -309,17 +309,23 @@ export default function MyPageScreen() {
               </p>
             ) : (
               <>
-                {myPosts.map((post) => (
-                  <button
-                    key={post.id}
-                    type="button"
-                    onClick={() => handleMovePostDetail(post.id)}
-                    className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left hover:border-[#05C075]"
-                  >
-                    <p className="line-clamp-1 text-sm font-semibold text-neutral-900">{post.title}</p>
-                    <p className="mt-1 text-xs text-neutral-500">{formatDateTime(post.createdAt)}</p>
-                  </button>
-                ))}
+                {myPosts.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-neutral-500">
+                    아직 작성한 게시글이 없습니다.
+                  </p>
+                ) : (
+                  myPosts.map((post) => (
+                    <button
+                      key={post.id}
+                      type="button"
+                      onClick={() => handleMovePostDetail(post.id)}
+                      className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left hover:border-[#05C075]"
+                    >
+                      <p className="line-clamp-1 text-sm font-semibold text-neutral-900">{post.title}</p>
+                      <p className="mt-1 text-xs text-neutral-500">{formatDateTime(post.createdAt)}</p>
+                    </button>
+                  ))
+                )}
                 {isMyPostsHasNextPage ? <div ref={infiniteScrollTriggerRef} className="h-1" /> : null}
                 {isMyPostsFetchingNextPage ? (
                   <p className="py-2 text-center text-xs text-neutral-400">게시글을 불러오는 중...</p>
@@ -345,22 +351,28 @@ export default function MyPageScreen() {
               </p>
             ) : (
               <>
-                {myComments.map((comment) => (
-                  <button
-                    key={comment.id}
-                    type="button"
-                    onClick={() => handleMoveCommentPostDetail(comment.postId)}
-                    className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left hover:border-[#05C075]"
-                  >
-                    <p className="line-clamp-1 text-sm font-semibold text-neutral-900">
-                      {comment.postTitle}
-                    </p>
-                    <p className="mt-1 line-clamp-1 text-xs text-neutral-600">{comment.content}</p>
-                    <p className="mt-1 text-xs text-neutral-500">
-                      {formatDateTime(comment.createdAt)}
-                    </p>
-                  </button>
-                ))}
+                {myComments.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-neutral-500">
+                    아직 작성한 댓글이 없습니다.
+                  </p>
+                ) : (
+                  myComments.map((comment) => (
+                    <button
+                      key={comment.id}
+                      type="button"
+                      onClick={() => handleMoveCommentPostDetail(comment.postId)}
+                      className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left hover:border-[#05C075]"
+                    >
+                      <p className="line-clamp-1 text-sm font-semibold text-neutral-900">
+                        {comment.postTitle}
+                      </p>
+                      <p className="mt-1 line-clamp-1 text-xs text-neutral-600">{comment.content}</p>
+                      <p className="mt-1 text-xs text-neutral-500">
+                        {formatDateTime(comment.createdAt)}
+                      </p>
+                    </button>
+                  ))
+                )}
                 {isMyCommentsHasNextPage ? (
                   <div ref={infiniteScrollTriggerRef} className="h-1" />
                 ) : null}
