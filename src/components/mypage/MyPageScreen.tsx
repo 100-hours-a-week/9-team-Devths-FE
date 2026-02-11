@@ -81,12 +81,10 @@ export default function MyPageScreen() {
   const followingCount = data?.stats.followingCount ?? 0;
 
   const handleMoveFollowers = () => {
-    if (followerCount <= 0) return;
     router.push('/profile/follows?tab=followers');
   };
 
   const handleMoveFollowings = () => {
-    if (followingCount <= 0) return;
     router.push('/profile/follows?tab=followings');
   };
 
@@ -234,8 +232,7 @@ export default function MyPageScreen() {
               <button
                 type="button"
                 onClick={handleMoveFollowers}
-                disabled={followerCount <= 0}
-                className="rounded-lg bg-white px-3 py-2 text-center disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-lg bg-white px-3 py-2 text-center hover:bg-neutral-50"
               >
                 <p className="text-[11px] text-neutral-500">팔로워</p>
                 <p className="mt-1 text-sm font-semibold text-neutral-900">
@@ -245,8 +242,7 @@ export default function MyPageScreen() {
               <button
                 type="button"
                 onClick={handleMoveFollowings}
-                disabled={followingCount <= 0}
-                className="rounded-lg bg-white px-3 py-2 text-center disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-lg bg-white px-3 py-2 text-center hover:bg-neutral-50"
               >
                 <p className="text-[11px] text-neutral-500">팔로잉</p>
                 <p className="mt-1 text-sm font-semibold text-neutral-900">

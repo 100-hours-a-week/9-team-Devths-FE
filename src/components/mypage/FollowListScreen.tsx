@@ -222,7 +222,7 @@ export default function FollowListScreen() {
             ) : isFollowersError ? (
               <p className="py-8 text-center text-sm text-red-500">팔로워 목록을 불러오지 못했습니다.</p>
             ) : followers.length === 0 ? (
-              <p className="py-8 text-center text-sm text-neutral-500">아직 팔로워가 없습니다.</p>
+              <p className="py-8 text-center text-sm text-neutral-500">팔로워가 없습니다.</p>
             ) : (
               <>
                 {followers.map((follower) => (
@@ -280,7 +280,7 @@ export default function FollowListScreen() {
             ) : isFollowingsError ? (
               <p className="py-8 text-center text-sm text-red-500">팔로잉 목록을 불러오지 못했습니다.</p>
             ) : followings.length === 0 ? (
-              <p className="py-8 text-center text-sm text-neutral-500">아직 팔로잉이 없습니다.</p>
+              <p className="py-8 text-center text-sm text-neutral-500">팔로잉이 없습니다.</p>
             ) : (
               <>
                 {followings.map((following) => (
