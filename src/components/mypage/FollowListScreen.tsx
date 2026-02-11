@@ -10,9 +10,11 @@ import FollowUserProfileModal, {
   type FollowUserProfileModalData,
 } from '@/components/mypage/FollowUserProfileModal';
 import { fetchUserProfile } from '@/lib/api/users';
+import { useFollowUserMutation } from '@/lib/hooks/users/useFollowUserMutation';
 import { useMyFollowersInfiniteQuery } from '@/lib/hooks/users/useMyFollowersInfiniteQuery';
 import { useMyFollowingsInfiniteQuery } from '@/lib/hooks/users/useMyFollowingsInfiniteQuery';
 import { userKeys } from '@/lib/hooks/users/queryKeys';
+import { toast } from '@/lib/toast/store';
 
 export default function FollowListScreen() {
   const router = useRouter();
@@ -36,6 +38,7 @@ export default function FollowListScreen() {
   } = useMyFollowingsInfiniteQuery({ size: 12 });
   const infiniteScrollTriggerRef = useRef<HTMLDivElement | null>(null);
   const [selectedUser, setSelectedUser] = useState<FollowUserProfileModalData | null>(null);
+  const followMutation = useFollowUserMutation();
   const selectedUserId = selectedUser?.userId;
   const activeTab = searchParams.get('tab') === 'followings' ? 'followings' : 'followers';
   const followers = followerData?.pages.flatMap((page) => page.followers) ?? [];
@@ -84,6 +87,19 @@ export default function FollowListScreen() {
 
   const handleOpenProfileModal = (user: FollowUserProfileModalData) => {
     setSelectedUser(user);
+  };
+
+  const handleFollowInModal = async () => {
+    if (!modalUser || modalUser.isFollowing) return;
+
+    try {
+      await followMutation.mutateAsync(modalUser.userId);
+      setSelectedUser((prev) => (prev ? { ...prev, isFollowing: true } : prev));
+      void refetchSelectedUserProfile();
+    } catch (error) {
+      const err = error as Error & { serverMessage?: string };
+      toast(err.serverMessage ?? '팔로우 처리에 실패했습니다.');
+    }
   };
 
   useEffect(() => {
@@ -282,7 +298,9 @@ export default function FollowListScreen() {
         user={modalUser}
         isLoading={isSelectedUserProfileLoading}
         isError={isSelectedUserProfileError}
+        isFollowPending={followMutation.isPending}
         onRetry={() => void refetchSelectedUserProfile()}
+        onClickFollow={() => void handleFollowInModal()}
       />
     </main>
   );

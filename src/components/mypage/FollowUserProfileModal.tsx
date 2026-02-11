@@ -19,6 +19,7 @@ type FollowUserProfileModalProps = {
   user: FollowUserProfileModalData | null;
   isLoading?: boolean;
   isError?: boolean;
+  isFollowPending?: boolean;
   onRetry?: () => void;
   onClickChat?: () => void;
   onClickFollow?: () => void;
@@ -30,6 +31,7 @@ export default function FollowUserProfileModal({
   user,
   isLoading = false,
   isError = false,
+  isFollowPending = false,
   onRetry,
   onClickChat,
   onClickFollow,
@@ -109,10 +111,11 @@ export default function FollowUserProfileModal({
           <button
             type="button"
             onClick={onClickFollow}
-            className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[#05C075] px-4 py-2 text-sm font-semibold text-white hover:bg-[#04A865]"
+            disabled={isFollowPending}
+            className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[#05C075] px-4 py-2 text-sm font-semibold text-white hover:bg-[#04A865] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <UserPlus className="h-4 w-4" />
-            {user.isFollowing ? '팔로잉' : '팔로우'}
+            {isFollowPending ? '처리 중...' : user.isFollowing ? '팔로잉' : '팔로우'}
           </button>
         </div>
       </div>
