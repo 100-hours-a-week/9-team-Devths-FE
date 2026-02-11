@@ -202,6 +202,54 @@ export async function fetchMyFollowings(
   return { ok, status, json };
 }
 
+export type UserProfileData = {
+  user: {
+    id: number;
+    nickname: string;
+  };
+  profileImage: { id: number; url: string } | null;
+  interests: string[];
+  isFollowing: boolean;
+};
+
+export type FetchUserProfileResult = {
+  ok: boolean;
+  status: number;
+  json: (ApiResponse<UserProfileData> | ApiErrorResponse) | null;
+};
+
+export async function fetchUserProfile(userId: number): Promise<FetchUserProfileResult> {
+  const { ok, status, json } = await api.get<UserProfileData>(`/api/users/${userId}`);
+  return { ok, status, json };
+}
+
+export type FollowData = {
+  targetUserId: number;
+  followingCount: number;
+};
+
+export type FollowUserResult = {
+  ok: boolean;
+  status: number;
+  json: (ApiResponse<FollowData> | ApiErrorResponse) | null;
+};
+
+export async function followUser(userId: number): Promise<FollowUserResult> {
+  const { ok, status, json } = await api.post<FollowData>(`/api/users/${userId}/followers`);
+  return { ok, status, json };
+}
+
+export type UnfollowUserResult = {
+  ok: boolean;
+  status: number;
+  json: (ApiResponse<void> | ApiErrorResponse) | null;
+};
+
+export async function unfollowUser(userId: number): Promise<UnfollowUserResult> {
+  const { ok, status, json } = await api.delete<void>(`/api/users/${userId}/followers`);
+  return { ok, status, json };
+}
+
 export type UpdateMeRequest = {
   nickname: string;
   interests?: string[];
