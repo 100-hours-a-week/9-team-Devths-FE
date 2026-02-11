@@ -57,6 +57,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
 
       - name: 의존성 설치
         run: pnpm install --frozen-lockfile
@@ -154,9 +155,13 @@ jobs:
         id: env
         run: |
           if [[ "${{ env.BRANCH_NAME }}" == release/* ]]; then
+            echo "ENV_FILE<<EOF" >> $GITHUB_ENV
             echo "${{ secrets.ENV_FILE_STAGING }}" >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
           else
+            echo "ENV_FILE<<EOF" >> $GITHUB_ENV
             echo "${{ secrets.ENV_FILE_DEV }}" >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
           fi
 
       - name: ECR 로그인
@@ -182,11 +187,12 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.ECR_REGISTRY }}/${{ env.ECR_TARGET_REPO }}:$IMAGE_TAG
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_TARGET_REPO }}:${{ env.IMAGE_TAG }}
             ${{ env.ECR_REGISTRY }}/${{ env.ECR_TARGET_REPO }}:latest
           build-args: ${{ steps.extract_args.outputs.build_args }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          provenance: false
 
       - name: 배포 아티팩트 생성
         id: upload
