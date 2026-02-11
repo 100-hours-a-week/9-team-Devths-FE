@@ -19,6 +19,7 @@ export default function MyPageScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data, isLoading, isError } = useMeQuery();
+  const [activeContentTab, setActiveContentTab] = useState<'posts' | 'comments'>('posts');
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
@@ -181,12 +182,48 @@ export default function MyPageScreen() {
         )}
       </section>
 
-      <section className="mt-6 flex flex-1 flex-col items-center justify-center rounded-2xl bg-white py-20 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100">
-          <Smile className="h-6 w-6 text-neutral-400" />
+      <section className="mt-6 flex flex-1 flex-col rounded-2xl bg-white p-4">
+        <div className="relative rounded-xl bg-neutral-100 p-1">
+          <span
+            className={`pointer-events-none absolute top-1 left-1 h-[calc(100%-8px)] w-[calc(50%-4px)] rounded-lg bg-white shadow-sm transition-transform duration-200 ${
+              activeContentTab === 'posts' ? 'translate-x-0' : 'translate-x-full'
+            }`}
+          />
+          <div className="relative grid grid-cols-2">
+            <button
+              type="button"
+              onClick={() => setActiveContentTab('posts')}
+              className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                activeContentTab === 'posts'
+                  ? 'text-neutral-900'
+                  : 'text-neutral-500 hover:text-neutral-700'
+              }`}
+            >
+              내가 쓴 글
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveContentTab('comments')}
+              className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                activeContentTab === 'comments'
+                  ? 'text-neutral-900'
+                  : 'text-neutral-500 hover:text-neutral-700'
+              }`}
+            >
+              내가 쓴 댓글
+            </button>
+          </div>
         </div>
-        <p className="mt-4 text-sm font-semibold text-neutral-700">기능 업데이트 준비 중</p>
-        <p className="mt-1 text-xs text-neutral-400">다음 버전에 추가될 예정입니다.</p>
+
+        <div className="mt-6 flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-neutral-200 py-16 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100">
+            <Smile className="h-6 w-6 text-neutral-400" />
+          </div>
+          <p className="mt-4 text-sm font-semibold text-neutral-700">
+            {activeContentTab === 'posts' ? '내가 쓴 글' : '내가 쓴 댓글'} 기능 업데이트 준비 중
+          </p>
+          <p className="mt-1 text-xs text-neutral-400">다음 버전에 추가될 예정입니다.</p>
+        </div>
       </section>
 
       <EditProfileModal
