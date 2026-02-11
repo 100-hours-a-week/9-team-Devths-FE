@@ -29,11 +29,21 @@ RUN pnpm run build
 FROM node:22-alpine
 WORKDIR /app
 
-# 빌드 결과물만 복사
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/node_modules ./node_modules
+# standalone 모드에서는 node 사용자로 실행 (보안 강화)
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
 
-# 실행
-CMD ["pnpm", "start"]
+# standalone 빌드 결과물 복사 (필요한 의존성만 포함)
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+# standalone 모드에서는 node로 직접 실행 (pnpm 불필요)
+CMD ["node", "server.js"]
