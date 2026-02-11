@@ -3,6 +3,7 @@ name: Devths-FE 비운영용 CICD 파이프라인
 on:
   push:
     branches:
+      - chore/docker-파이프라인-구축
       - develop
       - release/*
 
@@ -26,12 +27,12 @@ env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   ECR_REGISTRY: ${{ secrets.AWS_ECR_REGISTRY }}
   ECR_TARGET_REPO: "devths/fe-${{ startsWith(github.ref_name, 'release/') && 'stg' || 'dev'}}"
-  S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+  S3_BUCKET: ${{ secrets.AWS_S3_BUCKET_V2 }}
   S3_PREFIX: FE/${{ github.ref_name }}
 
   # CodeDeploy 설정
-  CODEDEPLOY_APP_NAME: ${{ secrets.CODE_DEPLOY_APP_NAME_V2 }}
-  CODEDEPLOY_DEPLOYMENT_GROUP: ${{ startsWith(github.ref_name, 'release/') && secrets.CODE_DEPLOY_GROUP_NAME_V2_STAGING || secrets.CODE_DEPLOY_GROUP_NAME_V2_DEV }}
+  CODEDEPLOY_APP_NAME: ${{ secrets.CODEDEPLOY_APP_NAME }}
+  CODEDEPLOY_DEPLOYMENT_GROUP: ${{ startsWith(github.ref_name, 'release/') && secrets.CODE_DEPLOY_GROUP_NAME_STAGING_V2 || secrets.CODE_DEPLOY_GROUP_NAME_DEV_V2 }}
 
   # Discord 설정
   DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_NON_PROD_URL }}
@@ -194,6 +195,9 @@ jobs:
           # CodeDeploy 설정 및 스크립트 복사
           cp appspec.yml deploy-temp/
           cp -r scripts deploy-temp/
+
+          # Docker Compose 파일 복사
+          cp docker-compose.yml deploy-temp/
 
           # 이미지 정보 파일 생성
           cat > deploy-temp/image-info.env << EOF
