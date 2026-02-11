@@ -198,6 +198,7 @@ jobs:
 
           # Docker Compose 파일 복사
           cp docker-compose.yml deploy-temp/
+          cp promtail-config.yml deploy-temp/
 
           # 이미지 정보 파일 생성
           cat > deploy-temp/image-info.env << EOF
