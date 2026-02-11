@@ -3,8 +3,11 @@
 import { Users } from 'lucide-react';
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
+import FollowUserProfileModal, {
+  type FollowUserProfileModalData,
+} from '@/components/mypage/FollowUserProfileModal';
 import { useMyFollowersInfiniteQuery } from '@/lib/hooks/users/useMyFollowersInfiniteQuery';
 import { useMyFollowingsInfiniteQuery } from '@/lib/hooks/users/useMyFollowingsInfiniteQuery';
 
@@ -29,6 +32,7 @@ export default function FollowListScreen() {
     fetchNextPage: fetchFollowingsNextPage,
   } = useMyFollowingsInfiniteQuery({ size: 12 });
   const infiniteScrollTriggerRef = useRef<HTMLDivElement | null>(null);
+  const [selectedUser, setSelectedUser] = useState<FollowUserProfileModalData | null>(null);
   const activeTab = searchParams.get('tab') === 'followings' ? 'followings' : 'followers';
   const followers = followerData?.pages.flatMap((page) => page.followers) ?? [];
   const followings = followingData?.pages.flatMap((page) => page.followings) ?? [];
@@ -40,6 +44,10 @@ export default function FollowListScreen() {
     params.set('tab', tab);
 
     router.replace(`${pathname}?${params.toString()}`);
+  };
+
+  const handleOpenProfileModal = (user: FollowUserProfileModalData) => {
+    setSelectedUser(user);
   };
 
   useEffect(() => {
@@ -130,9 +138,18 @@ export default function FollowListScreen() {
             ) : (
               <>
                 {followers.map((follower) => (
-                  <article
+                  <button
                     key={follower.id}
-                    className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3"
+                    type="button"
+                    onClick={() =>
+                      handleOpenProfileModal({
+                        userId: follower.userId,
+                        nickname: follower.nickname,
+                        profileImage: follower.profileImage,
+                        isFollowing: follower.isFollowing,
+                      })
+                    }
+                    className="flex w-full items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left hover:border-[#05C075]"
                   >
                     {follower.profileImage ? (
                       <Image
@@ -151,7 +168,7 @@ export default function FollowListScreen() {
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-neutral-900">{follower.nickname}</p>
                     </div>
-                  </article>
+                  </button>
                 ))}
                 {hasFollowersNextPage ? <div ref={infiniteScrollTriggerRef} className="h-1" /> : null}
                 {isFollowersFetchingNextPage ? (
@@ -179,9 +196,18 @@ export default function FollowListScreen() {
             ) : (
               <>
                 {followings.map((following) => (
-                  <article
+                  <button
                     key={following.id}
-                    className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3"
+                    type="button"
+                    onClick={() =>
+                      handleOpenProfileModal({
+                        userId: following.userId,
+                        nickname: following.nickname,
+                        profileImage: following.profileImage,
+                        isFollowing: following.isFollowing,
+                      })
+                    }
+                    className="flex w-full items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left hover:border-[#05C075]"
                   >
                     {following.profileImage ? (
                       <Image
@@ -202,7 +228,7 @@ export default function FollowListScreen() {
                         {following.nickname}
                       </p>
                     </div>
-                  </article>
+                  </button>
                 ))}
                 {hasFollowingsNextPage ? <div ref={infiniteScrollTriggerRef} className="h-1" /> : null}
                 {isFollowingsFetchingNextPage ? (
@@ -213,6 +239,12 @@ export default function FollowListScreen() {
           </div>
         )}
       </section>
+
+      <FollowUserProfileModal
+        open={Boolean(selectedUser)}
+        onClose={() => setSelectedUser(null)}
+        user={selectedUser}
+      />
     </main>
   );
 }
