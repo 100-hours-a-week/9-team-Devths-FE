@@ -188,7 +188,7 @@ export default function BoardEditPage() {
       router.push('/board');
       return;
     }
-    router.push(`/board/${postId}`);
+    router.push(`/board/${postId}?from=edit`);
   }, [postId, router]);
 
   const handleSubmit = useCallback(async () => {
