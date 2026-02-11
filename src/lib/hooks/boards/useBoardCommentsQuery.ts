@@ -13,7 +13,6 @@ export function useBoardCommentsQuery(postId: number | null, size = 50) {
       return listBoardComments(postId, size);
     },
     enabled: Boolean(postId),
-    refetchInterval: 10000,
     refetchOnWindowFocus: true,
   });
 }

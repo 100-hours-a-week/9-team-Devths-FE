@@ -628,6 +628,7 @@ export default function BoardDetailPage() {
                             commentId,
                             content: nextContent,
                           });
+                          await refetchComments();
                           handleCommentEditCancel();
                           return true;
                         } catch (error) {
