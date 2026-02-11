@@ -5,20 +5,20 @@ services:
     container_name: devths-fe
     restart: unless-stopped
     expose:
-      - "3000"
+      - '3000'
     networks:
       - devths-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/']
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 30s
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: '10m'
+        max-file: '3'
 
   # 로그 관련 사이드카
   promtail:
@@ -32,10 +32,10 @@ services:
     networks:
       - devths-network
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "5m"
-        max-file: "2"
+        max-size: '5m'
+        max-file: '2'
 
 networks:
   devths-network:
