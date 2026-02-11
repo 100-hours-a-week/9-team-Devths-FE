@@ -11,6 +11,7 @@ import EditProfileModal from '@/components/mypage/EditProfileModal';
 import WithdrawModal from '@/components/mypage/WithdrawModal';
 import { postLogout } from '@/lib/api/auth';
 import { clearAccessToken } from '@/lib/auth/token';
+import { useMyCommentsInfiniteQuery } from '@/lib/hooks/users/useMyCommentsInfiniteQuery';
 import { useMyPostsInfiniteQuery } from '@/lib/hooks/users/useMyPostsInfiniteQuery';
 import { useMeQuery } from '@/lib/hooks/users/useMeQuery';
 import { toast } from '@/lib/toast/store';
@@ -22,6 +23,8 @@ export default function MyPageScreen() {
   const { data, isLoading, isError } = useMeQuery();
   const { data: myPostsData, isLoading: isMyPostsLoading, isError: isMyPostsError } =
     useMyPostsInfiniteQuery({ size: 5 });
+  const { data: myCommentsData, isLoading: isMyCommentsLoading, isError: isMyCommentsError } =
+    useMyCommentsInfiniteQuery({ size: 5 });
   const [activeContentTab, setActiveContentTab] = useState<'posts' | 'comments'>('posts');
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
@@ -75,6 +78,7 @@ export default function MyPageScreen() {
   };
 
   const myPosts = myPostsData?.pages.flatMap((page) => page.posts) ?? [];
+  const myComments = myCommentsData?.pages.flatMap((page) => page.comments) ?? [];
 
   const formatDateTime = (isoDate: string) => {
     const date = new Date(isoDate);
@@ -90,6 +94,10 @@ export default function MyPageScreen() {
   };
 
   const handleMovePostDetail = (postId: number) => {
+    router.push(`/board/${postId}`);
+  };
+
+  const handleMoveCommentPostDetail = (postId: number) => {
     router.push(`/board/${postId}`);
   };
 
@@ -268,12 +276,37 @@ export default function MyPageScreen() {
             )}
           </div>
         ) : (
-          <div className="mt-6 flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-neutral-200 py-16 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100">
-              <Smile className="h-6 w-6 text-neutral-400" />
-            </div>
-            <p className="mt-4 text-sm font-semibold text-neutral-700">내가 쓴 댓글 기능 업데이트 준비 중</p>
-            <p className="mt-1 text-xs text-neutral-400">다음 버전에 추가될 예정입니다.</p>
+          <div className="mt-4 space-y-2">
+            {isMyCommentsLoading ? (
+              Array.from({ length: 3 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3"
+                >
+                  <div className="h-4 w-40 animate-pulse rounded bg-neutral-200" />
+                  <div className="mt-2 h-3 w-28 animate-pulse rounded bg-neutral-200" />
+                </div>
+              ))
+            ) : isMyCommentsError ? (
+              <p className="py-8 text-center text-sm text-red-500">
+                내가 쓴 댓글 목록을 불러오지 못했습니다.
+              </p>
+            ) : (
+              myComments.map((comment) => (
+                <button
+                  key={comment.id}
+                  type="button"
+                  onClick={() => handleMoveCommentPostDetail(comment.postId)}
+                  className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left hover:border-[#05C075]"
+                >
+                  <p className="line-clamp-1 text-sm font-semibold text-neutral-900">
+                    {comment.postTitle}
+                  </p>
+                  <p className="mt-1 line-clamp-1 text-xs text-neutral-600">{comment.content}</p>
+                  <p className="mt-1 text-xs text-neutral-500">{formatDateTime(comment.createdAt)}</p>
+                </button>
+              ))
+            )}
           </div>
         )}
       </section>
