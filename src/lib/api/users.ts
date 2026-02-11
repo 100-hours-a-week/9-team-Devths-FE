@@ -152,6 +152,56 @@ export async function fetchMyFollowers(
   return { ok, status, json };
 }
 
+export type FollowingSummaryData = {
+  id: number;
+  userId: number;
+  nickname: string;
+  profileImage: string | null;
+  isFollowing: boolean;
+};
+
+export type FollowingListData = CursorListResponse<FollowingSummaryData, 'followings'>;
+
+export type FetchMyFollowingsParams = {
+  size?: number;
+  lastId?: number | null;
+  nickname?: string;
+};
+
+export type FetchMyFollowingsResult = {
+  ok: boolean;
+  status: number;
+  json: (ApiResponse<FollowingListData> | ApiErrorResponse) | null;
+};
+
+export async function fetchMyFollowings(
+  params?: FetchMyFollowingsParams,
+): Promise<FetchMyFollowingsResult> {
+  const queryParams = new URLSearchParams();
+
+  const size = params?.size;
+  if (size !== null && size !== undefined) {
+    queryParams.set('size', String(size));
+  }
+
+  const lastId = params?.lastId;
+  if (lastId !== null && lastId !== undefined) {
+    queryParams.set('lastId', String(lastId));
+  }
+
+  const nickname = params?.nickname;
+  if (nickname) {
+    queryParams.set('nickname', nickname);
+  }
+
+  const queryString = queryParams.toString();
+  const path =
+    queryString ? `/api/users/me/followings?${queryString}` : '/api/users/me/followings';
+
+  const { ok, status, json } = await api.get<FollowingListData>(path);
+  return { ok, status, json };
+}
+
 export type UpdateMeRequest = {
   nickname: string;
   interests?: string[];
