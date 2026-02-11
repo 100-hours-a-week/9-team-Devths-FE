@@ -22,7 +22,7 @@ env:
 
   # CodeDeploy 설정
   CODEDEPLOY_APP_NAME: ${{ secrets.CODEDEPLOY_APP_NAME }}
-  CODEDEPLOY_DEPLOYMENT_GROUP: ${{ secrets.CODE_DEPLOY_GROUP_NAME_PROD }}
+  CODEDEPLOY_DEPLOYMENT_GROUP: ${{ secrets.CODE_DEPLOY_GROUP_NAME_PROD_V2 }}
 
   # Discord 설정
   DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_PROD_URL }}
@@ -293,5 +293,5 @@ jobs:
 
             **🔗 링크**: [워크플로우 확인하기](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
           color: 16776960
-          username: GitHub FE Production Deploy Bot
+          username: GitHub Production FE Deploy Bot
           avatar_url: ${{ env.DISCORD_AVATAR_URL }}
