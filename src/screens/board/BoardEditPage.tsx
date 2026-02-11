@@ -1,7 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import BoardAttachmentCard from '@/components/board/BoardAttachmentCard';
@@ -22,25 +22,84 @@ import {
   BOARD_IMAGE_MIME_TYPES,
   BOARD_TITLE_MAX_LENGTH,
 } from '@/constants/boardCreate';
-import { createBoardPost } from '@/lib/api/boards';
+import { updateBoardPost } from '@/lib/api/boards';
+import { boardsKeys } from '@/lib/hooks/boards/queryKeys';
 import { useBoardAttachments } from '@/lib/hooks/boards/useBoardAttachments';
+import { useBoardDetailQuery } from '@/lib/hooks/boards/useBoardDetailQuery';
 import { toast } from '@/lib/toast/store';
 import { uploadFile } from '@/lib/upload/uploadFile';
 import { validateFiles } from '@/lib/validators/attachment';
 import { validateBoardCreateContent, validateBoardCreateTitle } from '@/lib/validators/boardCreate';
 
 import type { BoardTag } from '@/types/board';
-import type { BoardAttachment } from '@/types/boardCreate';
+import type { BoardAttachment, BoardAttachmentType } from '@/types/boardCreate';
+import type { PostDetailAttachment } from '@/types/boardDetail';
 
-export default function BoardCreatePage() {
+type EditSnapshot = {
+  title: string;
+  content: string;
+  tags: BoardTag[];
+  fileIds: number[];
+};
+
+function sortNumberList(values: number[]) {
+  return [...values].sort((a, b) => a - b);
+}
+
+function areEqualNumberList(left: number[], right: number[]) {
+  if (left.length !== right.length) return false;
+  return left.every((value, index) => value === right[index]);
+}
+
+function mapServerAttachmentType(
+  fileType: PostDetailAttachment['fileType'],
+): BoardAttachmentType | null {
+  if (fileType === 'IMAGE') return 'IMAGE';
+  if (fileType === 'FILE') return 'PDF';
+  return null;
+}
+
+function toBoardAttachment(attachment: PostDetailAttachment): BoardAttachment | null {
+  const type = mapServerAttachmentType(attachment.fileType);
+  if (!type) return null;
+
+  const file = new File([], attachment.fileName, {
+    type: type === 'IMAGE' ? 'image/png' : 'application/pdf',
+  });
+
+  return {
+    id: `existing-${attachment.fileId}`,
+    type,
+    name: attachment.fileName,
+    size: attachment.fileSize,
+    file,
+    previewUrl: attachment.fileUrl,
+    fileId: attachment.fileId,
+    status: 'READY',
+  };
+}
+
+export default function BoardEditPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const params = useParams();
   const { setOptions, resetOptions } = useHeader();
+  const { setBlocked, setBlockMessage, setBlockedNavigationHandler } = useNavigationGuard();
+  const postIdParam = Array.isArray(params?.postId) ? params.postId[0] : params?.postId;
+  const postId = useMemo(() => {
+    if (!postIdParam) return null;
+    const parsed = Number(postIdParam);
+    return Number.isFinite(parsed) ? parsed : null;
+  }, [postIdParam]);
+  const { data: post, isLoading, isError, refetch } = useBoardDetailQuery(postId);
+
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isPreview, setIsPreview] = useState(false);
   const [tags, setTags] = useState<BoardTag[]>([]);
   const {
     attachments,
+    setAttachments,
     addAttachments,
     updateAttachment,
     replaceAttachmentFile,
@@ -51,29 +110,96 @@ export default function BoardCreatePage() {
   const [maskAttachment, setMaskAttachment] = useState<BoardAttachment | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const titleError = useMemo(() => validateBoardCreateTitle(title), [title]);
-  const contentError = useMemo(() => validateBoardCreateContent(content), [content]);
-  const isSubmitEnabled = useMemo(() => !titleError && !contentError, [contentError, titleError]);
+  const didBindInitialRef = useRef(false);
+  const [initialSnapshot, setInitialSnapshot] = useState<EditSnapshot | null>(null);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fileTooLargeOpen, setFileTooLargeOpen] = useState(false);
   const [unsupportedFileOpen, setUnsupportedFileOpen] = useState(false);
   const [partialFailOpen, setPartialFailOpen] = useState(false);
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
   const pendingNavigationRef = useRef<(() => void) | null>(null);
-  const { setBlocked, setBlockMessage, setBlockedNavigationHandler } = useNavigationGuard();
-  const queryClient = useQueryClient();
 
-  const isDirty = useMemo(
-    () => title.trim().length > 0 || content.trim().length > 0,
-    [content, title],
+  const titleError = useMemo(() => validateBoardCreateTitle(title), [title]);
+  const contentError = useMemo(() => validateBoardCreateContent(content), [content]);
+  const isSubmitEnabled = useMemo(() => !titleError && !contentError, [contentError, titleError]);
+
+  useEffect(() => {
+    didBindInitialRef.current = false;
+    setTitle('');
+    setContent('');
+    setTags([]);
+    setInitialSnapshot(null);
+    clearAttachments();
+  }, [clearAttachments, postId]);
+
+  useEffect(() => {
+    if (!post) return;
+    if (didBindInitialRef.current) return;
+
+    const nextAttachments = post.attachments
+      .map(toBoardAttachment)
+      .filter((attachment): attachment is BoardAttachment => attachment !== null);
+
+    setTitle(post.title);
+    setContent(post.content);
+    setTags(post.tags);
+    setAttachments(nextAttachments);
+    setInitialSnapshot({
+      title: post.title.trim(),
+      content: post.content.trim(),
+      tags: [...post.tags].sort(),
+      fileIds: sortNumberList(
+        nextAttachments
+          .map((attachment) => attachment.fileId ?? null)
+          .filter((fileId): fileId is number => typeof fileId === 'number'),
+      ),
+    });
+    didBindInitialRef.current = true;
+  }, [post, setAttachments]);
+
+  const readyFileIds = useMemo(
+    () =>
+      sortNumberList(
+        attachments
+          .filter(
+            (attachment) => attachment.status === 'READY' && typeof attachment.fileId === 'number',
+          )
+          .map((attachment) => attachment.fileId as number),
+      ),
+    [attachments],
   );
 
+  const hasUnstableAttachment = useMemo(
+    () => attachments.some((attachment) => attachment.status !== 'READY'),
+    [attachments],
+  );
+
+  const isDirty = useMemo(() => {
+    if (!initialSnapshot) return false;
+
+    if (title.trim() !== initialSnapshot.title) return true;
+    if (content.trim() !== initialSnapshot.content) return true;
+
+    const currentTags = [...tags].sort();
+    if (currentTags.join('|') !== initialSnapshot.tags.join('|')) return true;
+    if (hasUnstableAttachment) return true;
+
+    return !areEqualNumberList(readyFileIds, initialSnapshot.fileIds);
+  }, [content, hasUnstableAttachment, initialSnapshot, readyFileIds, tags, title]);
+
   const handleBackClick = useCallback(() => {
-    router.push('/board');
-  }, [router]);
+    if (!postId) {
+      router.push('/board');
+      return;
+    }
+    router.push(`/board/${postId}?from=edit`);
+  }, [postId, router]);
 
   const handleSubmit = useCallback(async () => {
+    if (!postId) return;
     if (!isSubmitEnabled || isSubmitting) return;
+
     const hasPending = attachments.some((attachment) => attachment.status === 'PENDING');
     if (hasPending) {
       toast('첨부 파일 업로드가 완료될 때까지 기다려 주세요.');
@@ -87,29 +213,35 @@ export default function BoardCreatePage() {
 
     setIsSubmitting(true);
     try {
-      const trimmedTitle = title.trim();
-      const trimmedContent = content.trim();
-      const fileIds = attachments
-        .filter((attachment) => attachment.status === 'READY' && attachment.fileId)
-        .map((attachment) => attachment.fileId!) as number[];
-
-      await createBoardPost({
-        title: trimmedTitle,
-        content: trimmedContent,
+      await updateBoardPost(postId, {
+        title: title.trim(),
+        content: content.trim(),
         tags: tags.length > 0 ? tags : undefined,
-        fileIds: fileIds.length > 0 ? fileIds : undefined,
+        fileIds: readyFileIds.length > 0 ? readyFileIds : undefined,
       });
 
-      toast('게시글이 등록되었습니다.');
-      queryClient.invalidateQueries({ queryKey: ['boards', 'list'], exact: false });
-      router.push('/board');
+      toast('게시글이 수정되었습니다.');
+      void queryClient.invalidateQueries({ queryKey: boardsKeys.detail(postId) });
+      void queryClient.invalidateQueries({ queryKey: ['boards', 'list'], exact: false });
+      router.push(`/board/${postId}?from=edit`);
     } catch (error) {
-      const message = error instanceof Error ? error.message : '게시글 등록에 실패했습니다.';
+      const message = error instanceof Error ? error.message : '게시글 수정에 실패했습니다.';
       toast(message);
     } finally {
       setIsSubmitting(false);
     }
-  }, [attachments, isSubmitEnabled, isSubmitting, queryClient, router, tags, title, content]);
+  }, [
+    attachments,
+    isSubmitEnabled,
+    isSubmitting,
+    postId,
+    queryClient,
+    readyFileIds,
+    router,
+    tags,
+    title,
+    content,
+  ]);
 
   const rightSlot = useMemo(
     () => (
@@ -123,7 +255,7 @@ export default function BoardCreatePage() {
             : 'rounded-full bg-[#05C075] px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-[#05C075]/30 transition hover:bg-[#04A865]'
         }
       >
-        {isSubmitting ? '등록 중...' : '등록'}
+        {isSubmitting ? '저장 중...' : '저장'}
       </button>
     ),
     [handleSubmit, isSubmitEnabled, isSubmitting],
@@ -131,7 +263,7 @@ export default function BoardCreatePage() {
 
   useEffect(() => {
     setOptions({
-      title: '게시글 작성',
+      title: '게시글 수정',
       showBackButton: true,
       onBackClick: handleBackClick,
       rightSlot,
@@ -143,7 +275,7 @@ export default function BoardCreatePage() {
   useEffect(() => {
     setBlocked(isDirty);
     if (isDirty) {
-      setBlockMessage('작성 중인 내용이 있습니다.');
+      setBlockMessage('수정 중인 내용이 있습니다.');
     } else {
       setBlockMessage('답변 생성 중에는 이동할 수 없습니다.');
     }
@@ -169,10 +301,6 @@ export default function BoardCreatePage() {
 
   const handleExitConfirm = useCallback(() => {
     setExitConfirmOpen(false);
-    setTitle('');
-    setContent('');
-    setTags([]);
-    setIsPreview(false);
     clearAttachments();
     const action = pendingNavigationRef.current;
     pendingNavigationRef.current = null;
@@ -314,6 +442,43 @@ export default function BoardCreatePage() {
     },
     [addAttachments, attachments, openErrorModal, uploadAttachments],
   );
+
+  if (!postId) {
+    return (
+      <main className="px-3 pt-4 pb-3">
+        <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-6 text-center text-sm text-neutral-500">
+          유효하지 않은 게시글입니다.
+        </div>
+      </main>
+    );
+  }
+
+  if (isLoading && !didBindInitialRef.current) {
+    return (
+      <main className="px-3 pt-4 pb-3">
+        <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-6 text-center text-sm text-neutral-500">
+          게시글 정보를 불러오는 중...
+        </div>
+      </main>
+    );
+  }
+
+  if (isError && !post) {
+    return (
+      <main className="px-3 pt-4 pb-3">
+        <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-6 text-center text-sm text-neutral-500">
+          <p>게시글 정보를 불러오지 못했습니다.</p>
+          <button
+            type="button"
+            onClick={() => void refetch()}
+            className="mt-3 rounded-full border border-neutral-200 bg-white px-4 py-1 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+          >
+            다시 시도
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="px-3 pt-4 pb-6">
@@ -480,8 +645,8 @@ export default function BoardCreatePage() {
       ) : null}
       <ConfirmModal
         isOpen={exitConfirmOpen}
-        title="작성 중인 내용이 있습니다"
-        message="작성 중인 내용을 저장하지 않고 나가시겠습니까?"
+        title="수정 중인 내용이 있습니다"
+        message="수정 중인 내용을 저장하지 않고 나가시겠습니까?"
         confirmText="나가기"
         cancelText="취소"
         onConfirm={handleExitConfirm}
