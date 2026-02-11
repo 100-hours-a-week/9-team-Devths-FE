@@ -66,6 +66,49 @@ export async function fetchMyPosts(params?: FetchMyPostsParams): Promise<FetchMy
   return { ok, status, json };
 }
 
+export type MyCommentSummaryData = {
+  id: number;
+  postId: number;
+  postTitle: string;
+  content: string;
+  createdAt: string;
+};
+
+export type MyCommentListData = CursorListResponse<MyCommentSummaryData, 'comments'>;
+
+export type FetchMyCommentsParams = {
+  size?: number;
+  lastId?: number | null;
+};
+
+export type FetchMyCommentsResult = {
+  ok: boolean;
+  status: number;
+  json: (ApiResponse<MyCommentListData> | ApiErrorResponse) | null;
+};
+
+export async function fetchMyComments(
+  params?: FetchMyCommentsParams,
+): Promise<FetchMyCommentsResult> {
+  const queryParams = new URLSearchParams();
+
+  const size = params?.size;
+  if (size !== null && size !== undefined) {
+    queryParams.set('size', String(size));
+  }
+
+  const lastId = params?.lastId;
+  if (lastId !== null && lastId !== undefined) {
+    queryParams.set('lastId', String(lastId));
+  }
+
+  const queryString = queryParams.toString();
+  const path = queryString ? `/api/users/me/comments?${queryString}` : '/api/users/me/comments';
+
+  const { ok, status, json } = await api.get<MyCommentListData>(path);
+  return { ok, status, json };
+}
+
 export type UpdateMeRequest = {
   nickname: string;
   interests?: string[];
