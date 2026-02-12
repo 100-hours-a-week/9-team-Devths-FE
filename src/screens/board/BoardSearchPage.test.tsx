@@ -7,13 +7,13 @@ const {
   backMock,
   setOptionsMock,
   resetOptionsMock,
-  useBoardSearchQueryMock,
+  useBoardSearchInfiniteQueryMock,
 } = vi.hoisted(() => ({
   pushMock: vi.fn(),
   backMock: vi.fn(),
   setOptionsMock: vi.fn(),
   resetOptionsMock: vi.fn(),
-  useBoardSearchQueryMock: vi.fn(),
+  useBoardSearchInfiniteQueryMock: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -30,8 +30,8 @@ vi.mock('@/components/layout/HeaderContext', () => ({
   }),
 }));
 
-vi.mock('@/lib/hooks/boards/useBoardSearchQuery', () => ({
-  useBoardSearchQuery: (params: unknown) => useBoardSearchQueryMock(params),
+vi.mock('@/lib/hooks/boards/useBoardSearchInfiniteQuery', () => ({
+  useBoardSearchInfiniteQuery: (params: unknown) => useBoardSearchInfiniteQueryMock(params),
 }));
 
 vi.mock('@/components/board/BoardPostCard', () => ({
@@ -48,39 +48,62 @@ vi.mock('@/components/board/BoardPostCard', () => ({
   ),
 }));
 
+vi.mock('@/components/llm/rooms/ListLoadMoreSentinel', () => ({
+  default: ({
+    onLoadMore,
+    hasNextPage,
+    isFetchingNextPage,
+  }: {
+    onLoadMore: () => void;
+    hasNextPage: boolean;
+    isFetchingNextPage: boolean;
+  }) => (
+    <button type="button" onClick={onLoadMore} disabled={!hasNextPage || isFetchingNextPage}>
+      load-more
+    </button>
+  ),
+}));
+
 import BoardSearchPage from '@/screens/board/BoardSearchPage';
 
 const RECENT_SEARCH_STORAGE_KEY = 'devths_board_recent_searches';
 
-type MockSearchParams = {
+type MockSearchInfiniteParams = {
   keyword: string;
   size?: number;
-  lastId?: number | null;
 };
 
-type MockSearchResult = {
+type MockPage = {
+  items: Array<{ postId: number; title: string }>;
+  lastId: number | null;
+  hasNext: boolean;
+};
+
+type MockSearchInfiniteResult = {
   data: {
-    items: Array<{ postId: number; title: string }>;
-    lastId: number | null;
-    hasNext: boolean;
+    pages: MockPage[];
   };
   isLoading: boolean;
   isError: boolean;
   error: Error | null;
   refetch: ReturnType<typeof vi.fn>;
+  fetchNextPage: ReturnType<typeof vi.fn>;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
 };
 
-function createQueryResult(overrides?: Partial<MockSearchResult>): MockSearchResult {
+function createQueryResult(overrides?: Partial<MockSearchInfiniteResult>): MockSearchInfiniteResult {
   return {
     data: {
-      items: [],
-      lastId: null,
-      hasNext: false,
+      pages: [],
     },
     isLoading: false,
     isError: false,
     error: null,
     refetch: vi.fn(),
+    fetchNextPage: vi.fn(),
+    hasNextPage: false,
+    isFetchingNextPage: false,
     ...overrides,
   };
 }
@@ -112,7 +135,7 @@ describe('BoardSearchPage', () => {
     });
     window.localStorage.clear();
 
-    useBoardSearchQueryMock.mockImplementation(() => createQueryResult());
+    useBoardSearchInfiniteQueryMock.mockImplementation(() => createQueryResult());
   });
 
   it('입력 검증 헬퍼 텍스트를 노출한다', async () => {
@@ -151,16 +174,20 @@ describe('BoardSearchPage', () => {
   it('검색 결과 카드를 렌더링하고 클릭 시 상세로 이동한다', async () => {
     const user = userEvent.setup();
 
-    useBoardSearchQueryMock.mockImplementation((params: MockSearchParams) => {
+    useBoardSearchInfiniteQueryMock.mockImplementation((params: MockSearchInfiniteParams) => {
       if (params.keyword === 'react') {
         return createQueryResult({
           data: {
-            items: [
-              { postId: 101, title: 'React 제목' },
-              { postId: 102, title: 'React 두번째' },
+            pages: [
+              {
+                items: [
+                  { postId: 101, title: 'React 제목' },
+                  { postId: 102, title: 'React 두번째' },
+                ],
+                lastId: null,
+                hasNext: false,
+              },
             ],
-            lastId: null,
-            hasNext: false,
           },
         });
       }
@@ -179,67 +206,44 @@ describe('BoardSearchPage', () => {
     expect(pushMock).toHaveBeenCalledWith('/board/101');
   });
 
-  it('페이지네이션 이전/다음/번호(최대 5개) 상태가 동작한다', async () => {
+  it('무한 스크롤 load more 동작으로 다음 결과를 이어서 표시한다', async () => {
     const user = userEvent.setup();
+    const fetchNextPageMock = vi.fn();
 
-    useBoardSearchQueryMock.mockImplementation((params: MockSearchParams) => {
-      if (params.keyword !== 'page') {
+    useBoardSearchInfiniteQueryMock.mockImplementation((params: MockSearchInfiniteParams) => {
+      if (params.keyword !== 'infinite') {
         return createQueryResult();
       }
 
-      const pageByLastId: Record<string, { page: number; nextLastId: number | null; hasNext: boolean }> = {
-        null: { page: 1, nextLastId: 11, hasNext: true },
-        '11': { page: 2, nextLastId: 22, hasNext: true },
-        '22': { page: 3, nextLastId: 33, hasNext: true },
-        '33': { page: 4, nextLastId: 44, hasNext: true },
-        '44': { page: 5, nextLastId: 55, hasNext: true },
-        '55': { page: 6, nextLastId: 66, hasNext: true },
-        '66': { page: 7, nextLastId: null, hasNext: false },
-      };
-
-      const key = String(params.lastId ?? null);
-      const pageData = pageByLastId[key] ?? pageByLastId.null;
-
       return createQueryResult({
         data: {
-          items: [{ postId: pageData.page, title: `page-${pageData.page}` }],
-          lastId: pageData.nextLastId,
-          hasNext: pageData.hasNext,
+          pages: [
+            {
+              items: [{ postId: 1, title: 'page-1' }],
+              lastId: 11,
+              hasNext: true,
+            },
+            {
+              items: [{ postId: 2, title: 'page-2' }],
+              lastId: null,
+              hasNext: false,
+            },
+          ],
         },
+        hasNextPage: true,
+        fetchNextPage: fetchNextPageMock,
       });
     });
 
     render(<BoardSearchPage />);
 
-    await user.type(screen.getByPlaceholderText('Search'), 'page');
+    await user.type(screen.getByPlaceholderText('Search'), 'infinite');
     await user.click(screen.getByRole('button', { name: '게시글 검색' }));
 
     expect(await screen.findByRole('button', { name: 'card-page-1' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'card-page-2' })).toBeInTheDocument();
 
-    const prevButton = screen.getByRole('button', { name: '이전' });
-    expect(prevButton).toBeDisabled();
-
-    await user.click(screen.getByRole('button', { name: '다음' }));
-    expect(await screen.findByRole('button', { name: 'card-page-2' })).toBeInTheDocument();
-    expect(prevButton).not.toBeDisabled();
-
-    await user.click(screen.getByRole('button', { name: '다음' }));
-    await screen.findByRole('button', { name: 'card-page-3' });
-    await user.click(screen.getByRole('button', { name: '다음' }));
-    await screen.findByRole('button', { name: 'card-page-4' });
-    await user.click(screen.getByRole('button', { name: '다음' }));
-    await screen.findByRole('button', { name: 'card-page-5' });
-    await user.click(screen.getByRole('button', { name: '다음' }));
-    await screen.findByRole('button', { name: 'card-page-6' });
-
-    const pageNumberButtons = screen
-      .getAllByRole('button')
-      .filter((button) => /^\d+$/.test(button.textContent ?? ''));
-
-    expect(pageNumberButtons.length).toBeLessThanOrEqual(5);
-    expect(screen.getByRole('button', { name: '6' })).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: '이전' }));
-    expect(await screen.findByRole('button', { name: 'card-page-5' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'load-more' }));
+    expect(fetchNextPageMock).toHaveBeenCalledTimes(1);
   });
 });

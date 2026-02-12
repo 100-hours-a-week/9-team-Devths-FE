@@ -6,12 +6,12 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
 import BoardPostCard from '@/components/board/BoardPostCard';
 import { useHeader } from '@/components/layout/HeaderContext';
-import { useBoardSearchQuery } from '@/lib/hooks/boards/useBoardSearchQuery';
+import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
+import { useBoardSearchInfiniteQuery } from '@/lib/hooks/boards/useBoardSearchInfiniteQuery';
 
 const RECENT_SEARCH_STORAGE_KEY = 'devths_board_recent_searches';
 const MAX_RECENT_SEARCH_COUNT = 10;
 const SEARCH_PAGE_SIZE = 20;
-const PAGE_NUMBER_WINDOW_SIZE = 5;
 
 type KeywordValidationResult = {
   isValid: boolean;
@@ -99,45 +99,15 @@ export default function BoardSearchPage() {
   const [submittedKeyword, setSubmittedKeyword] = useState('');
   const [helperText, setHelperText] = useState<string | null>(null);
   const [recentKeywords, setRecentKeywords] = useState<string[]>(() => readRecentKeywords());
-  const [currentPage, setCurrentPage] = useState(1);
-  const [currentLastId, setCurrentLastId] = useState<number | null>(null);
-  const [pageCursorMap, setPageCursorMap] = useState<Record<number, number | null>>({ 1: null });
 
-  const { data, isLoading, isError, error, refetch } = useBoardSearchQuery({
+  const { data, isLoading, isError, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useBoardSearchInfiniteQuery({
     keyword: submittedKeyword,
     size: SEARCH_PAGE_SIZE,
-    lastId: currentLastId,
   });
-  const posts = data?.items ?? [];
+  const posts = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data]);
   const hasSubmittedKeyword = submittedKeyword.length > 0;
   const resultCount = posts.length;
-
-  const effectivePageCursorMap = useMemo(() => {
-    if (!data?.hasNext || data.lastId === null) {
-      return pageCursorMap;
-    }
-
-    if (pageCursorMap[currentPage + 1] !== undefined) {
-      return pageCursorMap;
-    }
-
-    return {
-      ...pageCursorMap,
-      [currentPage + 1]: data.lastId,
-    };
-  }, [currentPage, data, pageCursorMap]);
-
-  const hasNextPage = Boolean(
-    effectivePageCursorMap[currentPage + 1] !== undefined || (data?.hasNext && data.lastId !== null),
-  );
-  const canGoPreviousPage = currentPage > 1;
-
-  const pageNumbers = useMemo(() => {
-    const maxPage = Math.max(1, ...Object.keys(effectivePageCursorMap).map(Number));
-    const start = Math.floor((currentPage - 1) / PAGE_NUMBER_WINDOW_SIZE) * PAGE_NUMBER_WINDOW_SIZE + 1;
-    const end = Math.min(start + PAGE_NUMBER_WINDOW_SIZE - 1, maxPage);
-    return Array.from({ length: end - start + 1 }, (_, index) => start + index);
-  }, [currentPage, effectivePageCursorMap]);
 
   const handleBackClick = useCallback(() => {
     if (typeof window !== 'undefined' && window.history.length > 1) {
@@ -165,9 +135,6 @@ export default function BoardSearchPage() {
     }
 
     setHelperText(null);
-    setCurrentPage(1);
-    setCurrentLastId(null);
-    setPageCursorMap({ 1: null });
     setSubmittedKeyword(validation.normalizedKeyword);
     setRecentKeywords((previousKeywords) => {
       const nextKeywords = addRecentKeyword(previousKeywords, validation.normalizedKeyword);
@@ -191,9 +158,6 @@ export default function BoardSearchPage() {
       const normalizedInput = value.trim();
       if (submittedKeyword.length > 0 && normalizedInput !== submittedKeyword) {
         setSubmittedKeyword('');
-        setCurrentPage(1);
-        setCurrentLastId(null);
-        setPageCursorMap({ 1: null });
       }
 
       if (helperText === null) {
@@ -229,52 +193,12 @@ export default function BoardSearchPage() {
     [router],
   );
 
-  const moveToPage = (targetPage: number) => {
-    if (targetPage === currentPage) {
+  const handleLoadMore = useCallback(() => {
+    if (!hasNextPage || isFetchingNextPage) {
       return;
     }
-
-    const targetCursor = effectivePageCursorMap[targetPage];
-    if (targetCursor === undefined) {
-      return;
-    }
-
-    if (pageCursorMap[targetPage] === undefined) {
-      setPageCursorMap((previousMap) => ({
-        ...previousMap,
-        [targetPage]: targetCursor,
-      }));
-    }
-
-    setCurrentPage(targetPage);
-    setCurrentLastId(targetCursor);
-  };
-
-  const handlePreviousPage = () => {
-    if (!canGoPreviousPage) {
-      return;
-    }
-    moveToPage(currentPage - 1);
-  };
-
-  const handleNextPage = () => {
-    if (!hasNextPage) {
-      return;
-    }
-
-    const nextCursor = effectivePageCursorMap[currentPage + 1];
-    if (nextCursor !== undefined) {
-      if (pageCursorMap[currentPage + 1] === undefined) {
-        setPageCursorMap((previousMap) => ({
-          ...previousMap,
-          [currentPage + 1]: nextCursor,
-        }));
-      }
-
-      setCurrentPage(currentPage + 1);
-      setCurrentLastId(nextCursor);
-    }
-  };
+    void fetchNextPage();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   return (
     <main className="px-3 pt-4 pb-3">
@@ -365,41 +289,14 @@ export default function BoardSearchPage() {
                     <BoardPostCard key={post.postId} post={post} onClick={handlePostClick} />
                   ))}
                 </div>
-
-                <div className="flex items-center justify-center gap-1">
-                  <button
-                    type="button"
-                    onClick={handlePreviousPage}
-                    disabled={!canGoPreviousPage}
-                    className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs text-neutral-700 transition disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    이전
-                  </button>
-
-                  {pageNumbers.map((pageNumber) => (
-                    <button
-                      key={pageNumber}
-                      type="button"
-                      onClick={() => moveToPage(pageNumber)}
-                      className={`min-w-8 rounded-lg px-2.5 py-1.5 text-xs transition ${
-                        currentPage === pageNumber
-                          ? 'bg-emerald-600 font-semibold text-white'
-                          : 'border border-neutral-200 text-neutral-700'
-                      }`}
-                    >
-                      {pageNumber}
-                    </button>
-                  ))}
-
-                  <button
-                    type="button"
-                    onClick={handleNextPage}
-                    disabled={!hasNextPage}
-                    className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs text-neutral-700 transition disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    다음
-                  </button>
-                </div>
+                <ListLoadMoreSentinel
+                  onLoadMore={handleLoadMore}
+                  hasNextPage={hasNextPage ?? false}
+                  isFetchingNextPage={isFetchingNextPage}
+                  hasNextText="스크롤로 더 보기"
+                  loadingText="추가 검색 결과를 불러오는 중..."
+                  endText="모든 검색 결과를 불러왔습니다"
+                />
               </div>
             )}
           </div>
