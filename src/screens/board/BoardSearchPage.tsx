@@ -80,7 +80,9 @@ function buildSearchPageUrl(keyword: string) {
     url.searchParams.delete(SEARCH_QUERY_PARAM_KEY);
   }
 
-  return url.searchParams.toString() ? `${url.pathname}?${url.searchParams.toString()}` : url.pathname;
+  return url.searchParams.toString()
+    ? `${url.pathname}?${url.searchParams.toString()}`
+    : url.pathname;
 }
 
 function validateKeyword(value: string): KeywordValidationResult {
@@ -127,8 +129,16 @@ export default function BoardSearchPage() {
   const [recentKeywords, setRecentKeywords] = useState<string[]>(() => readRecentKeywords());
   const [isSearchInputActive, setIsSearchInputActive] = useState(false);
 
-  const { data, isLoading, isError, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useBoardSearchInfiniteQuery({
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useBoardSearchInfiniteQuery({
     keyword: submittedKeyword,
     size: SEARCH_PAGE_SIZE,
   });
@@ -175,22 +185,25 @@ export default function BoardSearchPage() {
     };
   }, []);
 
-  const executeSearch = useCallback((rawKeyword: string) => {
-    const validation = validateKeyword(rawKeyword);
-    if (!validation.isValid) {
-      setHelperText(validation.helperText);
-      return;
-    }
+  const executeSearch = useCallback(
+    (rawKeyword: string) => {
+      const validation = validateKeyword(rawKeyword);
+      if (!validation.isValid) {
+        setHelperText(validation.helperText);
+        return;
+      }
 
-    setHelperText(null);
-    setSubmittedKeyword(validation.normalizedKeyword);
-    router.replace(buildSearchPageUrl(validation.normalizedKeyword), { scroll: false });
-    setRecentKeywords((previousKeywords) => {
-      const nextKeywords = addRecentKeyword(previousKeywords, validation.normalizedKeyword);
-      writeRecentKeywords(nextKeywords);
-      return nextKeywords;
-    });
-  }, [router]);
+      setHelperText(null);
+      setSubmittedKeyword(validation.normalizedKeyword);
+      router.replace(buildSearchPageUrl(validation.normalizedKeyword), { scroll: false });
+      setRecentKeywords((previousKeywords) => {
+        const nextKeywords = addRecentKeyword(previousKeywords, validation.normalizedKeyword);
+        writeRecentKeywords(nextKeywords);
+        return nextKeywords;
+      });
+    },
+    [router],
+  );
 
   const handleSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
@@ -264,7 +277,7 @@ export default function BoardSearchPage() {
                 onFocus={() => setIsSearchInputActive(true)}
                 onClick={() => setIsSearchInputActive(true)}
                 onChange={(event) => handleKeywordChange(event.target.value)}
-                className="h-10 w-full rounded-xl border border-neutral-200 bg-white pr-3 pl-9 text-sm text-neutral-900 outline-none transition focus:border-emerald-500"
+                className="h-10 w-full rounded-xl border border-neutral-200 bg-white pr-3 pl-9 text-sm text-neutral-900 transition outline-none focus:border-emerald-500"
               />
             </div>
             <button
@@ -275,9 +288,7 @@ export default function BoardSearchPage() {
               검색
             </button>
           </form>
-          {helperText !== null ? (
-            <p className="mt-2 text-xs text-red-500">{helperText}</p>
-          ) : null}
+          {helperText !== null ? <p className="mt-2 text-xs text-red-500">{helperText}</p> : null}
 
           {isSearchInputActive && recentKeywords.length > 0 ? (
             <div className="mt-3 rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-3">

@@ -179,7 +179,9 @@ function mapPostSummary(post: PostSummaryResponse): BoardPostSummary {
   };
 }
 
-function buildListBoardPostsPath(params: Pick<ListBoardPostsParams, 'size' | 'lastId' | 'keyword'>) {
+function buildListBoardPostsPath(
+  params: Pick<ListBoardPostsParams, 'size' | 'lastId' | 'keyword'>,
+) {
   const { size, lastId, keyword } = params;
   const queryParams = new URLSearchParams();
   queryParams.set('size', size.toString());

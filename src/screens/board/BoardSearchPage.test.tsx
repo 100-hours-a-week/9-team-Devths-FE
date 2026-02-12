@@ -95,7 +95,9 @@ type MockSearchInfiniteResult = {
   isFetchingNextPage: boolean;
 };
 
-function createQueryResult(overrides?: Partial<MockSearchInfiniteResult>): MockSearchInfiniteResult {
+function createQueryResult(
+  overrides?: Partial<MockSearchInfiniteResult>,
+): MockSearchInfiniteResult {
   return {
     data: {
       pages: [],
@@ -172,7 +174,9 @@ describe('BoardSearchPage', () => {
     await user.click(screen.getByRole('button', { name: 'spring 최근 검색어 삭제' }));
     expect(screen.queryByRole('button', { name: 'spring' })).not.toBeInTheDocument();
 
-    const stored = JSON.parse(window.localStorage.getItem(RECENT_SEARCH_STORAGE_KEY) ?? '[]') as string[];
+    const stored = JSON.parse(
+      window.localStorage.getItem(RECENT_SEARCH_STORAGE_KEY) ?? '[]',
+    ) as string[];
     expect(stored).toEqual(['react']);
   });
 
