@@ -54,7 +54,10 @@ function resolveNotificationPath(notification: NotificationResponse) {
   return normalized;
 }
 
-export default function NotificationItem({ notification, onClickNotification }: NotificationItemProps) {
+export default function NotificationItem({
+  notification,
+  onClickNotification,
+}: NotificationItemProps) {
   const router = useRouter();
   const senderName = notification.sender?.senderName ?? '시스템';
   const formattedDate = formatNotificationDate(notification.createdAt);

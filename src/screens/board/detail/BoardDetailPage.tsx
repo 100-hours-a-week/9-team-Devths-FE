@@ -157,33 +157,30 @@ export default function BoardDetailPage() {
     return null;
   }, [commentThreads, post, selectedCommentAuthorId]);
 
-  const { data: selectedAuthorProfile, refetch: refetchSelectedAuthorProfile } =
-    useQuery({
-      queryKey: userKeys.profile(selectedCommentAuthorId ?? -1),
-      queryFn: async () => {
-        const result = await fetchUserProfile(selectedCommentAuthorId!);
+  const { data: selectedAuthorProfile, refetch: refetchSelectedAuthorProfile } = useQuery({
+    queryKey: userKeys.profile(selectedCommentAuthorId ?? -1),
+    queryFn: async () => {
+      const result = await fetchUserProfile(selectedCommentAuthorId!);
 
-        if (!result.ok || !result.json) {
-          throw new Error('Failed to fetch user profile');
-        }
+      if (!result.ok || !result.json) {
+        throw new Error('Failed to fetch user profile');
+      }
 
-        if ('data' in result.json && result.json.data) {
-          return result.json.data;
-        }
+      if ('data' in result.json && result.json.data) {
+        return result.json.data;
+      }
 
-        throw new Error('Invalid response format');
-      },
-      enabled: selectedCommentAuthorId !== null,
-    });
+      throw new Error('Invalid response format');
+    },
+    enabled: selectedCommentAuthorId !== null,
+  });
 
   const modalUser = selectedAuthor
     ? {
         userId: selectedAuthor.userId,
         nickname: selectedAuthorProfile?.user.nickname ?? selectedAuthor.nickname,
         profileImageUrl:
-          selectedAuthorProfile?.profileImage?.url ??
-          selectedAuthor.profileImageUrl ??
-          null,
+          selectedAuthorProfile?.profileImage?.url ?? selectedAuthor.profileImageUrl ?? null,
         interests: selectedAuthorProfile?.interests ?? selectedAuthor.interests ?? [],
       }
     : null;

@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 import GoogleLoginButton from '@/components/auth/GoogleLoginButton';
@@ -11,13 +11,12 @@ import { getAccessToken } from '@/lib/auth/token';
 
 export default function LandingPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
     let isCancelled = false;
 
     const restoreSession = async () => {
-      const redirect = searchParams?.get('redirect');
+      const redirect = new URLSearchParams(window.location.search).get('redirect');
       const fallback = '/llm';
       const targetPath = redirect && redirect.startsWith('/') ? redirect : fallback;
 
@@ -41,7 +40,7 @@ export default function LandingPage() {
     return () => {
       isCancelled = true;
     };
-  }, [router, searchParams]);
+  }, [router]);
 
   return (
     <main className="min-h-dvh bg-transparent">
