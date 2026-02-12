@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { Bell, Loader2, Plus, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -12,9 +13,14 @@ import { useHeader } from '@/components/layout/HeaderContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
 import { BOARD_TAG_MAX, POPULAR_MIN_LIKES } from '@/constants/board';
+import { fetchUserProfile } from '@/lib/api/users';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { useBoardListInfiniteQuery } from '@/lib/hooks/boards/useBoardListInfiniteQuery';
 import { useUnreadCountQuery } from '@/lib/hooks/notifications/useUnreadCountQuery';
+import { userKeys } from '@/lib/hooks/users/queryKeys';
+import { useFollowUserMutation } from '@/lib/hooks/users/useFollowUserMutation';
+import { useUnfollowUserMutation } from '@/lib/hooks/users/useUnfollowUserMutation';
+import { toast } from '@/lib/toast/store';
 
 import type { BoardSort, BoardTag } from '@/types/board';
 
@@ -40,6 +46,8 @@ export default function BoardListPage() {
   const [isReadyToRefresh, setIsReadyToRefresh] = useState(false);
   const isRefreshingRef = useRef(false);
   const isReadyToRefreshRef = useRef(false);
+  const followMutation = useFollowUserMutation();
+  const unfollowMutation = useUnfollowUserMutation();
 
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useBoardListInfiniteQuery({
@@ -75,7 +83,39 @@ export default function BoardListPage() {
     () => rawPosts.find((post) => post.author.userId === selectedAuthorId)?.author ?? null,
     [rawPosts, selectedAuthorId],
   );
-  const isMine = Boolean(selectedAuthor && currentUserId !== null && selectedAuthor.userId === currentUserId);
+  const {
+    data: selectedAuthorProfile,
+    refetch: refetchSelectedAuthorProfile,
+  } = useQuery({
+    queryKey: userKeys.profile(selectedAuthorId ?? -1),
+    queryFn: async () => {
+      const result = await fetchUserProfile(selectedAuthorId!);
+
+      if (!result.ok || !result.json) {
+        throw new Error('Failed to fetch user profile');
+      }
+
+      if ('data' in result.json && result.json.data) {
+        return result.json.data;
+      }
+
+      throw new Error('Invalid response format');
+    },
+    enabled: selectedAuthorId !== null,
+  });
+
+  const modalUser = selectedAuthor
+    ? {
+        userId: selectedAuthor.userId,
+        nickname: selectedAuthorProfile?.user.nickname ?? selectedAuthor.nickname,
+        profileImageUrl: selectedAuthorProfile?.profileImage?.url ?? selectedAuthor.profileImageUrl ?? null,
+        interests: selectedAuthorProfile?.interests ?? selectedAuthor.interests ?? [],
+      }
+    : null;
+  const modalUserId = modalUser?.userId ?? null;
+  const isMine = Boolean(modalUserId !== null && currentUserId !== null && modalUserId === currentUserId);
+  const isFollowing = selectedAuthorProfile?.isFollowing ?? false;
+  const isFollowPending = followMutation.isPending || unfollowMutation.isPending;
 
   const handleCreatePost = useCallback(() => {
     requestNavigation(() => router.push('/board/create'));
@@ -92,6 +132,22 @@ export default function BoardListPage() {
   const handleAuthorClick = (userId: number) => {
     setSelectedAuthorId(userId);
     setIsMiniProfileOpen(true);
+  };
+
+  const handleToggleFollow = async () => {
+    if (modalUserId === null || isMine || isFollowPending) return;
+
+    try {
+      if (isFollowing) {
+        await unfollowMutation.mutateAsync(modalUserId);
+      } else {
+        await followMutation.mutateAsync(modalUserId);
+      }
+      void refetchSelectedAuthorProfile();
+    } catch (error) {
+      const err = error as Error & { serverMessage?: string };
+      toast(err.serverMessage ?? '팔로우 처리에 실패했습니다.');
+    }
   };
 
   const handlePostClick = useCallback(
@@ -327,23 +383,20 @@ export default function BoardListPage() {
       <BoardUserMiniProfile
         open={isMiniProfileOpen}
         onClose={() => setIsMiniProfileOpen(false)}
-        user={
-          selectedAuthor
-            ? {
-                userId: selectedAuthor.userId,
-                nickname: selectedAuthor.nickname,
-                profileImageUrl: selectedAuthor.profileImageUrl ?? null,
-                interests: selectedAuthor.interests ?? [],
-              }
-            : null
-        }
+        user={modalUser}
         isMine={isMine}
+        isFollowing={isFollowing}
+        isFollowPending={isFollowPending}
         onGoMyPage={() => {
           setIsMiniProfileOpen(false);
           requestNavigation(() => router.push('/profile'));
         }}
-        onStartChat={() => setIsMiniProfileOpen(false)}
-        onToggleFollow={() => setIsMiniProfileOpen(false)}
+        onStartChat={() => {
+          if (modalUserId === null || isMine) return;
+          setIsMiniProfileOpen(false);
+          requestNavigation(() => router.push(`/chat?targetUserId=${modalUserId}`));
+        }}
+        onToggleFollow={() => void handleToggleFollow()}
       />
     </>
   );

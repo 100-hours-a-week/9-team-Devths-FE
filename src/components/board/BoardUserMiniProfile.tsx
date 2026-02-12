@@ -5,13 +5,11 @@ import Image from 'next/image';
 
 import BaseModal from '@/components/common/BaseModal';
 
-import type { BoardInterest } from '@/types/board';
-
 type BoardMiniProfileUser = {
   userId: number;
   nickname: string;
   profileImageUrl?: string | null;
-  interests?: BoardInterest[];
+  interests?: string[];
 };
 
 type BoardUserMiniProfileProps = {
@@ -20,6 +18,7 @@ type BoardUserMiniProfileProps = {
   user: BoardMiniProfileUser | null;
   isMine?: boolean;
   isFollowing?: boolean;
+  isFollowPending?: boolean;
   onToggleFollow?: () => void;
   onStartChat?: () => void;
   onGoMyPage?: () => void;
@@ -31,6 +30,7 @@ export default function BoardUserMiniProfile({
   user,
   isMine = false,
   isFollowing = false,
+  isFollowPending = false,
   onToggleFollow,
   onStartChat,
   onGoMyPage,
@@ -93,10 +93,11 @@ export default function BoardUserMiniProfile({
             <button
               type="button"
               onClick={onToggleFollow}
+              disabled={isFollowPending}
               className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[#05C075] px-4 py-2 text-sm font-semibold text-white hover:bg-[#04A865]"
             >
               <UserPlus className="h-4 w-4" />
-              {isFollowing ? '팔로잉' : '팔로우'}
+              {isFollowPending ? '처리 중...' : isFollowing ? '팔로잉' : '팔로우'}
             </button>
           </div>
         )}
