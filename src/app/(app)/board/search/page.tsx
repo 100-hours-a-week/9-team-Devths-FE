@@ -1,5 +1,5 @@
-import BoardSearchPlaceholderPage from '@/screens/board/BoardSearchPlaceholderPage';
+import BoardSearchPage from '@/screens/board/BoardSearchPage';
 
 export default function Page() {
-  return <BoardSearchPlaceholderPage />;
+  return <BoardSearchPage />;
 }
