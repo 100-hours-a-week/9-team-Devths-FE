@@ -1,6 +1,6 @@
 'use client';
 
-import { Search } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 
@@ -98,10 +98,13 @@ export default function BoardSearchPage() {
   const [helperText, setHelperText] = useState<string | null>(null);
   const [recentKeywords, setRecentKeywords] = useState<string[]>(() => readRecentKeywords());
 
-  const { data } = useBoardSearchQuery({
+  const { data, isLoading, isError, error, refetch } = useBoardSearchQuery({
     keyword: submittedKeyword,
     size: 20,
   });
+  const posts = data?.items ?? [];
+  const hasSubmittedKeyword = submittedKeyword.length > 0;
+  const resultCount = posts.length;
 
   const handleBackClick = useCallback(() => {
     if (typeof window !== 'undefined' && window.history.length > 1) {
@@ -238,17 +241,37 @@ export default function BoardSearchPage() {
         ) : null}
 
         <section className="rounded-2xl bg-white px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
-          <p className="text-sm font-semibold text-neutral-900">게시글 ({data?.items.length ?? 0})</p>
+          <p className="text-sm font-semibold text-neutral-900">게시글 ({resultCount})</p>
           <div className="mt-3">
-            {data?.items.length ? (
-              <div className="space-y-3">
-                {data.items.map((post) => (
-                  <BoardPostCard key={post.postId} post={post} onClick={handlePostClick} />
-                ))}
+            {!hasSubmittedKeyword ? (
+              <div className="rounded-xl border border-dashed border-neutral-200 px-3 py-6 text-center text-xs text-neutral-500">
+                검색어를 입력하고 검색해 주세요.
+              </div>
+            ) : isLoading ? (
+              <div className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-neutral-200 px-3 py-6 text-xs text-neutral-500">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>검색 결과를 불러오는 중...</span>
+              </div>
+            ) : isError ? (
+              <div className="rounded-xl border border-dashed border-neutral-200 px-3 py-6 text-center text-xs text-neutral-500">
+                <p>{error instanceof Error ? error.message : '검색 결과를 불러오지 못했습니다.'}</p>
+                <button
+                  type="button"
+                  onClick={() => void refetch()}
+                  className="mt-3 rounded-full border border-neutral-200 bg-white px-4 py-1 text-[11px] font-semibold text-neutral-700 transition hover:bg-neutral-50"
+                >
+                  다시 시도
+                </button>
+              </div>
+            ) : resultCount === 0 ? (
+              <div className="rounded-xl border border-dashed border-neutral-200 px-3 py-6 text-center text-xs text-neutral-500">
+                검색 결과가 없습니다.
               </div>
             ) : (
-              <div className="rounded-xl border border-dashed border-neutral-200 px-3 py-6 text-center text-xs text-neutral-500">
-                검색 결과 영역
+              <div className="space-y-3">
+                {posts.map((post) => (
+                  <BoardPostCard key={post.postId} post={post} onClick={handlePostClick} />
+                ))}
               </div>
             )}
           </div>
