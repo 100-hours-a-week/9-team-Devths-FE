@@ -23,6 +23,12 @@ type ListBoardPostsParams = {
   keyword?: string | null;
 };
 
+export type SearchBoardPostsParams = {
+  size: number;
+  lastId?: number | null;
+  keyword: string;
+};
+
 type PostAuthorInfoResponse = {
   userId: number;
   nickname: string;
@@ -192,6 +198,14 @@ function buildListBoardPostsPath(params: Pick<ListBoardPostsParams, 'size' | 'la
   return queryParams.toString() ? `/api/posts?${queryParams.toString()}` : '/api/posts';
 }
 
+function mapPostListToCursorPage(data: PostListResponse): CursorPage<BoardPostSummary> {
+  return {
+    items: data.posts.map(mapPostSummary),
+    lastId: data.lastId ?? null,
+    hasNext: data.hasNext,
+  };
+}
+
 export async function listBoardPosts(
   params: ListBoardPostsParams,
 ): Promise<CursorPage<BoardPostSummary>> {
@@ -208,13 +222,30 @@ export async function listBoardPosts(
   const path = buildListBoardPostsPath({ size, lastId, keyword });
   const result = await api.get<PostListResponse>(path, { credentials: 'include' });
   const data = getResponseData<PostListResponse>(result, 'Failed to fetch posts');
-  const items = data.posts.map(mapPostSummary);
+  return mapPostListToCursorPage(data);
+}
 
-  return {
-    items,
-    lastId: data.lastId ?? null,
-    hasNext: data.hasNext,
-  };
+/**
+ * 게시글 검색 API
+ * - endpoint: GET /api/posts
+ * - backend search param: `tag` (제목/내용 통합검색 키워드)
+ */
+export async function searchBoardPosts(
+  params: SearchBoardPostsParams,
+): Promise<CursorPage<BoardPostSummary>> {
+  const normalizedKeyword = params.keyword.trim();
+  if (!normalizedKeyword) {
+    throw new Error('검색어를 입력해 주세요.');
+  }
+
+  const path = buildListBoardPostsPath({
+    size: params.size,
+    lastId: params.lastId,
+    keyword: normalizedKeyword,
+  });
+  const result = await api.get<PostListResponse>(path, { credentials: 'include' });
+  const data = getResponseData<PostListResponse>(result, '검색 결과를 불러오지 못했습니다.');
+  return mapPostListToCursorPage(data);
 }
 
 export async function createBoardPost(payload: CreateBoardPostRequest) {
