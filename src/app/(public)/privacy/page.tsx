@@ -1,8 +1,19 @@
+import Link from 'next/link';
+
 export default function PrivacyPage() {
   return (
     <main className="min-h-dvh bg-transparent">
       <div className="mx-auto w-full bg-white px-6 py-8 sm:max-w-[430px] sm:shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
         <article className="mx-auto w-full max-w-2xl space-y-6 text-sm leading-6 text-neutral-800">
+          <div>
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1 text-sm font-medium text-neutral-600 hover:text-neutral-900"
+            >
+              <span aria-hidden="true">&larr;</span>
+              뒤로가기
+            </Link>
+          </div>
           <header className="space-y-2">
             <h1 className="text-xl font-bold text-neutral-900">Devths 개인정보 처리방침</h1>
             <p>
