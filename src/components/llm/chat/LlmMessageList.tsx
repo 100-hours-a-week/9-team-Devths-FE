@@ -16,7 +16,9 @@ type Props = {
   onDeleteFailed?: (messageId: string) => void;
   retryEvaluationMessageId?: string | null;
   onRetryEvaluation?: (messageId: string) => void;
+  onFinishInterview?: (messageId: string) => void;
   isRetryEvaluationLoading?: boolean;
+  isInterviewEvaluationActionsDisabled?: boolean;
 };
 
 function TypingIndicator() {
@@ -254,7 +256,9 @@ export default function LlmMessageList({
   onDeleteFailed,
   retryEvaluationMessageId,
   onRetryEvaluation,
+  onFinishInterview,
   isRetryEvaluationLoading = false,
+  isInterviewEvaluationActionsDisabled = false,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const prevScrollHeightRef = useRef<number>(0);
@@ -481,15 +485,29 @@ export default function LlmMessageList({
                     m.isInterviewEvaluation &&
                     m.id === retryEvaluationMessageId &&
                     onRetryEvaluation ? (
-                      <div className="mt-2">
+                      <div className="mt-2 flex items-center gap-2">
                         <button
                           type="button"
                           onClick={() => onRetryEvaluation(m.id)}
-                          disabled={isRetryEvaluationLoading}
+                          disabled={
+                            isRetryEvaluationLoading || isInterviewEvaluationActionsDisabled
+                          }
                           className="rounded-lg border border-[#05C075] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#05C075] hover:bg-[#05C075]/5 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           면접 평가 다시받기
                         </button>
+                        {onFinishInterview ? (
+                          <button
+                            type="button"
+                            onClick={() => onFinishInterview(m.id)}
+                            disabled={
+                              isRetryEvaluationLoading || isInterviewEvaluationActionsDisabled
+                            }
+                            className="rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-neutral-700 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            면접 끝내기
+                          </button>
+                        ) : null}
                       </div>
                     ) : null}
                   </div>

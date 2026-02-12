@@ -75,6 +75,9 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
   const [model] = useState<LlmModel>(() => parseModel(initialModel));
   const [isSending, setIsSending] = useState(false);
   const [isRetryingEvaluation, setIsRetryingEvaluation] = useState(false);
+  const [finishedEvaluationMessageId, setFinishedEvaluationMessageId] = useState<string | null>(
+    null,
+  );
   const [streamingAiId, setStreamingAiId] = useState<string | null>(null);
   const notifiedDeletedRef = useRef(false);
   const { setBlocked, setBlockMessage } = useNavigationGuard();
@@ -604,6 +607,18 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
     void handleEndInterview({ retry: true, interviewId: targetInterviewId });
   }, [handleEndInterview, latestInterviewEvaluationMessage]);
 
+  const handleFinishInterview = useCallback((messageId: string) => {
+    setFinishedEvaluationMessageId(messageId);
+    setInterviewSession(null);
+    setInterviewUIState('idle');
+  }, []);
+
+  const isInterviewEvaluationActionsDisabled =
+    (latestInterviewEvaluationMessage?.id !== null &&
+      latestInterviewEvaluationMessage?.id !== undefined &&
+      latestInterviewEvaluationMessage.id === finishedEvaluationMessageId) ||
+    isRetryingEvaluation;
+
   const isComposerDisabled =
     isSending ||
     Boolean(streamingAiId) ||
@@ -663,7 +678,9 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
             interviewUIState === 'idle' ? (latestInterviewEvaluationMessage?.id ?? null) : null
           }
           onRetryEvaluation={() => handleRetryInterviewEvaluation()}
+          onFinishInterview={handleFinishInterview}
           isRetryEvaluationLoading={isRetryingEvaluation}
+          isInterviewEvaluationActionsDisabled={isInterviewEvaluationActionsDisabled}
         />
 
         <div className="bg-white px-3 py-2">
