@@ -2,7 +2,7 @@
 
 import { Loader2, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import BoardPostCard from '@/components/board/BoardPostCard';
 import { useHeader } from '@/components/layout/HeaderContext';
@@ -120,10 +120,12 @@ function validateKeyword(value: string): KeywordValidationResult {
 export default function BoardSearchPage() {
   const router = useRouter();
   const { setOptions, resetOptions } = useHeader();
+  const searchSectionRef = useRef<HTMLElement | null>(null);
   const [keywordInput, setKeywordInput] = useState(() => readKeywordFromLocation());
   const [submittedKeyword, setSubmittedKeyword] = useState(() => readKeywordFromLocation());
   const [helperText, setHelperText] = useState<string | null>(null);
   const [recentKeywords, setRecentKeywords] = useState<string[]>(() => readRecentKeywords());
+  const [isSearchInputActive, setIsSearchInputActive] = useState(false);
 
   const { data, isLoading, isError, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useBoardSearchInfiniteQuery({
@@ -151,6 +153,27 @@ export default function BoardSearchPage() {
 
     return () => resetOptions();
   }, [handleBackClick, resetOptions, setOptions]);
+
+  useEffect(() => {
+    const handleDocumentMouseDown = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      if (searchSectionRef.current?.contains(target)) {
+        return;
+      }
+
+      setIsSearchInputActive(false);
+    };
+
+    document.addEventListener('mousedown', handleDocumentMouseDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleDocumentMouseDown);
+    };
+  }, []);
 
   const executeSearch = useCallback((rawKeyword: string) => {
     const validation = validateKeyword(rawKeyword);
@@ -230,7 +253,7 @@ export default function BoardSearchPage() {
   return (
     <main className="px-3 pt-4 pb-3">
       <div className="space-y-4">
-        <section className="rounded-2xl bg-white px-4 py-4">
+        <section ref={searchSectionRef} className="rounded-2xl bg-white px-4 py-4">
           <form onSubmit={handleSubmit} className="flex items-center gap-2">
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-neutral-400" />
@@ -238,6 +261,8 @@ export default function BoardSearchPage() {
                 type="text"
                 placeholder="Search"
                 value={keywordInput}
+                onFocus={() => setIsSearchInputActive(true)}
+                onClick={() => setIsSearchInputActive(true)}
                 onChange={(event) => handleKeywordChange(event.target.value)}
                 className="h-10 w-full rounded-xl border border-neutral-200 bg-white pr-3 pl-9 text-sm text-neutral-900 outline-none transition focus:border-emerald-500"
               />
@@ -253,34 +278,34 @@ export default function BoardSearchPage() {
           {helperText !== null ? (
             <p className="mt-2 text-xs text-red-500">{helperText}</p>
           ) : null}
-        </section>
 
-        {recentKeywords.length > 0 ? (
-          <section className="rounded-2xl bg-white px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
-            <p className="text-sm font-semibold text-neutral-900">최근 검색어</p>
-            <ul className="mt-2 space-y-2">
-              {recentKeywords.map((keyword) => (
-                <li key={keyword} className="flex items-center justify-between gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleRecentKeywordClick(keyword)}
-                    className="min-w-0 flex-1 truncate text-left text-sm text-neutral-700 transition hover:text-emerald-700"
-                  >
-                    {keyword}
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={`${keyword} 최근 검색어 삭제`}
-                    onClick={() => handleRecentKeywordDelete(keyword)}
-                    className="rounded-md px-1 text-sm text-neutral-400 transition hover:text-neutral-700"
-                  >
-                    X
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
+          {isSearchInputActive && recentKeywords.length > 0 ? (
+            <div className="mt-3 rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-3">
+              <p className="text-sm font-semibold text-neutral-900">최근 검색어</p>
+              <ul className="mt-2 space-y-2">
+                {recentKeywords.map((keyword) => (
+                  <li key={keyword} className="flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleRecentKeywordClick(keyword)}
+                      className="min-w-0 flex-1 truncate text-left text-sm text-neutral-700 transition hover:text-emerald-700"
+                    >
+                      {keyword}
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`${keyword} 최근 검색어 삭제`}
+                      onClick={() => handleRecentKeywordDelete(keyword)}
+                      className="rounded-md px-1 text-sm text-neutral-400 transition hover:text-neutral-700"
+                    >
+                      X
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </section>
 
         <section className="rounded-2xl bg-white px-4 py-4">
           <p className="text-sm font-semibold text-neutral-900">게시글 ({resultCount})</p>

@@ -164,9 +164,11 @@ describe('BoardSearchPage', () => {
 
     render(<BoardSearchPage />);
 
+    await user.click(screen.getByPlaceholderText('Search'));
     await user.click(screen.getByRole('button', { name: 'react' }));
     expect(screen.getByPlaceholderText('Search')).toHaveValue('react');
 
+    await user.click(screen.getByPlaceholderText('Search'));
     await user.click(screen.getByRole('button', { name: 'spring 최근 검색어 삭제' }));
     expect(screen.queryByRole('button', { name: 'spring' })).not.toBeInTheDocument();
 
