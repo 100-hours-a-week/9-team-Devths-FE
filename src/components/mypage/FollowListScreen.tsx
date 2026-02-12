@@ -174,11 +174,11 @@ export default function FollowListScreen() {
   return (
     <main className="flex flex-col px-6 pb-4">
       <section className="-mx-6 bg-white px-6 py-4">
-        <div className="flex border-b border-neutral-200">
+        <div className="-mx-6 flex border-b border-neutral-200">
           <button
             type="button"
             onClick={() => handleChangeTab('followers')}
-            className={`flex-1 border-b-2 py-2 text-sm font-semibold transition-colors ${
+            className={`flex-1 border-b-2 px-6 py-2 text-sm font-semibold transition-colors ${
               activeTab === 'followers'
                 ? 'border-neutral-900 text-neutral-900'
                 : 'border-transparent text-neutral-500 hover:text-neutral-700'
@@ -189,7 +189,7 @@ export default function FollowListScreen() {
           <button
             type="button"
             onClick={() => handleChangeTab('followings')}
-            className={`flex-1 border-b-2 py-2 text-sm font-semibold transition-colors ${
+            className={`flex-1 border-b-2 px-6 py-2 text-sm font-semibold transition-colors ${
               activeTab === 'followings'
                 ? 'border-neutral-900 text-neutral-900'
                 : 'border-transparent text-neutral-500 hover:text-neutral-700'
