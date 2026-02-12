@@ -229,11 +229,11 @@ export default function MyPageScreen() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 rounded-xl bg-neutral-50 p-2">
+            <div className="grid grid-cols-2 bg-white">
               <button
                 type="button"
                 onClick={handleMoveFollowers}
-                className="rounded-lg bg-white px-3 py-2 text-center hover:bg-neutral-50"
+                className="border-r border-neutral-200 bg-white px-3 py-2 text-center hover:bg-neutral-50"
               >
                 <p className="text-[11px] text-neutral-500">팔로워</p>
                 <p className="mt-1 text-sm font-semibold text-neutral-900">
@@ -243,7 +243,7 @@ export default function MyPageScreen() {
               <button
                 type="button"
                 onClick={handleMoveFollowings}
-                className="rounded-lg bg-white px-3 py-2 text-center hover:bg-neutral-50"
+                className="bg-white px-3 py-2 text-center hover:bg-neutral-50"
               >
                 <p className="text-[11px] text-neutral-500">팔로잉</p>
                 <p className="mt-1 text-sm font-semibold text-neutral-900">
