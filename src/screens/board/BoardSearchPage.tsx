@@ -7,11 +7,53 @@ import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { useBoardSearchQuery } from '@/lib/hooks/boards/useBoardSearchQuery';
 
+const RECENT_SEARCH_STORAGE_KEY = 'devths_board_recent_searches';
+const MAX_RECENT_SEARCH_COUNT = 10;
+
 type KeywordValidationResult = {
   isValid: boolean;
   helperText: string | null;
   normalizedKeyword: string;
 };
+
+function readRecentKeywords(): string[] {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    const raw = window.localStorage.getItem(RECENT_SEARCH_STORAGE_KEY);
+    if (raw === null) {
+      return [];
+    }
+
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .filter((value): value is string => typeof value === 'string')
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0)
+      .slice(0, MAX_RECENT_SEARCH_COUNT);
+  } catch {
+    return [];
+  }
+}
+
+function writeRecentKeywords(keywords: string[]) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.localStorage.setItem(RECENT_SEARCH_STORAGE_KEY, JSON.stringify(keywords));
+}
+
+function addRecentKeyword(previousKeywords: string[], keyword: string) {
+  const deduplicated = previousKeywords.filter((item) => item !== keyword);
+  return [keyword, ...deduplicated].slice(0, MAX_RECENT_SEARCH_COUNT);
+}
 
 function validateKeyword(value: string): KeywordValidationResult {
   const normalizedKeyword = value.trim();
@@ -53,6 +95,7 @@ export default function BoardSearchPage() {
   const [keywordInput, setKeywordInput] = useState('');
   const [submittedKeyword, setSubmittedKeyword] = useState('');
   const [helperText, setHelperText] = useState<string | null>(null);
+  const [recentKeywords, setRecentKeywords] = useState<string[]>(() => readRecentKeywords());
 
   const { data } = useBoardSearchQuery({
     keyword: submittedKeyword,
@@ -88,6 +131,11 @@ export default function BoardSearchPage() {
 
       setHelperText(null);
       setSubmittedKeyword(validation.normalizedKeyword);
+      setRecentKeywords((previousKeywords) => {
+        const nextKeywords = addRecentKeyword(previousKeywords, validation.normalizedKeyword);
+        writeRecentKeywords(nextKeywords);
+        return nextKeywords;
+      });
     },
     [keywordInput],
   );
@@ -136,7 +184,9 @@ export default function BoardSearchPage() {
 
         <section className="rounded-2xl bg-white px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
           <p className="text-sm font-semibold text-neutral-900">최근 검색어</p>
-          <p className="mt-2 text-xs text-neutral-500">최근 검색어 영역</p>
+          <p className="mt-2 text-xs text-neutral-500">
+            {recentKeywords.length > 0 ? recentKeywords.join(', ') : '최근 검색어 영역'}
+          </p>
         </section>
 
         <section className="rounded-2xl bg-white px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
