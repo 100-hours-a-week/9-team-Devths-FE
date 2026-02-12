@@ -180,7 +180,7 @@ export default function FollowListScreen() {
             onClick={() => handleChangeTab('followers')}
             className={`flex-1 border-b-2 px-6 py-2 text-sm font-semibold transition-colors ${
               activeTab === 'followers'
-                ? 'border-neutral-900 text-neutral-900'
+                ? 'border-[#05C075] text-neutral-900'
                 : 'border-transparent text-neutral-500 hover:text-neutral-700'
             }`}
           >
@@ -191,7 +191,7 @@ export default function FollowListScreen() {
             onClick={() => handleChangeTab('followings')}
             className={`flex-1 border-b-2 px-6 py-2 text-sm font-semibold transition-colors ${
               activeTab === 'followings'
-                ? 'border-neutral-900 text-neutral-900'
+                ? 'border-[#05C075] text-neutral-900'
                 : 'border-transparent text-neutral-500 hover:text-neutral-700'
             }`}
           >
