@@ -7,11 +7,52 @@ import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { useBoardSearchQuery } from '@/lib/hooks/boards/useBoardSearchQuery';
 
+type KeywordValidationResult = {
+  isValid: boolean;
+  helperText: string | null;
+  normalizedKeyword: string;
+};
+
+function validateKeyword(value: string): KeywordValidationResult {
+  const normalizedKeyword = value.trim();
+
+  if (normalizedKeyword.length === 0) {
+    return {
+      isValid: false,
+      helperText: '검색어를 입력해 주세요.',
+      normalizedKeyword,
+    };
+  }
+
+  if (normalizedKeyword.length < 2) {
+    return {
+      isValid: false,
+      helperText: '검색어는 2자 이상 입력해 주세요.',
+      normalizedKeyword,
+    };
+  }
+
+  if (normalizedKeyword.length > 30) {
+    return {
+      isValid: false,
+      helperText: '검색어는 최대 30자까지 입력할 수 있습니다.',
+      normalizedKeyword,
+    };
+  }
+
+  return {
+    isValid: true,
+    helperText: null,
+    normalizedKeyword,
+  };
+}
+
 export default function BoardSearchPage() {
   const router = useRouter();
   const { setOptions, resetOptions } = useHeader();
   const [keywordInput, setKeywordInput] = useState('');
   const [submittedKeyword, setSubmittedKeyword] = useState('');
+  const [helperText, setHelperText] = useState<string | null>(null);
 
   const { data } = useBoardSearchQuery({
     keyword: submittedKeyword,
@@ -39,9 +80,30 @@ export default function BoardSearchPage() {
   const handleSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
-      setSubmittedKeyword(keywordInput.trim());
+      const validation = validateKeyword(keywordInput);
+      if (!validation.isValid) {
+        setHelperText(validation.helperText);
+        return;
+      }
+
+      setHelperText(null);
+      setSubmittedKeyword(validation.normalizedKeyword);
     },
     [keywordInput],
+  );
+
+  const handleKeywordChange = useCallback(
+    (value: string) => {
+      setKeywordInput(value);
+
+      if (helperText === null) {
+        return;
+      }
+
+      const validation = validateKeyword(value);
+      setHelperText(validation.helperText);
+    },
+    [helperText],
   );
 
   return (
@@ -55,7 +117,7 @@ export default function BoardSearchPage() {
                 type="text"
                 placeholder="Search"
                 value={keywordInput}
-                onChange={(event) => setKeywordInput(event.target.value)}
+                onChange={(event) => handleKeywordChange(event.target.value)}
                 className="h-10 w-full rounded-xl border border-neutral-200 bg-white pr-3 pl-9 text-sm text-neutral-900 outline-none transition focus:border-emerald-500"
               />
             </div>
@@ -67,6 +129,9 @@ export default function BoardSearchPage() {
               검색
             </button>
           </form>
+          {helperText !== null ? (
+            <p className="mt-2 text-xs text-red-500">{helperText}</p>
+          ) : null}
         </section>
 
         <section className="rounded-2xl bg-white px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
