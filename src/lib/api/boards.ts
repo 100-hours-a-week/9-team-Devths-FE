@@ -15,6 +15,18 @@ type ListBoardPostsParams = {
   lastId?: number | null;
   sort: BoardSort;
   tags?: BoardTag[];
+  /**
+   * Backend contract:
+   * - query key: `tag`
+   * - meaning: 통합 검색 키워드 (제목 + 내용 검색)
+   */
+  keyword?: string | null;
+};
+
+export type SearchBoardPostsParams = {
+  size: number;
+  lastId?: number | null;
+  keyword: string;
 };
 
 type PostAuthorInfoResponse = {
@@ -163,26 +175,75 @@ function mapPostSummary(post: PostSummaryResponse): BoardPostSummary {
   };
 }
 
-export async function listBoardPosts(
-  params: ListBoardPostsParams,
-): Promise<CursorPage<BoardPostSummary>> {
-  const { size, lastId } = params;
+function buildListBoardPostsPath(
+  params: Pick<ListBoardPostsParams, 'size' | 'lastId' | 'keyword'>,
+) {
+  const { size, lastId, keyword } = params;
   const queryParams = new URLSearchParams();
   queryParams.set('size', size.toString());
+
   if (lastId !== null && lastId !== undefined) {
     queryParams.set('lastId', lastId.toString());
   }
 
-  const path = queryParams.toString() ? `/api/posts?${queryParams.toString()}` : '/api/posts';
-  const result = await api.get<PostListResponse>(path, { credentials: 'include' });
-  const data = getResponseData<PostListResponse>(result, 'Failed to fetch posts');
-  const items = data.posts.map(mapPostSummary);
+  // NOTE:
+  // Backend uses `tag` query parameter as unified title/content search keyword.
+  const normalizedKeyword = keyword?.trim();
+  if (normalizedKeyword) {
+    queryParams.set('tag', normalizedKeyword);
+  }
 
+  return queryParams.toString() ? `/api/posts?${queryParams.toString()}` : '/api/posts';
+}
+
+function mapPostListToCursorPage(data: PostListResponse): CursorPage<BoardPostSummary> {
   return {
-    items,
+    items: data.posts.map(mapPostSummary),
     lastId: data.lastId ?? null,
     hasNext: data.hasNext,
   };
+}
+
+export async function listBoardPosts(
+  params: ListBoardPostsParams,
+): Promise<CursorPage<BoardPostSummary>> {
+  const {
+    size,
+    lastId,
+    keyword,
+    // 현재 게시판 목록 화면에서는 sort/tags를 프론트에서만 사용 중.
+    // (검색 페이지 연동 시 keyword -> `tag` 파라미터 사용 예정)
+    sort: _sort,
+    tags: _tags,
+  } = params;
+
+  const path = buildListBoardPostsPath({ size, lastId, keyword });
+  const result = await api.get<PostListResponse>(path, { credentials: 'include' });
+  const data = getResponseData<PostListResponse>(result, 'Failed to fetch posts');
+  return mapPostListToCursorPage(data);
+}
+
+/**
+ * 게시글 검색 API
+ * - endpoint: GET /api/posts
+ * - backend search param: `tag` (제목/내용 통합검색 키워드)
+ */
+export async function searchBoardPosts(
+  params: SearchBoardPostsParams,
+): Promise<CursorPage<BoardPostSummary>> {
+  const normalizedKeyword = params.keyword.trim();
+  if (!normalizedKeyword) {
+    throw new Error('검색어를 입력해 주세요.');
+  }
+
+  const path = buildListBoardPostsPath({
+    size: params.size,
+    lastId: params.lastId,
+    keyword: normalizedKeyword,
+  });
+  const result = await api.get<PostListResponse>(path, { credentials: 'include' });
+  const data = getResponseData<PostListResponse>(result, '검색 결과를 불러오지 못했습니다.');
+  return mapPostListToCursorPage(data);
 }
 
 export async function createBoardPost(payload: CreateBoardPostRequest) {
