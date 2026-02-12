@@ -1,3 +1,5 @@
+import type { CursorListResponse } from '@/types/pagination';
+
 export type AiChatRoom = {
   roomId: number;
   roomUuid: string;
@@ -29,11 +31,7 @@ export type ChatMessage = {
   createdAt: string;
 };
 
-export type FetchRoomsResponse = {
-  rooms: AiChatRoom[];
-  lastId: number | null;
-  hasNext: boolean;
-};
+export type FetchRoomsResponse = CursorListResponse<AiChatRoom, 'rooms'>;
 
 export type CreateRoomResponse = {
   roomId: number;
@@ -42,11 +40,7 @@ export type CreateRoomResponse = {
   createdAt: string;
 };
 
-export type FetchMessagesResponse = {
-  messages: ChatMessage[];
-  lastId: number | null;
-  hasNext: boolean;
-};
+export type FetchMessagesResponse = CursorListResponse<ChatMessage, 'messages'>;
 
 export type FetchRoomsParams = {
   size?: number;

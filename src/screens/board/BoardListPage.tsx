@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { Bell, Loader2, Plus, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -12,17 +13,25 @@ import { useHeader } from '@/components/layout/HeaderContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
 import { BOARD_TAG_MAX, POPULAR_MIN_LIKES } from '@/constants/board';
+import { fetchMyFollowings, fetchUserProfile } from '@/lib/api/users';
+import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { useBoardListInfiniteQuery } from '@/lib/hooks/boards/useBoardListInfiniteQuery';
 import { useUnreadCountQuery } from '@/lib/hooks/notifications/useUnreadCountQuery';
+import { userKeys } from '@/lib/hooks/users/queryKeys';
+import { useFollowUserMutation } from '@/lib/hooks/users/useFollowUserMutation';
+import { useUnfollowUserMutation } from '@/lib/hooks/users/useUnfollowUserMutation';
+import { toast } from '@/lib/toast/store';
 
 import type { BoardSort, BoardTag } from '@/types/board';
 
 const PAGE_SIZE = 10;
+const FOLLOWINGS_FETCH_SIZE = 100;
 const PULL_MAX = 120;
 const PULL_THRESHOLD = 72;
 
 export default function BoardListPage() {
   const router = useRouter();
+  const currentUserId = getUserIdFromAccessToken();
   const { setOptions, resetOptions } = useHeader();
   const { requestNavigation } = useNavigationGuard();
   const { data: unreadCount } = useUnreadCountQuery();
@@ -38,6 +47,8 @@ export default function BoardListPage() {
   const [isReadyToRefresh, setIsReadyToRefresh] = useState(false);
   const isRefreshingRef = useRef(false);
   const isReadyToRefreshRef = useRef(false);
+  const followMutation = useFollowUserMutation();
+  const unfollowMutation = useUnfollowUserMutation();
 
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useBoardListInfiniteQuery({
@@ -47,6 +58,46 @@ export default function BoardListPage() {
     });
 
   const rawPosts = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data]);
+  const {
+    data: followingAuthorIds,
+    isLoading: isFollowingAuthorIdsLoading,
+    isError: isFollowingAuthorIdsError,
+    refetch: refetchFollowingAuthorIds,
+  } = useQuery({
+    queryKey: [...userKeys.all, 'myFollowingAuthorIds'],
+    queryFn: async () => {
+      const ids = new Set<number>();
+      let lastId: number | null | undefined = undefined;
+
+      while (true) {
+        const result = await fetchMyFollowings({
+          size: FOLLOWINGS_FETCH_SIZE,
+          lastId,
+        });
+
+        if (!result.ok || !result.json) {
+          throw new Error('Failed to fetch my following users');
+        }
+
+        if (!('data' in result.json) || !result.json.data) {
+          throw new Error('Invalid response format');
+        }
+
+        for (const following of result.json.data.followings) {
+          ids.add(following.userId);
+        }
+
+        if (!result.json.data.hasNext || result.json.data.lastId === null) {
+          break;
+        }
+
+        lastId = result.json.data.lastId;
+      }
+
+      return Array.from(ids);
+    },
+    enabled: sort === 'FOLLOWING',
+  });
 
   const filteredPosts = useMemo(() => {
     let filtered = rawPosts;
@@ -66,13 +117,51 @@ export default function BoardListPage() {
         });
     }
 
+    if (sort === 'FOLLOWING') {
+      const followingAuthorIdSet = new Set(followingAuthorIds ?? []);
+      filtered = filtered.filter((post) => followingAuthorIdSet.has(post.author.userId));
+    }
+
     return filtered;
-  }, [rawPosts, selectedTags, sort]);
+  }, [rawPosts, selectedTags, sort, followingAuthorIds]);
 
   const selectedAuthor = useMemo(
     () => rawPosts.find((post) => post.author.userId === selectedAuthorId)?.author ?? null,
     [rawPosts, selectedAuthorId],
   );
+  const { data: selectedAuthorProfile, refetch: refetchSelectedAuthorProfile } = useQuery({
+    queryKey: userKeys.profile(selectedAuthorId ?? -1),
+    queryFn: async () => {
+      const result = await fetchUserProfile(selectedAuthorId!);
+
+      if (!result.ok || !result.json) {
+        throw new Error('Failed to fetch user profile');
+      }
+
+      if ('data' in result.json && result.json.data) {
+        return result.json.data;
+      }
+
+      throw new Error('Invalid response format');
+    },
+    enabled: selectedAuthorId !== null,
+  });
+
+  const modalUser = selectedAuthor
+    ? {
+        userId: selectedAuthor.userId,
+        nickname: selectedAuthorProfile?.user.nickname ?? selectedAuthor.nickname,
+        profileImageUrl:
+          selectedAuthorProfile?.profileImage?.url ?? selectedAuthor.profileImageUrl ?? null,
+        interests: selectedAuthorProfile?.interests ?? selectedAuthor.interests ?? [],
+      }
+    : null;
+  const modalUserId = modalUser?.userId ?? null;
+  const isMine = Boolean(
+    modalUserId !== null && currentUserId !== null && modalUserId === currentUserId,
+  );
+  const isFollowing = selectedAuthorProfile?.isFollowing ?? false;
+  const isFollowPending = followMutation.isPending || unfollowMutation.isPending;
 
   const handleCreatePost = useCallback(() => {
     requestNavigation(() => router.push('/board/create'));
@@ -89,6 +178,22 @@ export default function BoardListPage() {
   const handleAuthorClick = (userId: number) => {
     setSelectedAuthorId(userId);
     setIsMiniProfileOpen(true);
+  };
+
+  const handleToggleFollow = async () => {
+    if (modalUserId === null || isMine || isFollowPending) return;
+
+    try {
+      if (isFollowing) {
+        await unfollowMutation.mutateAsync(modalUserId);
+      } else {
+        await followMutation.mutateAsync(modalUserId);
+      }
+      void refetchSelectedAuthorProfile();
+    } catch (error) {
+      const err = error as Error & { serverMessage?: string };
+      toast(err.serverMessage ?? '팔로우 처리에 실패했습니다.');
+    }
   };
 
   const handlePostClick = useCallback(
@@ -153,10 +258,24 @@ export default function BoardListPage() {
 
   useEffect(() => {
     if (isLoading || isError) return;
+    if (sort === 'FOLLOWING' && isFollowingAuthorIdsLoading) return;
+    if (sort === 'FOLLOWING' && isFollowingAuthorIdsError) return;
+    if (sort === 'FOLLOWING' && followingAuthorIds && followingAuthorIds.length === 0) return;
     if (!hasNextPage || isFetchingNextPage) return;
     if (filteredPosts.length > 0) return;
     void fetchNextPage();
-  }, [fetchNextPage, filteredPosts.length, hasNextPage, isError, isFetchingNextPage, isLoading]);
+  }, [
+    fetchNextPage,
+    filteredPosts.length,
+    hasNextPage,
+    isError,
+    isFetchingNextPage,
+    isLoading,
+    sort,
+    isFollowingAuthorIdsLoading,
+    isFollowingAuthorIdsError,
+    followingAuthorIds,
+  ]);
 
   useEffect(() => {
     const getScrollTop = () =>
@@ -279,11 +398,30 @@ export default function BoardListPage() {
                   다시 시도
                 </button>
               </div>
+            ) : sort === 'FOLLOWING' && isFollowingAuthorIdsLoading ? (
+              <div className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-neutral-500 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
+                팔로잉 목록을 불러오는 중...
+              </div>
+            ) : sort === 'FOLLOWING' && isFollowingAuthorIdsError ? (
+              <div className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-neutral-500 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
+                <p>팔로잉 목록을 불러오지 못했어요.</p>
+                <button
+                  type="button"
+                  onClick={() => void refetchFollowingAuthorIds()}
+                  className="mt-3 rounded-full border border-neutral-200 bg-white px-4 py-1 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+                >
+                  다시 시도
+                </button>
+              </div>
             ) : filteredPosts.length === 0 ? (
               <p className="px-4 py-6 text-center text-sm text-neutral-500">
-                {selectedTags.length > 0
-                  ? '선택한 태그에 해당하는 글이 없어요.'
-                  : '아직 게시글이 없어요.'}
+                {sort === 'FOLLOWING'
+                  ? (followingAuthorIds?.length ?? 0) === 0
+                    ? '아직 팔로우한 사용자가 없어요.'
+                    : '팔로우한 사용자의 게시글이 없어요.'
+                  : selectedTags.length > 0
+                    ? '선택한 태그에 해당하는 글이 없어요.'
+                    : '아직 게시글이 없어요.'}
               </p>
             ) : (
               <>
@@ -324,18 +462,20 @@ export default function BoardListPage() {
       <BoardUserMiniProfile
         open={isMiniProfileOpen}
         onClose={() => setIsMiniProfileOpen(false)}
-        user={
-          selectedAuthor
-            ? {
-                userId: selectedAuthor.userId,
-                nickname: selectedAuthor.nickname,
-                profileImageUrl: selectedAuthor.profileImageUrl ?? null,
-                interests: selectedAuthor.interests ?? [],
-              }
-            : null
-        }
-        onStartChat={() => setIsMiniProfileOpen(false)}
-        onToggleFollow={() => setIsMiniProfileOpen(false)}
+        user={modalUser}
+        isMine={isMine}
+        isFollowing={isFollowing}
+        isFollowPending={isFollowPending}
+        onGoMyPage={() => {
+          setIsMiniProfileOpen(false);
+          requestNavigation(() => router.push('/profile'));
+        }}
+        onStartChat={() => {
+          if (modalUserId === null || isMine) return;
+          setIsMiniProfileOpen(false);
+          requestNavigation(() => router.push(`/chat?targetUserId=${modalUserId}`));
+        }}
+        onToggleFollow={() => void handleToggleFollow()}
       />
     </>
   );
