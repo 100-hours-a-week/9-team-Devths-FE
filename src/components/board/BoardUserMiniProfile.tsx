@@ -5,33 +5,42 @@ import Image from 'next/image';
 
 import BaseModal from '@/components/common/BaseModal';
 
-import type { BoardInterest } from '@/types/board';
-
 type BoardMiniProfileUser = {
   userId: number;
   nickname: string;
   profileImageUrl?: string | null;
-  interests?: BoardInterest[];
+  interests?: string[];
 };
 
 type BoardUserMiniProfileProps = {
   open: boolean;
   onClose: () => void;
   user: BoardMiniProfileUser | null;
+  isMine?: boolean;
   isFollowing?: boolean;
+  isFollowPending?: boolean;
   onToggleFollow?: () => void;
   onStartChat?: () => void;
+  onGoMyPage?: () => void;
 };
 
 export default function BoardUserMiniProfile({
   open,
   onClose,
   user,
+  isMine = false,
   isFollowing = false,
+  isFollowPending = false,
   onToggleFollow,
   onStartChat,
+  onGoMyPage,
 }: BoardUserMiniProfileProps) {
   if (!user) return null;
+
+  const followButtonClass = isFollowing
+    ? 'bg-[#E5484D] hover:bg-[#D6383C]'
+    : 'bg-[#05C075] hover:bg-[#04A865]';
+  const followButtonLabel = isFollowing ? '언팔로잉' : '팔로잉';
 
   return (
     <BaseModal open={open} onClose={onClose} contentClassName="pt-8">
@@ -66,24 +75,37 @@ export default function BoardUserMiniProfile({
           ) : null}
         </div>
 
-        <div className="mt-4 flex w-full gap-2">
-          <button
-            type="button"
-            onClick={onStartChat}
-            className="flex flex-1 items-center justify-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
-          >
-            <MessageCircle className="h-4 w-4" />
-            채팅
-          </button>
-          <button
-            type="button"
-            onClick={onToggleFollow}
-            className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[#05C075] px-4 py-2 text-sm font-semibold text-white hover:bg-[#04A865]"
-          >
-            <UserPlus className="h-4 w-4" />
-            {isFollowing ? '팔로잉' : '팔로우'}
-          </button>
-        </div>
+        {isMine ? (
+          <div className="mt-4 flex w-full">
+            <button
+              type="button"
+              onClick={onGoMyPage}
+              className="flex w-full items-center justify-center rounded-full bg-[#05C075] px-4 py-2 text-sm font-semibold text-white hover:bg-[#04A865]"
+            >
+              마이페이지로 가기
+            </button>
+          </div>
+        ) : (
+          <div className="mt-4 flex w-full gap-2">
+            <button
+              type="button"
+              onClick={onStartChat}
+              className="flex flex-1 items-center justify-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
+            >
+              <MessageCircle className="h-4 w-4" />
+              채팅
+            </button>
+            <button
+              type="button"
+              onClick={onToggleFollow}
+              disabled={isFollowPending}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white ${followButtonClass}`}
+            >
+              <UserPlus className="h-4 w-4" />
+              {isFollowPending ? '처리 중...' : followButtonLabel}
+            </button>
+          </div>
+        )}
       </div>
     </BaseModal>
   );

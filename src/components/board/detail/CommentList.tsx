@@ -8,6 +8,7 @@ import type { ReactNode } from 'react';
 
 type CommentListProps = {
   threads: CommentThread[];
+  onAuthorClick?: (userId: number) => void;
   onReplyClick?: (commentId: number) => void;
   currentUserId?: number | null;
   onDeleteClick?: (commentId: number) => void;
@@ -21,6 +22,7 @@ type CommentListProps = {
 
 export default function CommentList({
   threads,
+  onAuthorClick,
   onReplyClick,
   currentUserId,
   onDeleteClick,
@@ -66,6 +68,7 @@ export default function CommentList({
               createdAt={thread.comment.createdAt}
               content={thread.comment.content}
               isDeleted={thread.comment.isDeleted}
+              onAuthorClick={onAuthorClick}
               showReply={!disableActions && !thread.comment.isDeleted}
               onReplyClick={onReplyClick ? () => onReplyClick(thread.comment.commentId) : undefined}
               showOptions={
@@ -100,6 +103,7 @@ export default function CommentList({
                     createdAt={reply.createdAt}
                     content={reply.content}
                     isDeleted={reply.isDeleted}
+                    onAuthorClick={onAuthorClick}
                     showOptions={
                       !disableActions &&
                       currentUserId !== null &&

@@ -8,7 +8,7 @@ import type {
   PostDetail,
   PostDetailResponse,
 } from '@/types/boardDetail';
-import type { CursorPage } from '@/types/pagination';
+import type { CursorListResponse, CursorPage } from '@/types/pagination';
 
 type ListBoardPostsParams = {
   size: number;
@@ -48,11 +48,7 @@ type PostSummaryResponse = {
   createdAt: string;
 };
 
-type PostListResponse = {
-  posts: PostSummaryResponse[];
-  lastId: number | null;
-  hasNext: boolean;
-};
+type PostListResponse = CursorListResponse<PostSummaryResponse, 'posts'>;
 
 type CommentCreateRequest = {
   parentId?: number | null;
