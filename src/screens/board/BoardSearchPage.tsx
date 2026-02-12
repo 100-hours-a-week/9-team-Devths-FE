@@ -2,7 +2,7 @@
 
 import { Loader2, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
 import BoardPostCard from '@/components/board/BoardPostCard';
 import { useHeader } from '@/components/layout/HeaderContext';
@@ -10,6 +10,8 @@ import { useBoardSearchQuery } from '@/lib/hooks/boards/useBoardSearchQuery';
 
 const RECENT_SEARCH_STORAGE_KEY = 'devths_board_recent_searches';
 const MAX_RECENT_SEARCH_COUNT = 10;
+const SEARCH_PAGE_SIZE = 20;
+const PAGE_NUMBER_WINDOW_SIZE = 5;
 
 type KeywordValidationResult = {
   isValid: boolean;
@@ -97,14 +99,45 @@ export default function BoardSearchPage() {
   const [submittedKeyword, setSubmittedKeyword] = useState('');
   const [helperText, setHelperText] = useState<string | null>(null);
   const [recentKeywords, setRecentKeywords] = useState<string[]>(() => readRecentKeywords());
+  const [currentPage, setCurrentPage] = useState(1);
+  const [currentLastId, setCurrentLastId] = useState<number | null>(null);
+  const [pageCursorMap, setPageCursorMap] = useState<Record<number, number | null>>({ 1: null });
 
   const { data, isLoading, isError, error, refetch } = useBoardSearchQuery({
     keyword: submittedKeyword,
-    size: 20,
+    size: SEARCH_PAGE_SIZE,
+    lastId: currentLastId,
   });
   const posts = data?.items ?? [];
   const hasSubmittedKeyword = submittedKeyword.length > 0;
   const resultCount = posts.length;
+
+  const effectivePageCursorMap = useMemo(() => {
+    if (!data?.hasNext || data.lastId === null) {
+      return pageCursorMap;
+    }
+
+    if (pageCursorMap[currentPage + 1] !== undefined) {
+      return pageCursorMap;
+    }
+
+    return {
+      ...pageCursorMap,
+      [currentPage + 1]: data.lastId,
+    };
+  }, [currentPage, data, pageCursorMap]);
+
+  const hasNextPage = Boolean(
+    effectivePageCursorMap[currentPage + 1] !== undefined || (data?.hasNext && data.lastId !== null),
+  );
+  const canGoPreviousPage = currentPage > 1;
+
+  const pageNumbers = useMemo(() => {
+    const maxPage = Math.max(1, ...Object.keys(effectivePageCursorMap).map(Number));
+    const start = Math.floor((currentPage - 1) / PAGE_NUMBER_WINDOW_SIZE) * PAGE_NUMBER_WINDOW_SIZE + 1;
+    const end = Math.min(start + PAGE_NUMBER_WINDOW_SIZE - 1, maxPage);
+    return Array.from({ length: end - start + 1 }, (_, index) => start + index);
+  }, [currentPage, effectivePageCursorMap]);
 
   const handleBackClick = useCallback(() => {
     if (typeof window !== 'undefined' && window.history.length > 1) {
@@ -132,6 +165,9 @@ export default function BoardSearchPage() {
     }
 
     setHelperText(null);
+    setCurrentPage(1);
+    setCurrentLastId(null);
+    setPageCursorMap({ 1: null });
     setSubmittedKeyword(validation.normalizedKeyword);
     setRecentKeywords((previousKeywords) => {
       const nextKeywords = addRecentKeyword(previousKeywords, validation.normalizedKeyword);
@@ -184,6 +220,53 @@ export default function BoardSearchPage() {
     },
     [router],
   );
+
+  const moveToPage = (targetPage: number) => {
+    if (targetPage === currentPage) {
+      return;
+    }
+
+    const targetCursor = effectivePageCursorMap[targetPage];
+    if (targetCursor === undefined) {
+      return;
+    }
+
+    if (pageCursorMap[targetPage] === undefined) {
+      setPageCursorMap((previousMap) => ({
+        ...previousMap,
+        [targetPage]: targetCursor,
+      }));
+    }
+
+    setCurrentPage(targetPage);
+    setCurrentLastId(targetCursor);
+  };
+
+  const handlePreviousPage = () => {
+    if (!canGoPreviousPage) {
+      return;
+    }
+    moveToPage(currentPage - 1);
+  };
+
+  const handleNextPage = () => {
+    if (!hasNextPage) {
+      return;
+    }
+
+    const nextCursor = effectivePageCursorMap[currentPage + 1];
+    if (nextCursor !== undefined) {
+      if (pageCursorMap[currentPage + 1] === undefined) {
+        setPageCursorMap((previousMap) => ({
+          ...previousMap,
+          [currentPage + 1]: nextCursor,
+        }));
+      }
+
+      setCurrentPage(currentPage + 1);
+      setCurrentLastId(nextCursor);
+    }
+  };
 
   return (
     <main className="px-3 pt-4 pb-3">
@@ -268,10 +351,47 @@ export default function BoardSearchPage() {
                 검색 결과가 없습니다.
               </div>
             ) : (
-              <div className="space-y-3">
-                {posts.map((post) => (
-                  <BoardPostCard key={post.postId} post={post} onClick={handlePostClick} />
-                ))}
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  {posts.map((post) => (
+                    <BoardPostCard key={post.postId} post={post} onClick={handlePostClick} />
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-center gap-1">
+                  <button
+                    type="button"
+                    onClick={handlePreviousPage}
+                    disabled={!canGoPreviousPage}
+                    className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs text-neutral-700 transition disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    이전
+                  </button>
+
+                  {pageNumbers.map((pageNumber) => (
+                    <button
+                      key={pageNumber}
+                      type="button"
+                      onClick={() => moveToPage(pageNumber)}
+                      className={`min-w-8 rounded-lg px-2.5 py-1.5 text-xs transition ${
+                        currentPage === pageNumber
+                          ? 'bg-emerald-600 font-semibold text-white'
+                          : 'border border-neutral-200 text-neutral-700'
+                      }`}
+                    >
+                      {pageNumber}
+                    </button>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={handleNextPage}
+                    disabled={!hasNextPage}
+                    className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs text-neutral-700 transition disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    다음
+                  </button>
+                </div>
               </div>
             )}
           </div>
