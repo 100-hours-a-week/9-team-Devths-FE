@@ -1,9 +1,48 @@
+'use client';
+
 import Image from 'next/image';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
 
 import GoogleLoginButton from '@/components/auth/GoogleLoginButton';
 import LandingCarousel from '@/components/common/LandingCarousel';
+import { ensureAccessToken } from '@/lib/api/client';
+import { getAccessToken } from '@/lib/auth/token';
 
 export default function LandingPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const restoreSession = async () => {
+      const redirect = searchParams?.get('redirect');
+      const fallback = '/llm';
+      const targetPath = redirect && redirect.startsWith('/') ? redirect : fallback;
+
+      if (getAccessToken()) {
+        if (!isCancelled) {
+          router.replace(targetPath);
+        }
+        return;
+      }
+
+      const restored = await ensureAccessToken();
+      if (isCancelled) return;
+
+      if (restored) {
+        router.replace(targetPath);
+      }
+    };
+
+    void restoreSession();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [router, searchParams]);
+
   return (
     <main className="min-h-dvh bg-transparent">
       <div className="mx-auto flex min-h-dvh w-full items-center justify-center bg-white px-6 py-10 sm:max-w-[430px] sm:shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
