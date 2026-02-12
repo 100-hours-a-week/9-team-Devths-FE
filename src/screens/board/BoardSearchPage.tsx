@@ -188,6 +188,14 @@ export default function BoardSearchPage() {
     (value: string) => {
       setKeywordInput(value);
 
+      const normalizedInput = value.trim();
+      if (submittedKeyword.length > 0 && normalizedInput !== submittedKeyword) {
+        setSubmittedKeyword('');
+        setCurrentPage(1);
+        setCurrentLastId(null);
+        setPageCursorMap({ 1: null });
+      }
+
       if (helperText === null) {
         return;
       }
@@ -195,7 +203,7 @@ export default function BoardSearchPage() {
       const validation = validateKeyword(value);
       setHelperText(validation.helperText);
     },
-    [helperText],
+    [helperText, submittedKeyword],
   );
 
   const handleRecentKeywordClick = useCallback(
