@@ -265,13 +265,13 @@ export default function SignupPage() {
               </div>
             </div>
 
-            <div className="px-1">
+            <div className="mt-2 px-1">
               <label className="flex items-start gap-2 text-sm text-neutral-700">
                 <input
                   type="checkbox"
                   checked={isPrivacyAgreed}
                   onChange={(event) => setIsPrivacyAgreed(event.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-[#81D247] focus:ring-[#81D247]"
+                  className="mt-0.5 h-4 w-4 rounded border-[#81D247] accent-[#81D247] focus:ring-[#81D247]"
                 />
                 <span>
                   <Link
