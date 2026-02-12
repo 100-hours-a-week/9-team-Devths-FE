@@ -12,6 +12,7 @@ import { useBoardSearchInfiniteQuery } from '@/lib/hooks/boards/useBoardSearchIn
 const RECENT_SEARCH_STORAGE_KEY = 'devths_board_recent_searches';
 const MAX_RECENT_SEARCH_COUNT = 10;
 const SEARCH_PAGE_SIZE = 20;
+const SEARCH_QUERY_PARAM_KEY = 'q';
 
 type KeywordValidationResult = {
   isValid: boolean;
@@ -58,6 +59,30 @@ function addRecentKeyword(previousKeywords: string[], keyword: string) {
   return [keyword, ...deduplicated].slice(0, MAX_RECENT_SEARCH_COUNT);
 }
 
+function readKeywordFromLocation() {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+
+  return (new URLSearchParams(window.location.search).get(SEARCH_QUERY_PARAM_KEY) ?? '').trim();
+}
+
+function buildSearchPageUrl(keyword: string) {
+  if (typeof window === 'undefined') {
+    return '/board/search';
+  }
+
+  const url = new URL(window.location.href);
+  const normalizedKeyword = keyword.trim();
+  if (normalizedKeyword.length > 0) {
+    url.searchParams.set(SEARCH_QUERY_PARAM_KEY, normalizedKeyword);
+  } else {
+    url.searchParams.delete(SEARCH_QUERY_PARAM_KEY);
+  }
+
+  return url.searchParams.toString() ? `${url.pathname}?${url.searchParams.toString()}` : url.pathname;
+}
+
 function validateKeyword(value: string): KeywordValidationResult {
   const normalizedKeyword = value.trim();
 
@@ -95,8 +120,8 @@ function validateKeyword(value: string): KeywordValidationResult {
 export default function BoardSearchPage() {
   const router = useRouter();
   const { setOptions, resetOptions } = useHeader();
-  const [keywordInput, setKeywordInput] = useState('');
-  const [submittedKeyword, setSubmittedKeyword] = useState('');
+  const [keywordInput, setKeywordInput] = useState(() => readKeywordFromLocation());
+  const [submittedKeyword, setSubmittedKeyword] = useState(() => readKeywordFromLocation());
   const [helperText, setHelperText] = useState<string | null>(null);
   const [recentKeywords, setRecentKeywords] = useState<string[]>(() => readRecentKeywords());
 
@@ -136,12 +161,13 @@ export default function BoardSearchPage() {
 
     setHelperText(null);
     setSubmittedKeyword(validation.normalizedKeyword);
+    router.replace(buildSearchPageUrl(validation.normalizedKeyword), { scroll: false });
     setRecentKeywords((previousKeywords) => {
       const nextKeywords = addRecentKeyword(previousKeywords, validation.normalizedKeyword);
       writeRecentKeywords(nextKeywords);
       return nextKeywords;
     });
-  }, []);
+  }, [router]);
 
   const handleSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
@@ -158,6 +184,7 @@ export default function BoardSearchPage() {
       const normalizedInput = value.trim();
       if (submittedKeyword.length > 0 && normalizedInput !== submittedKeyword) {
         setSubmittedKeyword('');
+        router.replace(buildSearchPageUrl(''), { scroll: false });
       }
 
       if (helperText === null) {
@@ -167,7 +194,7 @@ export default function BoardSearchPage() {
       const validation = validateKeyword(value);
       setHelperText(validation.helperText);
     },
-    [helperText, submittedKeyword],
+    [helperText, router, submittedKeyword],
   );
 
   const handleRecentKeywordClick = useCallback(
@@ -203,7 +230,7 @@ export default function BoardSearchPage() {
   return (
     <main className="px-3 pt-4 pb-3">
       <div className="space-y-4">
-        <section className="rounded-2xl bg-white px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
+        <section className="rounded-2xl bg-white px-4 py-4">
           <form onSubmit={handleSubmit} className="flex items-center gap-2">
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-neutral-400" />
@@ -255,11 +282,11 @@ export default function BoardSearchPage() {
           </section>
         ) : null}
 
-        <section className="rounded-2xl bg-white px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
+        <section className="rounded-2xl bg-white px-4 py-4">
           <p className="text-sm font-semibold text-neutral-900">게시글 ({resultCount})</p>
           <div className="mt-3">
             {!hasSubmittedKeyword ? (
-              <div className="rounded-xl border border-dashed border-neutral-200 px-3 py-6 text-center text-xs text-neutral-500">
+              <div className="px-3 py-6 text-center text-xs text-neutral-500">
                 검색어를 입력하고 검색해 주세요.
               </div>
             ) : isLoading ? (

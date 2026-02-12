@@ -5,12 +5,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const {
   pushMock,
   backMock,
+  replaceMock,
   setOptionsMock,
   resetOptionsMock,
   useBoardSearchInfiniteQueryMock,
 } = vi.hoisted(() => ({
   pushMock: vi.fn(),
   backMock: vi.fn(),
+  replaceMock: vi.fn(),
   setOptionsMock: vi.fn(),
   resetOptionsMock: vi.fn(),
   useBoardSearchInfiniteQueryMock: vi.fn(),
@@ -20,6 +22,7 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: pushMock,
     back: backMock,
+    replace: replaceMock,
   }),
 }));
 
