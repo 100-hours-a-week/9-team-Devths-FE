@@ -1,10 +1,11 @@
 'use client';
 
-import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
+import { useQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { Bell, Heart, MessageCircle, Search, Share2 } from 'lucide-react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import BoardUserMiniProfile from '@/components/board/BoardUserMiniProfile';
 import BoardShareModal from '@/components/board/detail/BoardShareModal';
 import CommentComposer from '@/components/board/detail/CommentComposer';
 import CommentList from '@/components/board/detail/CommentList';
@@ -15,6 +16,7 @@ import { useAppFrame } from '@/components/layout/AppFrameContext';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import { deleteBoardPost, likeBoardPost, unlikeBoardPost } from '@/lib/api/boards';
+import { fetchUserProfile } from '@/lib/api/users';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { boardsKeys } from '@/lib/hooks/boards/queryKeys';
 import { useBoardCommentsQuery } from '@/lib/hooks/boards/useBoardCommentsQuery';
@@ -22,6 +24,9 @@ import { useBoardDetailQuery } from '@/lib/hooks/boards/useBoardDetailQuery';
 import { useCreateCommentMutation } from '@/lib/hooks/boards/useCreateCommentMutation';
 import { useDeleteCommentMutation } from '@/lib/hooks/boards/useDeleteCommentMutation';
 import { useUpdateCommentMutation } from '@/lib/hooks/boards/useUpdateCommentMutation';
+import { userKeys } from '@/lib/hooks/users/queryKeys';
+import { useFollowUserMutation } from '@/lib/hooks/users/useFollowUserMutation';
+import { useUnfollowUserMutation } from '@/lib/hooks/users/useUnfollowUserMutation';
 import { toast } from '@/lib/toast/store';
 import { formatCountCompact } from '@/lib/utils/board';
 import { groupCommentsByThread } from '@/lib/utils/comments';
@@ -76,6 +81,11 @@ export default function BoardDetailPage() {
   const [isCommentDeleteOpen, setIsCommentDeleteOpen] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [replyTargetId, setReplyTargetId] = useState<number | null>(null);
+  const [isMiniProfileOpen, setIsMiniProfileOpen] = useState(false);
+  const [selectedCommentAuthorId, setSelectedCommentAuthorId] = useState<number | null>(null);
+  const [followStateOverrides, setFollowStateOverrides] = useState<Record<number, boolean>>({});
+  const followMutation = useFollowUserMutation();
+  const unfollowMutation = useUnfollowUserMutation();
 
   const handleSearchClick = useCallback(() => {
     requestNavigation(() => router.push('/board/search'));
@@ -108,6 +118,90 @@ export default function BoardDetailPage() {
     ),
     [handleNotificationsClick, handleSearchClick],
   );
+
+  const selectedCommentAuthor = useMemo(() => {
+    if (selectedCommentAuthorId === null) return null;
+
+    for (const thread of commentThreads) {
+      if (thread.comment.author.userId === selectedCommentAuthorId) {
+        return thread.comment.author;
+      }
+
+      const selectedReply = thread.replies.find(
+        (reply) => reply.author.userId === selectedCommentAuthorId,
+      );
+      if (selectedReply) {
+        return selectedReply.author;
+      }
+    }
+
+    return null;
+  }, [commentThreads, selectedCommentAuthorId]);
+
+  const { data: selectedCommentAuthorProfile, refetch: refetchSelectedCommentAuthorProfile } =
+    useQuery({
+      queryKey: userKeys.profile(selectedCommentAuthorId ?? -1),
+      queryFn: async () => {
+        const result = await fetchUserProfile(selectedCommentAuthorId!);
+
+        if (!result.ok || !result.json) {
+          throw new Error('Failed to fetch user profile');
+        }
+
+        if ('data' in result.json && result.json.data) {
+          return result.json.data;
+        }
+
+        throw new Error('Invalid response format');
+      },
+      enabled: selectedCommentAuthorId !== null,
+    });
+
+  const modalUser = selectedCommentAuthor
+    ? {
+        userId: selectedCommentAuthor.userId,
+        nickname: selectedCommentAuthorProfile?.user.nickname ?? selectedCommentAuthor.nickname,
+        profileImageUrl:
+          selectedCommentAuthorProfile?.profileImage?.url ??
+          selectedCommentAuthor.profileImageUrl ??
+          null,
+        interests: selectedCommentAuthorProfile?.interests ?? [],
+      }
+    : null;
+  const modalUserId = modalUser?.userId ?? null;
+  const isMine = Boolean(
+    modalUserId !== null && currentUserId !== null && modalUserId === currentUserId,
+  );
+  const profileIsFollowing = selectedCommentAuthorProfile?.isFollowing ?? false;
+  const isFollowing =
+    modalUserId !== null && followStateOverrides[modalUserId] !== undefined
+      ? followStateOverrides[modalUserId]
+      : profileIsFollowing;
+  const isFollowPending = followMutation.isPending || unfollowMutation.isPending;
+
+  const handleCommentAuthorClick = (userId: number) => {
+    setSelectedCommentAuthorId(userId);
+    setIsMiniProfileOpen(true);
+  };
+
+  const handleToggleFollow = async () => {
+    if (modalUserId === null || isMine || isFollowPending) return;
+
+    try {
+      if (isFollowing) {
+        await unfollowMutation.mutateAsync(modalUserId);
+        setFollowStateOverrides((prev) => ({ ...prev, [modalUserId]: false }));
+      } else {
+        await followMutation.mutateAsync(modalUserId);
+        setFollowStateOverrides((prev) => ({ ...prev, [modalUserId]: true }));
+      }
+
+      void refetchSelectedCommentAuthorProfile();
+    } catch (error) {
+      const err = error as Error & { serverMessage?: string };
+      toast(err.serverMessage ?? '팔로우 처리에 실패했습니다.');
+    }
+  };
 
   const handleBackClick = useCallback(() => {
     void queryClient.invalidateQueries({
@@ -598,6 +692,7 @@ export default function BoardDetailPage() {
             ) : (
               <CommentList
                 threads={commentThreads}
+                onAuthorClick={handleCommentAuthorClick}
                 onReplyClick={handleReplyToggle}
                 currentUserId={currentUserId}
                 onDeleteClick={handleCommentDeleteOpen}
@@ -706,6 +801,24 @@ export default function BoardDetailPage() {
         onClose={handleShareClose}
         shareUrl={shareUrl}
         onCopy={handleShareCopy}
+      />
+      <BoardUserMiniProfile
+        open={isMiniProfileOpen}
+        onClose={() => setIsMiniProfileOpen(false)}
+        user={modalUser}
+        isMine={isMine}
+        isFollowing={isFollowing}
+        isFollowPending={isFollowPending}
+        onGoMyPage={() => {
+          setIsMiniProfileOpen(false);
+          requestNavigation(() => router.push('/profile'));
+        }}
+        onStartChat={() => {
+          if (modalUserId === null || isMine) return;
+          setIsMiniProfileOpen(false);
+          requestNavigation(() => router.push(`/chat?targetUserId=${modalUserId}`));
+        }}
+        onToggleFollow={() => void handleToggleFollow()}
       />
       <div className="fixed bottom-0 left-1/2 z-40 w-full max-w-[430px] -translate-x-1/2 bg-white px-3 py-3 shadow-[0_-6px_16px_rgba(15,23,42,0.08)] sm:px-4">
         <CommentComposer
