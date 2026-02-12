@@ -12,6 +12,7 @@ import { useHeader } from '@/components/layout/HeaderContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
 import { BOARD_TAG_MAX, POPULAR_MIN_LIKES } from '@/constants/board';
+import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { useBoardListInfiniteQuery } from '@/lib/hooks/boards/useBoardListInfiniteQuery';
 import { useUnreadCountQuery } from '@/lib/hooks/notifications/useUnreadCountQuery';
 
@@ -23,6 +24,7 @@ const PULL_THRESHOLD = 72;
 
 export default function BoardListPage() {
   const router = useRouter();
+  const currentUserId = getUserIdFromAccessToken();
   const { setOptions, resetOptions } = useHeader();
   const { requestNavigation } = useNavigationGuard();
   const { data: unreadCount } = useUnreadCountQuery();
@@ -73,6 +75,7 @@ export default function BoardListPage() {
     () => rawPosts.find((post) => post.author.userId === selectedAuthorId)?.author ?? null,
     [rawPosts, selectedAuthorId],
   );
+  const isMine = Boolean(selectedAuthor && currentUserId !== null && selectedAuthor.userId === currentUserId);
 
   const handleCreatePost = useCallback(() => {
     requestNavigation(() => router.push('/board/create'));
@@ -334,6 +337,11 @@ export default function BoardListPage() {
               }
             : null
         }
+        isMine={isMine}
+        onGoMyPage={() => {
+          setIsMiniProfileOpen(false);
+          requestNavigation(() => router.push('/profile'));
+        }}
         onStartChat={() => setIsMiniProfileOpen(false)}
         onToggleFollow={() => setIsMiniProfileOpen(false)}
       />
