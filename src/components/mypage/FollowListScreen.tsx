@@ -172,8 +172,8 @@ export default function FollowListScreen() {
   ]);
 
   return (
-    <main className="flex flex-col px-6 py-4">
-      <section className="mt-2 rounded-2xl bg-white p-4">
+    <main className="flex flex-col px-6 pb-4">
+      <section className="-mx-6 bg-white px-6 py-4">
         <div className="flex border-b border-neutral-200">
           <button
             type="button"
