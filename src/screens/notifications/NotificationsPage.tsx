@@ -4,7 +4,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import ConfirmModal from '@/components/common/ConfirmModal';
 import FollowUserProfileModal, {
   type FollowUserProfileModalData,
 } from '@/components/mypage/FollowUserProfileModal';
@@ -23,7 +22,6 @@ export default function NotificationsPage() {
   const [seenIds, setSeenIds] = useState<number[]>([]);
   const queryClient = useQueryClient();
   const [selectedUser, setSelectedUser] = useState<FollowUserProfileModalData | null>(null);
-  const [isUnfollowConfirmOpen, setIsUnfollowConfirmOpen] = useState(false);
   const followMutation = useFollowUserMutation();
   const unfollowMutation = useUnfollowUserMutation();
   const {
@@ -167,33 +165,22 @@ export default function NotificationsPage() {
 
   const handleFollowInModal = async () => {
     if (!modalUser) return;
-
-    if (modalUser.isFollowing) {
-      setIsUnfollowConfirmOpen(true);
-      return;
-    }
-
+    const wasFollowing = Boolean(modalUser.isFollowing);
     try {
-      await followMutation.mutateAsync(modalUser.userId);
-      setSelectedUser((prev) => (prev ? { ...prev, isFollowing: true } : prev));
+      if (wasFollowing) {
+        await unfollowMutation.mutateAsync(modalUser.userId);
+        setSelectedUser((prev) => (prev ? { ...prev, isFollowing: false } : prev));
+      } else {
+        await followMutation.mutateAsync(modalUser.userId);
+        setSelectedUser((prev) => (prev ? { ...prev, isFollowing: true } : prev));
+      }
       void refetchSelectedUserProfile();
     } catch (error) {
       const err = error as Error & { serverMessage?: string };
-      toast(err.serverMessage ?? '팔로우 처리에 실패했습니다.');
-    }
-  };
-
-  const handleUnfollowConfirm = async () => {
-    if (!modalUser || unfollowMutation.isPending) return;
-
-    try {
-      await unfollowMutation.mutateAsync(modalUser.userId);
-      setSelectedUser((prev) => (prev ? { ...prev, isFollowing: false } : prev));
-      setIsUnfollowConfirmOpen(false);
-      void refetchSelectedUserProfile();
-    } catch (error) {
-      const err = error as Error & { serverMessage?: string };
-      toast(err.serverMessage ?? '언팔로우 처리에 실패했습니다.');
+      toast(
+        err.serverMessage ??
+          (wasFollowing ? '언팔로우 처리에 실패했습니다.' : '팔로우 처리에 실패했습니다.'),
+      );
     }
   };
 
@@ -246,7 +233,6 @@ export default function NotificationsPage() {
         open={Boolean(selectedUser)}
         onClose={() => {
           setSelectedUser(null);
-          setIsUnfollowConfirmOpen(false);
         }}
         user={modalUser}
         isLoading={isSelectedUserProfileLoading}
@@ -255,19 +241,6 @@ export default function NotificationsPage() {
         onRetry={() => void refetchSelectedUserProfile()}
         onClickFollow={() => void handleFollowInModal()}
         onClickChat={handleStartChatInModal}
-      />
-
-      <ConfirmModal
-        isOpen={isUnfollowConfirmOpen}
-        title="팔로우 취소"
-        message={`${modalUser?.nickname ?? ''}님에 대한 팔로우를 취소하시겠습니까?`}
-        confirmText="팔로우 끊기"
-        cancelText="뒤로 가기"
-        onConfirm={() => void handleUnfollowConfirm()}
-        onCancel={() => {
-          if (unfollowMutation.isPending) return;
-          setIsUnfollowConfirmOpen(false);
-        }}
       />
     </main>
   );

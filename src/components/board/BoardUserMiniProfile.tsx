@@ -37,6 +37,11 @@ export default function BoardUserMiniProfile({
 }: BoardUserMiniProfileProps) {
   if (!user) return null;
 
+  const followButtonClass = isFollowing
+    ? 'bg-[#E5484D] hover:bg-[#D6383C]'
+    : 'bg-[#05C075] hover:bg-[#04A865]';
+  const followButtonLabel = isFollowing ? '언팔로잉' : '팔로잉';
+
   return (
     <BaseModal open={open} onClose={onClose} contentClassName="pt-8">
       <div className="flex flex-col items-center gap-3">
@@ -94,10 +99,10 @@ export default function BoardUserMiniProfile({
               type="button"
               onClick={onToggleFollow}
               disabled={isFollowPending}
-              className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[#05C075] px-4 py-2 text-sm font-semibold text-white hover:bg-[#04A865]"
+              className={`flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white ${followButtonClass}`}
             >
               <UserPlus className="h-4 w-4" />
-              {isFollowPending ? '처리 중...' : isFollowing ? '팔로잉' : '팔로우'}
+              {isFollowPending ? '처리 중...' : followButtonLabel}
             </button>
           </div>
         )}

@@ -50,7 +50,7 @@ vi.mock('@/components/mypage/FollowUserProfileModal', () => ({
     open && user ? (
       <div data-testid="profile-modal">
         <p>{user.nickname}</p>
-        <p data-testid="follow-state">{user.isFollowing ? '팔로잉' : '팔로우'}</p>
+        <p data-testid="follow-state">{user.isFollowing ? '언팔로잉' : '팔로잉'}</p>
         <button type="button" onClick={onClickFollow}>
           follow-action
         </button>
@@ -268,7 +268,7 @@ describe('FollowListScreen', () => {
     expect(fetchFollowingsNextPage).toHaveBeenCalledTimes(1);
   });
 
-  it('프로필 모달 팔로우 상태가 팔로우 -> 팔로잉으로 변경된다', async () => {
+  it('프로필 모달 팔로우 상태가 팔로잉 -> 언팔로잉으로 변경된다', async () => {
     const user = userEvent.setup();
     const followMutateAsync = vi.fn().mockResolvedValue({});
 
@@ -304,7 +304,7 @@ describe('FollowListScreen', () => {
 
     await user.click(screen.getByRole('button', { name: /follower-1/i }));
 
-    expect(screen.getByTestId('follow-state')).toHaveTextContent('팔로우');
+    expect(screen.getByTestId('follow-state')).toHaveTextContent('팔로잉');
 
     await user.click(screen.getByRole('button', { name: 'follow-action' }));
 
@@ -313,7 +313,7 @@ describe('FollowListScreen', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByTestId('follow-state')).toHaveTextContent('팔로잉');
+      expect(screen.getByTestId('follow-state')).toHaveTextContent('언팔로잉');
     });
   });
 });
