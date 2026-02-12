@@ -174,14 +174,6 @@ export default function FollowListScreen() {
   return (
     <main className="flex flex-col px-6 py-4">
       <section className="mt-2 rounded-2xl bg-white p-4">
-        <p className="text-xs font-semibold text-neutral-500">MEM-003</p>
-        <h2 className="mt-1 text-lg font-bold text-neutral-900">마이페이지 - 팔로워/팔로잉 목록</h2>
-        <p className="mt-2 text-sm text-neutral-600">
-          현재 탭: {activeTab === 'followers' ? '팔로워' : '팔로잉'}
-        </p>
-      </section>
-
-      <section className="mt-4 rounded-2xl bg-white p-4">
         <div className="flex border-b border-neutral-200">
           <button
             type="button"
