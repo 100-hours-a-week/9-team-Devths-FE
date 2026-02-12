@@ -41,6 +41,7 @@ export default function BoardListPage() {
   const [isTagOpen, setIsTagOpen] = useState(false);
   const [isMiniProfileOpen, setIsMiniProfileOpen] = useState(false);
   const [selectedAuthorId, setSelectedAuthorId] = useState<number | null>(null);
+  const [followStateOverrides, setFollowStateOverrides] = useState<Record<number, boolean>>({});
   const [pullDistance, setPullDistance] = useState(0);
   const [isPulling, setIsPulling] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -160,7 +161,11 @@ export default function BoardListPage() {
   const isMine = Boolean(
     modalUserId !== null && currentUserId !== null && modalUserId === currentUserId,
   );
-  const isFollowing = selectedAuthorProfile?.isFollowing ?? false;
+  const profileIsFollowing = selectedAuthorProfile?.isFollowing ?? false;
+  const isFollowing =
+    modalUserId !== null && followStateOverrides[modalUserId] !== undefined
+      ? followStateOverrides[modalUserId]
+      : profileIsFollowing;
   const isFollowPending = followMutation.isPending || unfollowMutation.isPending;
 
   const handleCreatePost = useCallback(() => {
@@ -186,8 +191,10 @@ export default function BoardListPage() {
     try {
       if (isFollowing) {
         await unfollowMutation.mutateAsync(modalUserId);
+        setFollowStateOverrides((prev) => ({ ...prev, [modalUserId]: false }));
       } else {
         await followMutation.mutateAsync(modalUserId);
+        setFollowStateOverrides((prev) => ({ ...prev, [modalUserId]: true }));
       }
       void refetchSelectedAuthorProfile();
     } catch (error) {

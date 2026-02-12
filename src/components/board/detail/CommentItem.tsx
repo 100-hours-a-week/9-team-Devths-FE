@@ -14,6 +14,7 @@ type CommentItemProps = {
   createdAt: string;
   content: string | null;
   isDeleted?: boolean;
+  onAuthorClick?: (userId: number) => void;
   showReply?: boolean;
   onReplyClick?: () => void;
   showOptions?: boolean;
@@ -28,6 +29,7 @@ export default function CommentItem({
   createdAt,
   content,
   isDeleted,
+  onAuthorClick,
   showReply = false,
   onReplyClick,
   showOptions = false,
@@ -69,7 +71,12 @@ export default function CommentItem({
   return (
     <div className={cn('border-b border-neutral-200 py-3', (isLast || isEditing) && 'border-b-0')}>
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onAuthorClick?.(author.userId)}
+          className="flex items-center gap-2 text-left"
+          aria-label={`${author.nickname} 프로필 보기`}
+        >
           <div className="relative flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 bg-neutral-200 text-[11px] font-semibold text-neutral-600">
             {author.profileImageUrl ? (
               <Image
@@ -87,7 +94,7 @@ export default function CommentItem({
             <div className="text-xs font-semibold text-neutral-800">{author.nickname}</div>
             <div className="text-[11px] text-neutral-400">{formatRelativeTime(createdAt)}</div>
           </div>
-        </div>
+        </button>
         {canShowOptions ? (
           <div className="relative">
             <button
