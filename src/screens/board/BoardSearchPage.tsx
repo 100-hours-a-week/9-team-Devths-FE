@@ -120,24 +120,28 @@ export default function BoardSearchPage() {
     return () => resetOptions();
   }, [handleBackClick, resetOptions, setOptions]);
 
+  const executeSearch = useCallback((rawKeyword: string) => {
+    const validation = validateKeyword(rawKeyword);
+    if (!validation.isValid) {
+      setHelperText(validation.helperText);
+      return;
+    }
+
+    setHelperText(null);
+    setSubmittedKeyword(validation.normalizedKeyword);
+    setRecentKeywords((previousKeywords) => {
+      const nextKeywords = addRecentKeyword(previousKeywords, validation.normalizedKeyword);
+      writeRecentKeywords(nextKeywords);
+      return nextKeywords;
+    });
+  }, []);
+
   const handleSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
-      const validation = validateKeyword(keywordInput);
-      if (!validation.isValid) {
-        setHelperText(validation.helperText);
-        return;
-      }
-
-      setHelperText(null);
-      setSubmittedKeyword(validation.normalizedKeyword);
-      setRecentKeywords((previousKeywords) => {
-        const nextKeywords = addRecentKeyword(previousKeywords, validation.normalizedKeyword);
-        writeRecentKeywords(nextKeywords);
-        return nextKeywords;
-      });
+      executeSearch(keywordInput);
     },
-    [keywordInput],
+    [executeSearch, keywordInput],
   );
 
   const handleKeywordChange = useCallback(
@@ -153,6 +157,22 @@ export default function BoardSearchPage() {
     },
     [helperText],
   );
+
+  const handleRecentKeywordClick = useCallback(
+    (keyword: string) => {
+      setKeywordInput(keyword);
+      executeSearch(keyword);
+    },
+    [executeSearch],
+  );
+
+  const handleRecentKeywordDelete = useCallback((keyword: string) => {
+    setRecentKeywords((previousKeywords) => {
+      const nextKeywords = previousKeywords.filter((item) => item !== keyword);
+      writeRecentKeywords(nextKeywords);
+      return nextKeywords;
+    });
+  }, []);
 
   return (
     <main className="px-3 pt-4 pb-3">
@@ -182,12 +202,32 @@ export default function BoardSearchPage() {
           ) : null}
         </section>
 
-        <section className="rounded-2xl bg-white px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
-          <p className="text-sm font-semibold text-neutral-900">최근 검색어</p>
-          <p className="mt-2 text-xs text-neutral-500">
-            {recentKeywords.length > 0 ? recentKeywords.join(', ') : '최근 검색어 영역'}
-          </p>
-        </section>
+        {recentKeywords.length > 0 ? (
+          <section className="rounded-2xl bg-white px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
+            <p className="text-sm font-semibold text-neutral-900">최근 검색어</p>
+            <ul className="mt-2 space-y-2">
+              {recentKeywords.map((keyword) => (
+                <li key={keyword} className="flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleRecentKeywordClick(keyword)}
+                    className="min-w-0 flex-1 truncate text-left text-sm text-neutral-700 transition hover:text-emerald-700"
+                  >
+                    {keyword}
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`${keyword} 최근 검색어 삭제`}
+                    onClick={() => handleRecentKeywordDelete(keyword)}
+                    className="rounded-md px-1 text-sm text-neutral-400 transition hover:text-neutral-700"
+                  >
+                    X
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         <section className="rounded-2xl bg-white px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
           <p className="text-sm font-semibold text-neutral-900">게시글 ({data?.items.length ?? 0})</p>
