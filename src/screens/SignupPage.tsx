@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -36,6 +37,7 @@ export default function SignupPage() {
   const [profileImageS3Key, setProfileImageS3Key] = useState<string | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPrivacyAgreed, setIsPrivacyAgreed] = useState(false);
 
   const [tempToken, setTempTokenState] = useState<string | null>(null);
   const [email, setEmailState] = useState<string | null>(null);
@@ -144,6 +146,10 @@ export default function SignupPage() {
   const handleSubmit = async () => {
     if (!tempToken || !email) return;
     if (!isNicknameValid) return;
+    if (!isPrivacyAgreed) {
+      toast('개인정보 처리방침 동의가 필요합니다.');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -258,11 +264,31 @@ export default function SignupPage() {
                 />
               </div>
             </div>
+
+            <div className="px-1">
+              <label className="flex items-start gap-2 text-sm text-neutral-700">
+                <input
+                  type="checkbox"
+                  checked={isPrivacyAgreed}
+                  onChange={(event) => setIsPrivacyAgreed(event.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-[#81D247] focus:ring-[#81D247]"
+                />
+                <span>
+                  <Link
+                    href="/privacy"
+                    className="underline underline-offset-2 hover:text-neutral-900"
+                  >
+                    개인정보 처리방침
+                  </Link>
+                  에 동의합니다.
+                </span>
+              </label>
+            </div>
           </section>
 
           <footer className="mt-auto pt-8">
             <PrimaryButton
-              disabled={!isNicknameValid || isUploadingProfile || isSubmitting}
+              disabled={!isNicknameValid || !isPrivacyAgreed || isUploadingProfile || isSubmitting}
               onClick={handleSubmit}
             >
               시작하기
