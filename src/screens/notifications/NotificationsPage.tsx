@@ -177,7 +177,10 @@ export default function NotificationsPage() {
       void refetchSelectedUserProfile();
     } catch (error) {
       const err = error as Error & { serverMessage?: string };
-      toast(err.serverMessage ?? (wasFollowing ? '언팔로우 처리에 실패했습니다.' : '팔로우 처리에 실패했습니다.'));
+      toast(
+        err.serverMessage ??
+          (wasFollowing ? '언팔로우 처리에 실패했습니다.' : '팔로우 처리에 실패했습니다.'),
+      );
     }
   };
 
