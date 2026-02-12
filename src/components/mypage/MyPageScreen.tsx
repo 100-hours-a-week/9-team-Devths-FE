@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
+import BoardPostCard from '@/components/board/BoardPostCard';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import EditProfileModal from '@/components/mypage/EditProfileModal';
 import WithdrawModal from '@/components/mypage/WithdrawModal';
@@ -16,6 +17,8 @@ import { useMyPostsInfiniteQuery } from '@/lib/hooks/users/useMyPostsInfiniteQue
 import { useMeQuery } from '@/lib/hooks/users/useMeQuery';
 import { toast } from '@/lib/toast/store';
 import { formatCountToK } from '@/lib/utils/number';
+
+import type { BoardPostSummary } from '@/types/board';
 
 export default function MyPageScreen() {
   const router = useRouter();
@@ -91,6 +94,24 @@ export default function MyPageScreen() {
   const myPosts = myPostsData?.pages.flatMap((page) => page.posts) ?? [];
   const myComments = myCommentsData?.pages.flatMap((page) => page.comments) ?? [];
   const myNicknameInitial = Array.from((data?.nickname ?? '').trim())[0]?.toUpperCase() ?? '?';
+  const myPostCards: BoardPostSummary[] = myPosts.map((post) => ({
+    postId: post.id,
+    title: post.title,
+    preview: post.content,
+    tags: [],
+    createdAt: post.createdAt,
+    author: {
+      userId: data?.id ?? data?.userId ?? -1,
+      nickname: data?.nickname ?? '나',
+      profileImageUrl: data?.profileImage?.url ?? null,
+      interests: [],
+    },
+    stats: {
+      likeCount: post.likeCount,
+      commentCount: post.commentCount,
+      shareCount: post.shareCount,
+    },
+  }));
 
   const formatDateTime = (isoDate: string) => {
     const date = new Date(isoDate);
@@ -311,16 +332,8 @@ export default function MyPageScreen() {
                     아직 작성한 게시글이 없습니다.
                   </p>
                 ) : (
-                  myPosts.map((post) => (
-                    <button
-                      key={post.id}
-                      type="button"
-                      onClick={() => handleMovePostDetail(post.id)}
-                      className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left hover:border-[#05C075]"
-                    >
-                      <p className="line-clamp-1 text-sm font-semibold text-neutral-900">{post.title}</p>
-                      <p className="mt-1 text-xs text-neutral-500">{formatDateTime(post.createdAt)}</p>
-                    </button>
+                  myPostCards.map((post) => (
+                    <BoardPostCard key={post.postId} post={post} onClick={handleMovePostDetail} />
                   ))
                 )}
                 {isMyPostsHasNextPage ? <div ref={infiniteScrollTriggerRef} className="h-1" /> : null}
