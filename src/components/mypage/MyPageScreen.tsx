@@ -256,34 +256,34 @@ export default function MyPageScreen() {
       </section>
 
       <section className="mt-6 flex flex-1 flex-col rounded-2xl bg-white p-4">
-        <div className="relative rounded-xl bg-neutral-100 p-1">
+        <div className="relative rounded-xl border border-[#05C075]/30 bg-white p-1">
           <span
-            className={`pointer-events-none absolute top-1 left-1 h-[calc(100%-8px)] w-[calc(50%-4px)] rounded-lg bg-white shadow-sm transition-transform duration-200 ${
+            className={`pointer-events-none absolute top-1 left-1 h-[calc(100%-8px)] w-[calc(50%-4px)] rounded-lg bg-[#05C075] shadow-sm transition-transform duration-200 ${
               activeContentTab === 'posts' ? 'translate-x-0' : 'translate-x-full'
             }`}
           />
           <div className="relative grid grid-cols-2">
             <button
               type="button"
-              onClick={() => setActiveContentTab('posts')}
-              className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
-                activeContentTab === 'posts'
-                  ? 'text-neutral-900'
-                  : 'text-neutral-500 hover:text-neutral-700'
-              }`}
-            >
-              내가 쓴 글
+                onClick={() => setActiveContentTab('posts')}
+                className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                  activeContentTab === 'posts'
+                    ? 'text-white'
+                    : 'text-neutral-500 hover:text-[#0B6A42]'
+                }`}
+              >
+                내가 쓴 글
             </button>
             <button
               type="button"
-              onClick={() => setActiveContentTab('comments')}
-              className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
-                activeContentTab === 'comments'
-                  ? 'text-neutral-900'
-                  : 'text-neutral-500 hover:text-neutral-700'
-              }`}
-            >
-              내가 쓴 댓글
+                onClick={() => setActiveContentTab('comments')}
+                className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                  activeContentTab === 'comments'
+                    ? 'text-white'
+                    : 'text-neutral-500 hover:text-[#0B6A42]'
+                }`}
+              >
+                내가 쓴 댓글
             </button>
           </div>
         </div>
