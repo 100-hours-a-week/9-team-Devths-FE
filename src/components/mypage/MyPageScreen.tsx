@@ -1,7 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { Pencil, Smile, User } from 'lucide-react';
+import { Pencil, Smile } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -90,6 +90,7 @@ export default function MyPageScreen() {
 
   const myPosts = myPostsData?.pages.flatMap((page) => page.posts) ?? [];
   const myComments = myCommentsData?.pages.flatMap((page) => page.comments) ?? [];
+  const myNicknameInitial = Array.from((data?.nickname ?? '').trim())[0]?.toUpperCase() ?? '?';
 
   const formatDateTime = (isoDate: string) => {
     const date = new Date(isoDate);
@@ -170,8 +171,8 @@ export default function MyPageScreen() {
                   className="h-16 w-16 rounded-full object-cover"
                 />
               ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-neutral-200">
-                  <User className="h-8 w-8 text-neutral-400" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-black text-2xl font-semibold text-white">
+                  {myNicknameInitial}
                 </div>
               )}
 

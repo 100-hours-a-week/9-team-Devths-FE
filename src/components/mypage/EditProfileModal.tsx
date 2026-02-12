@@ -71,6 +71,7 @@ function EditForm({ initialData, onClose, onWithdraw }: EditFormProps) {
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
     setSelectedFile(file);
+    setIsProfileImageDeleted(false);
     setSubmitMessage(null);
   };
 
@@ -122,7 +123,7 @@ function EditForm({ initialData, onClose, onWithdraw }: EditFormProps) {
     }
 
     try {
-      if (hasImageChange) {
+      if (selectedFile) {
         if (!userId) {
           setSubmitMessage({ type: 'error', text: '유저 정보를 확인할 수 없습니다.' });
           return;
@@ -173,6 +174,7 @@ function EditForm({ initialData, onClose, onWithdraw }: EditFormProps) {
         <div className="mt-2 flex flex-col items-center">
           <ProfileImagePicker
             previewUrl={previewUrl}
+            fallbackInitial={nickname}
             onSelect={handleSelectImage}
             onFileTooLarge={() => setIsFileTooLargeOpen(true)}
             size="sm"
