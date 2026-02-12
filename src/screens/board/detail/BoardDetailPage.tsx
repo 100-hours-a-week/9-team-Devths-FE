@@ -119,26 +119,45 @@ export default function BoardDetailPage() {
     [handleNotificationsClick, handleSearchClick],
   );
 
-  const selectedCommentAuthor = useMemo(() => {
+  const selectedAuthor = useMemo(() => {
     if (selectedCommentAuthorId === null) return null;
+
+    if (post && post.author.userId === selectedCommentAuthorId) {
+      return {
+        userId: post.author.userId,
+        nickname: post.author.nickname,
+        profileImageUrl: post.author.profileImageUrl ?? null,
+        interests: post.author.interests ?? [],
+      };
+    }
 
     for (const thread of commentThreads) {
       if (thread.comment.author.userId === selectedCommentAuthorId) {
-        return thread.comment.author;
+        return {
+          userId: thread.comment.author.userId,
+          nickname: thread.comment.author.nickname,
+          profileImageUrl: thread.comment.author.profileImageUrl ?? null,
+          interests: [],
+        };
       }
 
       const selectedReply = thread.replies.find(
         (reply) => reply.author.userId === selectedCommentAuthorId,
       );
       if (selectedReply) {
-        return selectedReply.author;
+        return {
+          userId: selectedReply.author.userId,
+          nickname: selectedReply.author.nickname,
+          profileImageUrl: selectedReply.author.profileImageUrl ?? null,
+          interests: [],
+        };
       }
     }
 
     return null;
-  }, [commentThreads, selectedCommentAuthorId]);
+  }, [commentThreads, post, selectedCommentAuthorId]);
 
-  const { data: selectedCommentAuthorProfile, refetch: refetchSelectedCommentAuthorProfile } =
+  const { data: selectedAuthorProfile, refetch: refetchSelectedAuthorProfile } =
     useQuery({
       queryKey: userKeys.profile(selectedCommentAuthorId ?? -1),
       queryFn: async () => {
@@ -157,29 +176,29 @@ export default function BoardDetailPage() {
       enabled: selectedCommentAuthorId !== null,
     });
 
-  const modalUser = selectedCommentAuthor
+  const modalUser = selectedAuthor
     ? {
-        userId: selectedCommentAuthor.userId,
-        nickname: selectedCommentAuthorProfile?.user.nickname ?? selectedCommentAuthor.nickname,
+        userId: selectedAuthor.userId,
+        nickname: selectedAuthorProfile?.user.nickname ?? selectedAuthor.nickname,
         profileImageUrl:
-          selectedCommentAuthorProfile?.profileImage?.url ??
-          selectedCommentAuthor.profileImageUrl ??
+          selectedAuthorProfile?.profileImage?.url ??
+          selectedAuthor.profileImageUrl ??
           null,
-        interests: selectedCommentAuthorProfile?.interests ?? [],
+        interests: selectedAuthorProfile?.interests ?? selectedAuthor.interests ?? [],
       }
     : null;
   const modalUserId = modalUser?.userId ?? null;
   const isMine = Boolean(
     modalUserId !== null && currentUserId !== null && modalUserId === currentUserId,
   );
-  const profileIsFollowing = selectedCommentAuthorProfile?.isFollowing ?? false;
+  const profileIsFollowing = selectedAuthorProfile?.isFollowing ?? false;
   const isFollowing =
     modalUserId !== null && followStateOverrides[modalUserId] !== undefined
       ? followStateOverrides[modalUserId]
       : profileIsFollowing;
   const isFollowPending = followMutation.isPending || unfollowMutation.isPending;
 
-  const handleCommentAuthorClick = (userId: number) => {
+  const handleAuthorClick = (userId: number) => {
     setSelectedCommentAuthorId(userId);
     setIsMiniProfileOpen(true);
   };
@@ -196,7 +215,7 @@ export default function BoardDetailPage() {
         setFollowStateOverrides((prev) => ({ ...prev, [modalUserId]: true }));
       }
 
-      void refetchSelectedCommentAuthorProfile();
+      void refetchSelectedAuthorProfile();
     } catch (error) {
       const err = error as Error & { serverMessage?: string };
       toast(err.serverMessage ?? '팔로우 처리에 실패했습니다.');
@@ -606,6 +625,7 @@ export default function BoardDetailPage() {
               <PostHeader
                 author={post.author}
                 createdAt={post.createdAt}
+                onAuthorClick={handleAuthorClick}
                 showOptions={isAuthor}
                 onOptionsClick={handleOptionsToggle}
                 optionsButtonRef={optionsButtonRef}
@@ -692,7 +712,7 @@ export default function BoardDetailPage() {
             ) : (
               <CommentList
                 threads={commentThreads}
-                onAuthorClick={handleCommentAuthorClick}
+                onAuthorClick={handleAuthorClick}
                 onReplyClick={handleReplyToggle}
                 currentUserId={currentUserId}
                 onDeleteClick={handleCommentDeleteOpen}
