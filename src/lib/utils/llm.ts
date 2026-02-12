@@ -18,6 +18,8 @@ export type UIMessage = {
   time?: string;
   attachments?: UIAttachment[];
   status?: MessageStatus;
+  interviewId?: number | null;
+  isInterviewEvaluation?: boolean;
 };
 
 export function formatUpdatedAt(isoString: string): string {
@@ -72,11 +74,16 @@ function mapRole(role: ChatMessage['role']): UIMessage['role'] {
 }
 
 export function toUIMessage(msg: ChatMessage): UIMessage {
+  const isInterviewEvaluation =
+    msg.role === 'ASSISTANT' && msg.type === 'INTERVIEW' && msg.metadata?.evaluation === true;
+
   return {
     id: String(msg.messageId),
     role: mapRole(msg.role),
     text: msg.content,
     time: formatMessageTime(msg.createdAt),
+    interviewId: msg.interviewId,
+    isInterviewEvaluation,
   };
 }
 

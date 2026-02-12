@@ -74,6 +74,7 @@ export type StartInterviewResponse = {
 
 export type EndInterviewRequest = {
   interviewId: number;
+  retry?: boolean;
   content?: string;
 };
 

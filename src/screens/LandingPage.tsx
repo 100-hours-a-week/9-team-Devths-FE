@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
@@ -68,6 +69,15 @@ export default function LandingPage() {
           <section className="w-full">
             <GoogleLoginButton />
           </section>
+
+          <footer className="w-full text-center">
+            <Link
+              href="/privacy"
+              className="text-xs text-neutral-500 underline underline-offset-2 hover:text-neutral-700"
+            >
+              개인정보 처리방침
+            </Link>
+          </footer>
         </div>
       </div>
     </main>
