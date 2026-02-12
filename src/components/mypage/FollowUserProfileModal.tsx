@@ -38,6 +38,11 @@ export default function FollowUserProfileModal({
 }: FollowUserProfileModalProps) {
   if (!user) return null;
 
+  const followButtonClass = user.isFollowing
+    ? 'bg-[#E5484D] hover:bg-[#D6383C]'
+    : 'bg-[#05C075] hover:bg-[#04A865]';
+  const followButtonLabel = user.isFollowing ? '언팔로잉' : '팔로잉';
+
   if (isLoading) {
     return (
       <BaseModal open={open} onClose={onClose} contentClassName="pt-8">
@@ -114,10 +119,10 @@ export default function FollowUserProfileModal({
             type="button"
             onClick={onClickFollow}
             disabled={isFollowPending}
-            className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[#05C075] px-4 py-2 text-sm font-semibold text-white hover:bg-[#04A865] disabled:cursor-not-allowed disabled:opacity-60"
+            className={`flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 ${followButtonClass}`}
           >
             <UserPlus className="h-4 w-4" />
-            {isFollowPending ? '처리 중...' : user.isFollowing ? '팔로잉' : '팔로우'}
+            {isFollowPending ? '처리 중...' : followButtonLabel}
           </button>
         </div>
       </div>
