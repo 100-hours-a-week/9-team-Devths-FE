@@ -1,7 +1,6 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Users } from 'lucide-react';
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -11,11 +10,11 @@ import FollowUserProfileModal, {
   type FollowUserProfileModalData,
 } from '@/components/mypage/FollowUserProfileModal';
 import { fetchUserProfile } from '@/lib/api/users';
+import { userKeys } from '@/lib/hooks/users/queryKeys';
 import { useFollowUserMutation } from '@/lib/hooks/users/useFollowUserMutation';
 import { useMyFollowersInfiniteQuery } from '@/lib/hooks/users/useMyFollowersInfiniteQuery';
 import { useMyFollowingsInfiniteQuery } from '@/lib/hooks/users/useMyFollowingsInfiniteQuery';
 import { useUnfollowUserMutation } from '@/lib/hooks/users/useUnfollowUserMutation';
-import { userKeys } from '@/lib/hooks/users/queryKeys';
 import { toast } from '@/lib/toast/store';
 
 export default function FollowListScreen() {
@@ -212,7 +211,9 @@ export default function FollowListScreen() {
                 </div>
               ))
             ) : isFollowersError ? (
-              <p className="py-8 text-center text-sm text-red-500">팔로워 목록을 불러오지 못했습니다.</p>
+              <p className="py-8 text-center text-sm text-red-500">
+                팔로워 목록을 불러오지 못했습니다.
+              </p>
             ) : followers.length === 0 ? (
               <p className="py-8 text-center text-sm text-neutral-500">팔로워가 없습니다.</p>
             ) : (
@@ -246,13 +247,19 @@ export default function FollowListScreen() {
                     )}
 
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-neutral-900">{follower.nickname}</p>
+                      <p className="truncate text-sm font-semibold text-neutral-900">
+                        {follower.nickname}
+                      </p>
                     </div>
                   </button>
                 ))}
-                {hasFollowersNextPage ? <div ref={infiniteScrollTriggerRef} className="h-1" /> : null}
+                {hasFollowersNextPage ? (
+                  <div ref={infiniteScrollTriggerRef} className="h-1" />
+                ) : null}
                 {isFollowersFetchingNextPage ? (
-                  <p className="py-2 text-center text-xs text-neutral-400">팔로워를 불러오는 중...</p>
+                  <p className="py-2 text-center text-xs text-neutral-400">
+                    팔로워를 불러오는 중...
+                  </p>
                 ) : null}
               </>
             )}
@@ -270,7 +277,9 @@ export default function FollowListScreen() {
                 </div>
               ))
             ) : isFollowingsError ? (
-              <p className="py-8 text-center text-sm text-red-500">팔로잉 목록을 불러오지 못했습니다.</p>
+              <p className="py-8 text-center text-sm text-red-500">
+                팔로잉 목록을 불러오지 못했습니다.
+              </p>
             ) : followings.length === 0 ? (
               <p className="py-8 text-center text-sm text-neutral-500">팔로잉이 없습니다.</p>
             ) : (
@@ -310,9 +319,13 @@ export default function FollowListScreen() {
                     </div>
                   </button>
                 ))}
-                {hasFollowingsNextPage ? <div ref={infiniteScrollTriggerRef} className="h-1" /> : null}
+                {hasFollowingsNextPage ? (
+                  <div ref={infiniteScrollTriggerRef} className="h-1" />
+                ) : null}
                 {isFollowingsFetchingNextPage ? (
-                  <p className="py-2 text-center text-xs text-neutral-400">팔로잉을 불러오는 중...</p>
+                  <p className="py-2 text-center text-xs text-neutral-400">
+                    팔로잉을 불러오는 중...
+                  </p>
                 ) : null}
               </>
             )}

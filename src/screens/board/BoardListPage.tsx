@@ -129,10 +129,7 @@ export default function BoardListPage() {
     () => rawPosts.find((post) => post.author.userId === selectedAuthorId)?.author ?? null,
     [rawPosts, selectedAuthorId],
   );
-  const {
-    data: selectedAuthorProfile,
-    refetch: refetchSelectedAuthorProfile,
-  } = useQuery({
+  const { data: selectedAuthorProfile, refetch: refetchSelectedAuthorProfile } = useQuery({
     queryKey: userKeys.profile(selectedAuthorId ?? -1),
     queryFn: async () => {
       const result = await fetchUserProfile(selectedAuthorId!);
@@ -154,12 +151,15 @@ export default function BoardListPage() {
     ? {
         userId: selectedAuthor.userId,
         nickname: selectedAuthorProfile?.user.nickname ?? selectedAuthor.nickname,
-        profileImageUrl: selectedAuthorProfile?.profileImage?.url ?? selectedAuthor.profileImageUrl ?? null,
+        profileImageUrl:
+          selectedAuthorProfile?.profileImage?.url ?? selectedAuthor.profileImageUrl ?? null,
         interests: selectedAuthorProfile?.interests ?? selectedAuthor.interests ?? [],
       }
     : null;
   const modalUserId = modalUser?.userId ?? null;
-  const isMine = Boolean(modalUserId !== null && currentUserId !== null && modalUserId === currentUserId);
+  const isMine = Boolean(
+    modalUserId !== null && currentUserId !== null && modalUserId === currentUserId,
+  );
   const isFollowing = selectedAuthorProfile?.isFollowing ?? false;
   const isFollowPending = followMutation.isPending || unfollowMutation.isPending;
 

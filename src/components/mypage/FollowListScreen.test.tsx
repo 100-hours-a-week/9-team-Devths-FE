@@ -2,9 +2,9 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import FollowListScreen from '@/components/mypage/FollowListScreen';
+import { useFollowUserMutation } from '@/lib/hooks/users/useFollowUserMutation';
 import { useMyFollowersInfiniteQuery } from '@/lib/hooks/users/useMyFollowersInfiniteQuery';
 import { useMyFollowingsInfiniteQuery } from '@/lib/hooks/users/useMyFollowingsInfiniteQuery';
-import { useFollowUserMutation } from '@/lib/hooks/users/useFollowUserMutation';
 import { useUnfollowUserMutation } from '@/lib/hooks/users/useUnfollowUserMutation';
 
 const mockPush = vi.fn();
@@ -29,6 +29,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('next/image', () => ({
+  // eslint-disable-next-line @next/next/no-img-element
   default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => <img {...props} alt={props.alt} />,
 }));
 

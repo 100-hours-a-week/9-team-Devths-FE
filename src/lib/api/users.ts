@@ -195,8 +195,7 @@ export async function fetchMyFollowings(
   }
 
   const queryString = queryParams.toString();
-  const path =
-    queryString ? `/api/users/me/followings?${queryString}` : '/api/users/me/followings';
+  const path = queryString ? `/api/users/me/followings?${queryString}` : '/api/users/me/followings';
 
   const { ok, status, json } = await api.get<FollowingListData>(path);
   return { ok, status, json };

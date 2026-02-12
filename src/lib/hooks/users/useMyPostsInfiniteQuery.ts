@@ -9,7 +9,9 @@ type UseMyPostsInfiniteQueryParams = {
 
 const DEFAULT_PAGE_SIZE = 5;
 
-export function useMyPostsInfiniteQuery({ size = DEFAULT_PAGE_SIZE }: UseMyPostsInfiniteQueryParams = {}) {
+export function useMyPostsInfiniteQuery({
+  size = DEFAULT_PAGE_SIZE,
+}: UseMyPostsInfiniteQueryParams = {}) {
   return useInfiniteQuery({
     queryKey: userKeys.myPosts({ size }),
     queryFn: async ({ pageParam }) => {

@@ -2,9 +2,9 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import MyPageScreen from '@/components/mypage/MyPageScreen';
+import { useMeQuery } from '@/lib/hooks/users/useMeQuery';
 import { useMyCommentsInfiniteQuery } from '@/lib/hooks/users/useMyCommentsInfiniteQuery';
 import { useMyPostsInfiniteQuery } from '@/lib/hooks/users/useMyPostsInfiniteQuery';
-import { useMeQuery } from '@/lib/hooks/users/useMeQuery';
 
 import type { MeData } from '@/lib/api/users';
 
@@ -22,6 +22,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('next/image', () => ({
+  // eslint-disable-next-line @next/next/no-img-element
   default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => <img {...props} alt={props.alt} />,
 }));
 
@@ -116,7 +117,9 @@ function createPostsHookValue(overrides?: Partial<ReturnType<typeof useMyPostsIn
   } as unknown as ReturnType<typeof useMyPostsInfiniteQuery>;
 }
 
-function createCommentsHookValue(overrides?: Partial<ReturnType<typeof useMyCommentsInfiniteQuery>>) {
+function createCommentsHookValue(
+  overrides?: Partial<ReturnType<typeof useMyCommentsInfiniteQuery>>,
+) {
   return {
     data: {
       pages: [{ comments: [], hasNext: false, lastId: null }],

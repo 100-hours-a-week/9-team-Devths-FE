@@ -53,7 +53,9 @@ export default function FollowUserProfileModal({
     return (
       <BaseModal open={open} onClose={onClose} contentClassName="pt-8">
         <div className="flex flex-col items-center gap-3 py-6 text-center">
-          <p className="text-sm font-semibold text-neutral-800">프로필 정보를 불러오지 못했습니다.</p>
+          <p className="text-sm font-semibold text-neutral-800">
+            프로필 정보를 불러오지 못했습니다.
+          </p>
           <button
             type="button"
             onClick={onRetry}

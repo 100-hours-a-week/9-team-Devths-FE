@@ -1,7 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { Pencil, Smile } from 'lucide-react';
+import { Pencil } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -12,9 +12,9 @@ import EditProfileModal from '@/components/mypage/EditProfileModal';
 import WithdrawModal from '@/components/mypage/WithdrawModal';
 import { postLogout } from '@/lib/api/auth';
 import { clearAccessToken } from '@/lib/auth/token';
+import { useMeQuery } from '@/lib/hooks/users/useMeQuery';
 import { useMyCommentsInfiniteQuery } from '@/lib/hooks/users/useMyCommentsInfiniteQuery';
 import { useMyPostsInfiniteQuery } from '@/lib/hooks/users/useMyPostsInfiniteQuery';
-import { useMeQuery } from '@/lib/hooks/users/useMeQuery';
 import { toast } from '@/lib/toast/store';
 import { formatCountToK } from '@/lib/utils/number';
 
@@ -336,9 +336,13 @@ export default function MyPageScreen() {
                     <BoardPostCard key={post.postId} post={post} onClick={handleMovePostDetail} />
                   ))
                 )}
-                {isMyPostsHasNextPage ? <div ref={infiniteScrollTriggerRef} className="h-1" /> : null}
+                {isMyPostsHasNextPage ? (
+                  <div ref={infiniteScrollTriggerRef} className="h-1" />
+                ) : null}
                 {isMyPostsFetchingNextPage ? (
-                  <p className="py-2 text-center text-xs text-neutral-400">게시글을 불러오는 중...</p>
+                  <p className="py-2 text-center text-xs text-neutral-400">
+                    게시글을 불러오는 중...
+                  </p>
                 ) : null}
               </>
             )}
@@ -376,7 +380,9 @@ export default function MyPageScreen() {
                       <p className="line-clamp-1 text-sm font-semibold text-neutral-900">
                         {comment.postTitle}
                       </p>
-                      <p className="mt-1 line-clamp-1 text-xs text-neutral-600">{comment.content}</p>
+                      <p className="mt-1 line-clamp-1 text-xs text-neutral-600">
+                        {comment.content}
+                      </p>
                       <p className="mt-1 text-xs text-neutral-500">
                         {formatDateTime(comment.createdAt)}
                       </p>

@@ -113,7 +113,10 @@ export default function ProfileImagePicker({
           )}
         >
           <Plus
-            className={cn(iconClass, hasPreview || hasFallbackInitial ? 'text-white' : 'text-zinc-700')}
+            className={cn(
+              iconClass,
+              hasPreview || hasFallbackInitial ? 'text-white' : 'text-zinc-700',
+            )}
           />
         </span>
       </button>
