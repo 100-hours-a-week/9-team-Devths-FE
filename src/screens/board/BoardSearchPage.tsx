@@ -4,6 +4,7 @@ import { Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 
+import BoardPostCard from '@/components/board/BoardPostCard';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { useBoardSearchQuery } from '@/lib/hooks/boards/useBoardSearchQuery';
 
@@ -174,6 +175,13 @@ export default function BoardSearchPage() {
     });
   }, []);
 
+  const handlePostClick = useCallback(
+    (postId: number) => {
+      router.push(`/board/${postId}`);
+    },
+    [router],
+  );
+
   return (
     <main className="px-3 pt-4 pb-3">
       <div className="space-y-4">
@@ -231,8 +239,18 @@ export default function BoardSearchPage() {
 
         <section className="rounded-2xl bg-white px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
           <p className="text-sm font-semibold text-neutral-900">게시글 ({data?.items.length ?? 0})</p>
-          <div className="mt-3 rounded-xl border border-dashed border-neutral-200 px-3 py-6 text-center text-xs text-neutral-500">
-            검색 결과 영역
+          <div className="mt-3">
+            {data?.items.length ? (
+              <div className="space-y-3">
+                {data.items.map((post) => (
+                  <BoardPostCard key={post.postId} post={post} onClick={handlePostClick} />
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-neutral-200 px-3 py-6 text-center text-xs text-neutral-500">
+                검색 결과 영역
+              </div>
+            )}
           </div>
         </section>
       </div>
