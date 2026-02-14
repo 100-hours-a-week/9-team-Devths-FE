@@ -40,26 +40,27 @@ export const httpRequestTotal = new Counter({
 });
 
 /**
- * Web Vitals 메트릭 (히스토그램)
- * 클라이언트에서 측정된 성능 지표
- * 라벨: name (LCP, CLS, FCP, TTFB, INP), rating (good, needs-improvement, poor), page
+ * Web Vitals 시간 기반 메트릭 (히스토그램)
+ * LCP, FCP, TTFB, INP — 단위: ms
+ * 라벨: name, rating (good, needs-improvement, poor), page
  */
 export const webVitalsMetric = new Histogram({
-  name: 'web_vitals',
-  help: 'Web Vitals performance metrics',
+  name: 'web_vitals_ms',
+  help: 'Web Vitals timing metrics in milliseconds (LCP, FCP, TTFB, INP)',
   labelNames: ['name', 'rating', 'page'],
-  buckets: [100, 300, 500, 1000, 2500, 5000, 10000], // ms
+  buckets: [100, 300, 500, 1000, 2500, 5000, 10000],
   registers: [register],
 });
 
 /**
- * 에러 발생 횟수 (카운터)
- * 클라이언트/서버 에러 추적
- * 라벨: type (client, server, api), severity (error, warning), page
+ * CLS (Cumulative Layout Shift) 메트릭 (히스토그램)
+ * CLS는 ms가 아닌 비율 값(0~1+)으로 별도 버킷 사용
+ * 라벨: rating (good, needs-improvement, poor), page
  */
-export const errorCount = new Counter({
-  name: 'errors_total',
-  help: 'Total number of errors',
-  labelNames: ['type', 'severity', 'page'],
+export const clsMetric = new Histogram({
+  name: 'web_vitals_cls',
+  help: 'Cumulative Layout Shift score (unitless ratio)',
+  labelNames: ['rating', 'page'],
+  buckets: [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.5],
   registers: [register],
 });

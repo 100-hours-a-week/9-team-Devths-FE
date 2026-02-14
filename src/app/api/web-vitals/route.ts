@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { webVitalsMetric } from '@/lib/metrics';
+import { clsMetric, webVitalsMetric } from '@/lib/metrics';
 
 /**
  * Web Vitals 메트릭 수집 엔드포인트
@@ -32,15 +32,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Prometheus 메트릭 기록
-    webVitalsMetric.observe(
-      {
-        name: metric.name,
-        rating: metric.rating || 'unknown',
-        page: metric.page || 'unknown',
-      },
-      metric.value,
-    );
+    // CLS는 비율 값이므로 별도 메트릭에 기록
+    if (metric.name === 'CLS') {
+      clsMetric.observe(
+        {
+          rating: metric.rating || 'unknown',
+          page: metric.page || 'unknown',
+        },
+        metric.value,
+      );
+    } else {
+      webVitalsMetric.observe(
+        {
+          name: metric.name,
+          rating: metric.rating || 'unknown',
+          page: metric.page || 'unknown',
+        },
+        metric.value,
+      );
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
