@@ -1,4 +1,5 @@
 import type { BoardAuthor, BoardTag } from '@/types/board';
+import type { CursorListResponse } from '@/types/pagination';
 
 export type ReactionCounts = {
   likeCount: number;
@@ -67,11 +68,7 @@ export type CommentItemResponse = {
   isDeleted: boolean;
 };
 
-export type CommentListResponse = {
-  comments: CommentItemResponse[];
-  lastId: number | null;
-  hasNext: boolean;
-};
+export type CommentListResponse = CursorListResponse<CommentItemResponse, 'comments'>;
 
 export type CommentItem = {
   commentId: number;

@@ -10,6 +10,7 @@ import type { BoardAuthor } from '@/types/board';
 type PostHeaderProps = {
   author: BoardAuthor;
   createdAt: string;
+  onAuthorClick?: (userId: number) => void;
   showOptions?: boolean;
   onOptionsClick?: () => void;
   optionsButtonRef?: React.Ref<HTMLButtonElement>;
@@ -18,13 +19,19 @@ type PostHeaderProps = {
 export default function PostHeader({
   author,
   createdAt,
+  onAuthorClick,
   showOptions = false,
   onOptionsClick,
   optionsButtonRef,
 }: PostHeaderProps) {
   return (
     <div className="flex items-start justify-between gap-3">
-      <div className="flex min-w-0 items-center gap-3">
+      <button
+        type="button"
+        onClick={() => onAuthorClick?.(author.userId)}
+        className="flex min-w-0 items-center gap-3 text-left"
+        aria-label={`${author.nickname} 프로필 보기`}
+      >
         <div className="relative flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 bg-neutral-200 text-sm font-semibold text-neutral-600">
           {author.profileImageUrl ? (
             <Image
@@ -51,7 +58,7 @@ export default function PostHeader({
             </div>
           ) : null}
         </div>
-      </div>
+      </button>
 
       {showOptions ? (
         <button

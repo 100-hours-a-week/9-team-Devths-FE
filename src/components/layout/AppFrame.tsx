@@ -9,6 +9,7 @@ import Header from '@/components/layout/Header';
 import { HeaderContext, type HeaderOptions } from '@/components/layout/HeaderContext';
 import { NavigationGuardContext } from '@/components/layout/NavigationGuardContext';
 import LlmAnalysisTaskWatcher from '@/components/llm/analysis/LlmAnalysisTaskWatcher';
+import { ensureAccessToken } from '@/lib/api/client';
 import { getAccessToken, setAuthRedirect } from '@/lib/auth/token';
 import { toast } from '@/lib/toast/store';
 
@@ -61,17 +62,39 @@ export default function AppFrame({
   }, [defaultFrameOptions]);
 
   useEffect(() => {
-    const token = getAccessToken();
-    if (!token) {
+    let isCancelled = false;
+
+    const checkAuth = async () => {
+      const token = getAccessToken();
+      if (token) {
+        if (!isCancelled) {
+          setIsAuthed(true);
+        }
+        return;
+      }
+
+      const restored = await ensureAccessToken();
+      if (isCancelled) {
+        return;
+      }
+
+      if (restored) {
+        setIsAuthed(true);
+        return;
+      }
+
       const query = searchParams?.toString() ?? '';
       const redirectPath = `${pathname}${query ? `?${query}` : ''}`;
       setAuthRedirect(redirectPath);
       setIsAuthed(false);
       router.replace(`/?redirect=${encodeURIComponent(redirectPath)}`);
-      return;
-    }
+    };
 
-    setIsAuthed(true);
+    void checkAuth();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [pathname, router, searchParams]);
 
   const resetOptions = useCallback(() => {
