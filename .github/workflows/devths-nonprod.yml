@@ -203,7 +203,7 @@ jobs:
           ECR_REPOSITORY: ${{ env.ECR_TARGET_REPO }}
         run: |
           set -euo pipefail
-          
+
           ARTIFACT_NAME="deploy-$IMAGE_TAG.zip"
           echo "artifact_name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
 
