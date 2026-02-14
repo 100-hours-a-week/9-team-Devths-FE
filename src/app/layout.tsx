@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import Script from 'next/script';
 
 import ToastHost from '@/components/common/ToastHost';
+import WebVitalsReporter from '@/components/common/WebVitalsReporter';
 import QueryProvider from '@/providers/QueryProvider';
 
 import type { Metadata } from 'next';
@@ -56,6 +57,7 @@ gtag('config', '${GA_MEASUREMENT_ID}');`}
           </>
         ) : null}
         <QueryProvider>
+          <WebVitalsReporter />
           {children}
           <ToastHost />
         </QueryProvider>

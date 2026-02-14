@@ -3,7 +3,6 @@ name: Devths-FE 비운영용 CICD 파이프라인
 on:
   push:
     branches:
-      - chore/docker-파이프라인-구축
       - develop
       - release/*
 
@@ -97,14 +96,6 @@ jobs:
           # GITHUB_REF는 push일 땐 refs/heads/branch명, PR일 땐 refs/pull/번호/merge가 됩니다.
           CURRENT_REF="${{ github.ref }}"
           echo "📍 현재 Ref: $CURRENT_REF"
-
-          # 만약 특정 브랜치에서만 통과
-          if [[ $CURRENT_REF == "refs/heads/chore/docker-파이프라인-구축" ]]; then
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "⚠️ 특정 브랜치 정책에 따라 보안 검사를 강제 통과 처리합니다."
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            exit 0
-          fi
 
           # 2. API 호출하여 High/Critical 등급의 Open 상태인 알림 조회
           ALERTS=$(gh api "repos/${{ github.repository }}/code-scanning/alerts?tool_name=CodeQL&state=open&ref=$CURRENT_REF" \
@@ -211,6 +202,8 @@ jobs:
           ECR_REGISTRY: ${{ env.ECR_REGISTRY }}
           ECR_REPOSITORY: ${{ env.ECR_TARGET_REPO }}
         run: |
+          set -euo pipefail
+
           ARTIFACT_NAME="deploy-$IMAGE_TAG.zip"
           echo "artifact_name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
 
@@ -289,7 +282,7 @@ jobs:
           aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: CodeDeploy 배포 시작
+      - name: AWS CodeDeploy 배포 시작
         id: create
         run: |
           set -euo pipefail
