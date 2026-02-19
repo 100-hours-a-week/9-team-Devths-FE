@@ -11,6 +11,7 @@ import { useHeader } from '@/components/layout/HeaderContext';
 import { fetchMyFollowings } from '@/lib/api/users';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { useChatMessagesInfiniteQuery } from '@/lib/hooks/chat/useChatMessagesInfiniteQuery';
+import { useChatRealtimeConnection } from '@/lib/hooks/chat/useChatRealtimeConnection';
 import { useChatRoomDetailQuery } from '@/lib/hooks/chat/useChatRoomDetailQuery';
 import { useCreatePrivateRoomMutation } from '@/lib/hooks/chat/useCreatePrivateRoomMutation';
 import { useDeleteMessageMutation } from '@/lib/hooks/chat/useDeleteMessageMutation';
@@ -146,6 +147,7 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
   const createPrivateRoomMutation = useCreatePrivateRoomMutation();
   const followUserMutation = useFollowUserMutation();
   const unfollowUserMutation = useUnfollowUserMutation();
+  useChatRealtimeConnection({ enabled: roomId !== null });
 
   const {
     data: messageData,
