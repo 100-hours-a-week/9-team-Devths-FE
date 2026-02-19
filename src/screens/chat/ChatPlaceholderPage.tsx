@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo } from 'react';
@@ -7,6 +8,7 @@ import { useEffect, useMemo } from 'react';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
+import { chatKeys } from '@/lib/hooks/chat/queryKeys';
 import { useChatRoomsInfiniteQuery } from '@/lib/hooks/chat/useChatRoomsInfiniteQuery';
 
 const ROOM_PAGE_SIZE = 10;
@@ -76,6 +78,7 @@ function truncateRoomName(title: string | null): string {
 
 export default function ChatPlaceholderPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { setOptions, resetOptions } = useHeader();
   const { requestNavigation } = useNavigationGuard();
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
@@ -104,6 +107,10 @@ export default function ChatPlaceholderPage() {
 
     return () => resetOptions();
   }, [resetOptions, setOptions]);
+
+  useEffect(() => {
+    queryClient.setQueryData<number>(chatKeys.realtimeUnread(), 0);
+  }, [queryClient]);
 
   return (
     <>

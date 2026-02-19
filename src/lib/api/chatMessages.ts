@@ -25,6 +25,19 @@ export type ChatMessageListResponse = Readonly<{
   hasNext: boolean;
 }>;
 
+export type SendChatMessagePayload = Readonly<{
+  roomId: number;
+  type: ChatMessageType;
+  content: string | null;
+  s3Key: string | null;
+}>;
+
+export type ChatRoomNotificationResponse = Readonly<{
+  roomId: number;
+  lastMessageContent: string;
+  lastMessageAt: string;
+}>;
+
 export type FetchChatMessagesParams = Readonly<{
   size?: number | null;
   lastId?: number | null;

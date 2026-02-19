@@ -1,15 +1,26 @@
 'use client';
 
+import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { Menu } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from 'react';
 
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { fetchMyFollowings } from '@/lib/api/users';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
+import { chatStompManager } from '@/lib/chat/stompManager';
+import { chatKeys } from '@/lib/hooks/chat/queryKeys';
 import { useChatMessagesInfiniteQuery } from '@/lib/hooks/chat/useChatMessagesInfiniteQuery';
 import { useChatRealtimeConnection } from '@/lib/hooks/chat/useChatRealtimeConnection';
 import { useChatRoomDetailQuery } from '@/lib/hooks/chat/useChatRoomDetailQuery';
@@ -23,7 +34,13 @@ import { useFollowUserMutation } from '@/lib/hooks/users/useFollowUserMutation';
 import { useUnfollowUserMutation } from '@/lib/hooks/users/useUnfollowUserMutation';
 import { toast } from '@/lib/toast/store';
 
-import type { ChatMessageResponse } from '@/lib/api/chatMessages';
+import type {
+  ChatMessageListResponse,
+  ChatMessageResponse,
+  ChatRoomNotificationResponse,
+  SendChatMessagePayload,
+} from '@/lib/api/chatMessages';
+import type { IMessage } from '@stomp/stompjs';
 
 type ChatRoomPageProps = Readonly<{
   roomId: number | null;
@@ -40,6 +57,8 @@ const LONG_MESSAGE_THRESHOLD = 300;
 const TOP_FETCH_THRESHOLD = 80;
 const BOTTOM_CONFIRM_THRESHOLD = 32;
 const DELETE_LONG_PRESS_MS = 2000;
+const MESSAGE_SEND_DESTINATION = '/app/chat/message';
+const NOTIFICATION_TOAST_COOLDOWN_MS = 3000;
 
 function resolveTitle(roomName: string | null, title: string | null) {
   const trimmedRoomName = roomName?.trim();
@@ -116,11 +135,21 @@ function resolveMessageContent(message: ChatMessageResponse): string {
   return message.content ?? '';
 }
 
+function parseStompJson<T>(body: string): T | null {
+  try {
+    return JSON.parse(body) as T;
+  } catch {
+    return null;
+  }
+}
+
 export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { setOptions, resetOptions } = useHeader();
   const { data, isLoading, isError, refetch } = useChatRoomDetailQuery(roomId);
   const currentUserId = getUserIdFromAccessToken();
+  const [messageInput, setMessageInput] = useState('');
   const [expandedMessageIds, setExpandedMessageIds] = useState<Set<number>>(new Set());
   const [deleteTargetMessageId, setDeleteTargetMessageId] = useState<number | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -141,6 +170,7 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
   const prevScrollHeightRef = useRef(0);
   const hasPatchedOnEntryRef = useRef(false);
   const lastPatchedMsgIdRef = useRef<number | null>(null);
+  const lastNotificationToastRef = useRef<Readonly<{ roomId: number; at: number }> | null>(null);
   const patchLastReadMutation = usePatchLastReadMutation(roomId ?? 0);
   const deleteMessageMutation = useDeleteMessageMutation(roomId ?? 0);
   const putRoomSettingsMutation = usePutRoomSettingsMutation(roomId ?? 0);
@@ -149,11 +179,6 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
   const followUserMutation = useFollowUserMutation();
   const unfollowUserMutation = useUnfollowUserMutation();
   useChatRealtimeConnection({ enabled: roomId !== null });
-  useChatSubscriptions({
-    enabled: roomId !== null && currentUserId !== null,
-    roomId,
-    userId: currentUserId,
-  });
 
   const {
     data: messageData,
@@ -269,6 +294,149 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
     },
     [patchLastReadMutation, roomId],
   );
+
+  const handleRealtimeRoomMessage = useCallback(
+    (frame: IMessage) => {
+      if (roomId === null) {
+        return;
+      }
+
+      const incomingMessage = parseStompJson<ChatMessageResponse>(frame.body);
+      if (!incomingMessage || typeof incomingMessage.messageId !== 'number') {
+        return;
+      }
+
+      const container = messageListRef.current;
+      const shouldStickToBottom =
+        !container ||
+        container.scrollHeight - (container.scrollTop + container.clientHeight) <=
+          BOTTOM_CONFIRM_THRESHOLD;
+
+      queryClient.setQueryData<InfiniteData<ChatMessageListResponse>>(
+        chatKeys.messages({ roomId, size: MESSAGE_PAGE_SIZE, lastId: null }),
+        (old) => {
+          if (!old) {
+            return old;
+          }
+
+          const alreadyExists = old.pages.some((page) =>
+            page.messages.some((message) => message.messageId === incomingMessage.messageId),
+          );
+
+          if (alreadyExists) {
+            return old;
+          }
+
+          const firstPage = old.pages[0];
+          if (!firstPage) {
+            return {
+              ...old,
+              pages: [
+                {
+                  messages: [incomingMessage],
+                  lastReadMsgId: null,
+                  nextCursor: null,
+                  hasNext: false,
+                },
+              ],
+            };
+          }
+
+          return {
+            ...old,
+            pages: [
+              {
+                ...firstPage,
+                messages: [...firstPage.messages, incomingMessage],
+              },
+              ...old.pages.slice(1),
+            ],
+          };
+        },
+      );
+
+      if (shouldStickToBottom) {
+        requestAnimationFrame(() => {
+          const updatedContainer = messageListRef.current;
+          if (!updatedContainer) {
+            return;
+          }
+
+          updatedContainer.scrollTop = updatedContainer.scrollHeight;
+          patchLastReadOnce(incomingMessage.messageId);
+        });
+      }
+    },
+    [patchLastReadOnce, queryClient, roomId],
+  );
+
+  const handleRealtimeUserNotification = useCallback(
+    (frame: IMessage) => {
+      const notification = parseStompJson<ChatRoomNotificationResponse>(frame.body);
+      if (!notification || typeof notification.roomId !== 'number') {
+        return;
+      }
+
+      if (roomId !== null && notification.roomId === roomId) {
+        return;
+      }
+
+      queryClient.setQueryData<number>(chatKeys.realtimeUnread(), (prev) =>
+        typeof prev === 'number' ? prev + 1 : 1,
+      );
+
+      const now = Date.now();
+      const last = lastNotificationToastRef.current;
+      if (
+        !last ||
+        last.roomId !== notification.roomId ||
+        now - last.at > NOTIFICATION_TOAST_COOLDOWN_MS
+      ) {
+        toast('새 메시지가 도착했습니다.');
+        lastNotificationToastRef.current = { roomId: notification.roomId, at: now };
+      }
+    },
+    [queryClient, roomId],
+  );
+
+  const handleSendMessage = useCallback(
+    (event?: FormEvent<HTMLFormElement>) => {
+      event?.preventDefault();
+
+      if (roomId === null) {
+        return;
+      }
+
+      const trimmedContent = messageInput.trim();
+      if (!trimmedContent) {
+        return;
+      }
+
+      const payload: SendChatMessagePayload = {
+        roomId,
+        type: 'TEXT',
+        content: trimmedContent,
+        s3Key: null,
+      };
+
+      const published = chatStompManager.publishJson(MESSAGE_SEND_DESTINATION, payload);
+      if (!published) {
+        toast('메시지 전송에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+        return;
+      }
+
+      setMessageInput('');
+    },
+    [messageInput, roomId],
+  );
+
+  useChatSubscriptions({
+    enabled: roomId !== null && currentUserId !== null,
+    roomId,
+    userId: currentUserId,
+    onRoomMessage: handleRealtimeRoomMessage,
+    onUserNotification: handleRealtimeUserNotification,
+  });
 
   const clearDeleteLongPressTimer = useCallback(() => {
     if (deleteLongPressTimerRef.current !== null) {
@@ -525,6 +693,7 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
     prevScrollHeightRef.current = 0;
     hasPatchedOnEntryRef.current = false;
     lastPatchedMsgIdRef.current = null;
+    setMessageInput('');
   }, [roomId]);
 
   useEffect(() => {
@@ -671,7 +840,7 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
         onScroll={handleMessageScroll}
         className="overflow-y-auto rounded-2xl border border-neutral-200 bg-neutral-50 p-3"
         style={{
-          height: 'calc(100dvh - 56px - var(--bottom-nav-h) - 28px)',
+          height: 'calc(100dvh - 56px - var(--bottom-nav-h) - 88px)',
         }}
       >
         {hasNextPage ? (
@@ -835,6 +1004,27 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
           </div>
         ) : null}
       </section>
+
+      <form
+        onSubmit={handleSendMessage}
+        className="mt-2 flex items-center gap-2 rounded-2xl border border-neutral-200 bg-white px-3 py-2"
+      >
+        <input
+          value={messageInput}
+          onChange={(event) => setMessageInput(event.target.value)}
+          placeholder="메시지를 입력하세요."
+          className="h-9 flex-1 border-0 bg-transparent text-sm text-neutral-900 outline-none placeholder:text-neutral-400"
+          maxLength={2000}
+          autoComplete="off"
+        />
+        <button
+          type="submit"
+          disabled={!messageInput.trim()}
+          className="rounded-lg bg-[#0F172A] px-3 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:bg-neutral-300"
+        >
+          전송
+        </button>
+      </form>
 
       {isSettingsOpen ? (
         <div className="fixed inset-0 z-[180] flex items-end justify-center">

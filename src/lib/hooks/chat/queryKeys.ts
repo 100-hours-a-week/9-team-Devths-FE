@@ -40,6 +40,7 @@ const normalizeFollowingsParams = (params?: ChatFollowingsKeyParams) => ({
  * - 방 상세 갱신: chatKeys.roomDetail(roomId)
  * - 메시지 갱신: chatKeys.messages(...)
  * - 팔로잉 목록 갱신: chatKeys.followings(...)
+ * - 실시간 뱃지 갱신: chatKeys.realtimeUnread()
  */
 export const chatKeys = {
   all: ['chat'] as const,
@@ -50,4 +51,5 @@ export const chatKeys = {
     [...chatKeys.all, 'messages', normalizeMessagesParams(params)] as const,
   followings: (params?: ChatFollowingsKeyParams) =>
     [...chatKeys.all, 'followings', normalizeFollowingsParams(params)] as const,
+  realtimeUnread: () => [...chatKeys.all, 'realtimeUnread'] as const,
 };
