@@ -1,6 +1,6 @@
-import { api, type ApiClientResult } from '@/lib/api/client';
+import { api, apiRequest, type ApiClientResult } from '@/lib/api/client';
 
-import type { ChatRoomType, ChatroomsCursor } from '@/types/chat';
+import type { ChatRoomType, ChatroomsCursor, PatchLastReadBody } from '@/types/chat';
 
 type ChatRoomSummaryResponse = Readonly<{
   roomId: number;
@@ -20,7 +20,6 @@ export type ChatRoomListResponse = Readonly<{
 export type FetchChatRoomsParams = Readonly<{
   type?: ChatRoomType | null;
   size?: number | null;
-  // 서버 응답 cursor를 그대로 재사용합니다.
   cursor?: ChatroomsCursor | null;
 }>;
 
@@ -112,4 +111,18 @@ export async function putRoomSettings(
 
 export async function leaveChatRoom(roomId: number): Promise<ApiClientResult<void>> {
   return api.delete<void>(`/api/chatrooms/${roomId}`);
+}
+
+export async function patchLastRead(
+  roomId: number,
+  body: PatchLastReadBody,
+): Promise<ApiClientResult<void>> {
+  return apiRequest<void>({
+    method: 'PATCH',
+    path: `/api/chatrooms/${roomId}`,
+    body,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
 }
