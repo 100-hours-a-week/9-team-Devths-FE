@@ -1,6 +1,6 @@
 'use client';
 
-import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { Menu } from 'lucide-react';
 import Image from 'next/image';
@@ -19,6 +19,7 @@ import ConfirmModal from '@/components/common/ConfirmModal';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { fetchMyFollowings } from '@/lib/api/users';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
+import { applyRealtimeRoomMessage } from '@/lib/chat/realtimeMessageCache';
 import { applyRealtimeRoomNotification } from '@/lib/chat/realtimeRoomCache';
 import { chatStompManager } from '@/lib/chat/stompManager';
 import { chatKeys } from '@/lib/hooks/chat/queryKeys';
@@ -36,7 +37,6 @@ import { useUnfollowUserMutation } from '@/lib/hooks/users/useUnfollowUserMutati
 import { toast } from '@/lib/toast/store';
 
 import type {
-  ChatMessageListResponse,
   ChatMessageResponse,
   ChatRoomNotificationResponse,
   SendChatMessagePayload,
@@ -327,48 +327,11 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
         container.scrollHeight - (container.scrollTop + container.clientHeight) <=
           BOTTOM_CONFIRM_THRESHOLD;
 
-      queryClient.setQueryData<InfiniteData<ChatMessageListResponse>>(
-        chatKeys.messages({ roomId, size: MESSAGE_PAGE_SIZE, lastId: null }),
-        (old) => {
-          if (!old) {
-            return old;
-          }
-
-          const alreadyExists = old.pages.some((page) =>
-            page.messages.some((message) => message.messageId === incomingMessage.messageId),
-          );
-
-          if (alreadyExists) {
-            return old;
-          }
-
-          const firstPage = old.pages[0];
-          if (!firstPage) {
-            return {
-              ...old,
-              pages: [
-                {
-                  messages: [incomingMessage],
-                  lastReadMsgId: null,
-                  nextCursor: null,
-                  hasNext: false,
-                },
-              ],
-            };
-          }
-
-          return {
-            ...old,
-            pages: [
-              {
-                ...firstPage,
-                messages: [...firstPage.messages, incomingMessage],
-              },
-              ...old.pages.slice(1),
-            ],
-          };
-        },
-      );
+      applyRealtimeRoomMessage(queryClient, {
+        roomId,
+        size: MESSAGE_PAGE_SIZE,
+        message: incomingMessage,
+      });
 
       if (shouldStickToBottom) {
         requestAnimationFrame(() => {
