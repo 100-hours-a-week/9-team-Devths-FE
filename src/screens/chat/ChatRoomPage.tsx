@@ -2,22 +2,35 @@
 
 import clsx from 'clsx';
 import { Menu } from 'lucide-react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { useHeader } from '@/components/layout/HeaderContext';
+import { fetchMyFollowings } from '@/lib/api/users';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { useChatMessagesInfiniteQuery } from '@/lib/hooks/chat/useChatMessagesInfiniteQuery';
 import { useChatRoomDetailQuery } from '@/lib/hooks/chat/useChatRoomDetailQuery';
+import { useCreatePrivateRoomMutation } from '@/lib/hooks/chat/useCreatePrivateRoomMutation';
 import { useDeleteMessageMutation } from '@/lib/hooks/chat/useDeleteMessageMutation';
+import { useLeaveChatRoomMutation } from '@/lib/hooks/chat/useLeaveChatRoomMutation';
 import { usePatchLastReadMutation } from '@/lib/hooks/chat/usePatchLastReadMutation';
+import { usePutRoomSettingsMutation } from '@/lib/hooks/chat/usePutRoomSettingsMutation';
+import { useFollowUserMutation } from '@/lib/hooks/users/useFollowUserMutation';
+import { useUnfollowUserMutation } from '@/lib/hooks/users/useUnfollowUserMutation';
 import { toast } from '@/lib/toast/store';
 
 import type { ChatMessageResponse } from '@/lib/api/chatMessages';
 
 type ChatRoomPageProps = Readonly<{
   roomId: number | null;
+}>;
+
+type ParticipantUser = Readonly<{
+  userId: number;
+  nickname: string;
+  profileImage: string | null;
 }>;
 
 const MESSAGE_PAGE_SIZE = 20;
@@ -108,6 +121,16 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
   const currentUserId = getUserIdFromAccessToken();
   const [expandedMessageIds, setExpandedMessageIds] = useState<Set<number>>(new Set());
   const [deleteTargetMessageId, setDeleteTargetMessageId] = useState<number | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
+  const [isLeaveConfirmOpen, setIsLeaveConfirmOpen] = useState(false);
+  const [roomNameInput, setRoomNameInput] = useState('');
+  const [isAlarmOnInput, setIsAlarmOnInput] = useState(true);
+  const [followingUserIds, setFollowingUserIds] = useState<Set<number>>(new Set());
+  const [followStateOverrides, setFollowStateOverrides] = useState<Record<number, boolean>>({});
+  const [activeParticipantUserId, setActiveParticipantUserId] = useState<number | null>(null);
+  const [isFollowingsLoading, setIsFollowingsLoading] = useState(false);
+  const hasLoadedFollowingsRef = useRef(false);
   const messageListRef = useRef<HTMLDivElement>(null);
   const unreadDividerRef = useRef<HTMLDivElement>(null);
   const deleteLongPressTimerRef = useRef<number | null>(null);
@@ -118,6 +141,11 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
   const lastPatchedMsgIdRef = useRef<number | null>(null);
   const patchLastReadMutation = usePatchLastReadMutation(roomId ?? 0);
   const deleteMessageMutation = useDeleteMessageMutation(roomId ?? 0);
+  const putRoomSettingsMutation = usePutRoomSettingsMutation(roomId ?? 0);
+  const leaveChatRoomMutation = useLeaveChatRoomMutation(roomId ?? 0);
+  const createPrivateRoomMutation = useCreatePrivateRoomMutation();
+  const followUserMutation = useFollowUserMutation();
+  const unfollowUserMutation = useUnfollowUserMutation();
 
   const {
     data: messageData,
@@ -160,6 +188,41 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
 
     return messages.findIndex((message) => message.messageId > serverLastReadMsgId);
   }, [messages, serverLastReadMsgId]);
+
+  const participants = useMemo<ParticipantUser[]>(() => {
+    const participantMap = new Map<number, ParticipantUser>();
+
+    for (const message of messages) {
+      if (!message.sender) {
+        continue;
+      }
+
+      const participant = participantMap.get(message.sender.userId);
+      if (!participant) {
+        participantMap.set(message.sender.userId, {
+          userId: message.sender.userId,
+          nickname: message.sender.nickname,
+          profileImage: message.sender.profileImage,
+        });
+      }
+    }
+
+    return Array.from(participantMap.values()).sort((a, b) => {
+      if (currentUserId !== null) {
+        if (a.userId === currentUserId && b.userId !== currentUserId) return -1;
+        if (a.userId !== currentUserId && b.userId === currentUserId) return 1;
+      }
+
+      const nicknameCompare = a.nickname.localeCompare(b.nickname, 'ko');
+      if (nicknameCompare !== 0) {
+        return nicknameCompare;
+      }
+
+      return a.userId - b.userId;
+    });
+  }, [currentUserId, messages]);
+
+  const isPrivateRoom = data?.type === 'PRIVATE';
 
   const toggleExpandedMessage = useCallback((messageId: number) => {
     setExpandedMessageIds((prev) => {
@@ -231,6 +294,186 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
     }
   }, [deleteMessageMutation, deleteTargetMessageId]);
 
+  const loadMyFollowings = useCallback(async () => {
+    if (isFollowingsLoading) {
+      return;
+    }
+
+    setIsFollowingsLoading(true);
+    try {
+      const ids = new Set<number>();
+      let lastId: number | null | undefined = undefined;
+
+      while (true) {
+        const result = await fetchMyFollowings({
+          size: 100,
+          lastId,
+        });
+
+        if (!result.ok || !result.json || !('data' in result.json) || !result.json.data) {
+          throw new Error('팔로잉 목록 조회 실패');
+        }
+
+        for (const following of result.json.data.followings) {
+          ids.add(following.userId);
+        }
+
+        if (!result.json.data.hasNext || result.json.data.lastId === null) {
+          break;
+        }
+
+        lastId = result.json.data.lastId;
+      }
+
+      setFollowingUserIds(ids);
+      hasLoadedFollowingsRef.current = true;
+    } catch {
+      toast('팔로우 상태를 불러오지 못했습니다.');
+    } finally {
+      setIsFollowingsLoading(false);
+    }
+  }, [isFollowingsLoading]);
+
+  const isParticipantFollowing = useCallback(
+    (userId: number) => {
+      if (followStateOverrides[userId] !== undefined) {
+        return followStateOverrides[userId];
+      }
+      return followingUserIds.has(userId);
+    },
+    [followStateOverrides, followingUserIds],
+  );
+
+  const handleToggleParticipantFollow = useCallback(
+    async (userId: number) => {
+      if (activeParticipantUserId !== null) {
+        return;
+      }
+
+      const currentlyFollowing = isParticipantFollowing(userId);
+      setActiveParticipantUserId(userId);
+
+      try {
+        if (currentlyFollowing) {
+          await unfollowUserMutation.mutateAsync(userId);
+          setFollowStateOverrides((prev) => ({ ...prev, [userId]: false }));
+          setFollowingUserIds((prev) => {
+            const next = new Set(prev);
+            next.delete(userId);
+            return next;
+          });
+          toast('언팔로우했습니다.');
+        } else {
+          await followUserMutation.mutateAsync(userId);
+          setFollowStateOverrides((prev) => ({ ...prev, [userId]: true }));
+          setFollowingUserIds((prev) => {
+            const next = new Set(prev);
+            next.add(userId);
+            return next;
+          });
+          toast('팔로우했습니다.');
+        }
+      } catch (error) {
+        const err = error as Error & { serverMessage?: string };
+        toast(err.serverMessage ?? '팔로우 처리에 실패했습니다.');
+      } finally {
+        setActiveParticipantUserId(null);
+      }
+    },
+    [
+      activeParticipantUserId,
+      followUserMutation,
+      isParticipantFollowing,
+      unfollowUserMutation,
+    ],
+  );
+
+  const handleCreatePrivateChatWithParticipant = useCallback(
+    async (userId: number) => {
+      if (activeParticipantUserId !== null) {
+        return;
+      }
+
+      setActiveParticipantUserId(userId);
+      try {
+        const result = await createPrivateRoomMutation.mutateAsync({ userId });
+        const responseData = result.json && 'data' in result.json ? result.json.data : null;
+
+        if (!responseData) {
+          throw new Error('Invalid response');
+        }
+
+        setIsParticipantsModalOpen(false);
+        setIsSettingsOpen(false);
+        router.push(`/chat/${responseData.roomId}`);
+      } catch (error) {
+        const err = error as Error & { serverMessage?: string };
+        toast(err.serverMessage ?? '1:1 채팅방 이동에 실패했습니다.');
+      } finally {
+        setActiveParticipantUserId(null);
+      }
+    },
+    [activeParticipantUserId, createPrivateRoomMutation, router],
+  );
+
+  const handleOpenParticipantsModal = useCallback(() => {
+    setIsParticipantsModalOpen(true);
+    if (!hasLoadedFollowingsRef.current) {
+      void loadMyFollowings();
+    }
+  }, [loadMyFollowings]);
+
+  const handleSaveRoomSettings = useCallback(async () => {
+    if (roomId === null || putRoomSettingsMutation.isPending) {
+      return;
+    }
+
+    const trimmedRoomName = roomNameInput.trim();
+
+    try {
+      await putRoomSettingsMutation.mutateAsync({
+        isAlarmOn: isAlarmOnInput,
+        roomName: isPrivateRoom ? undefined : (trimmedRoomName || undefined),
+      });
+      toast('채팅방 설정이 저장되었습니다.');
+      setIsSettingsOpen(false);
+    } catch (error) {
+      const err = error as Error & { serverMessage?: string };
+      toast(err.serverMessage ?? '채팅방 설정 저장에 실패했습니다.');
+    }
+  }, [
+    isAlarmOnInput,
+    isPrivateRoom,
+    putRoomSettingsMutation,
+    roomId,
+    roomNameInput,
+  ]);
+
+  const handleLeaveChatRoom = useCallback(async () => {
+    if (roomId === null || leaveChatRoomMutation.isPending) {
+      return;
+    }
+
+    try {
+      await leaveChatRoomMutation.mutateAsync();
+      setIsLeaveConfirmOpen(false);
+      setIsSettingsOpen(false);
+      toast('채팅방에서 나갔습니다.');
+      router.push('/chat');
+    } catch (error) {
+      const err = error as Error & { serverMessage?: string };
+      toast(err.serverMessage ?? '채팅방 나가기에 실패했습니다.');
+    }
+  }, [leaveChatRoomMutation, roomId, router]);
+
+  const handleCloseSettings = useCallback(() => {
+    if (putRoomSettingsMutation.isPending) {
+      return;
+    }
+    setIsParticipantsModalOpen(false);
+    setIsSettingsOpen(false);
+  }, [putRoomSettingsMutation.isPending]);
+
   const handleBackClick = useCallback(() => {
     if (typeof window !== 'undefined' && window.history.length > 1) {
       router.back();
@@ -240,7 +483,7 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
   }, [router]);
 
   const handleSettingsClick = useCallback(() => {
-    toast('채팅방 설정 화면 준비 중입니다.');
+    setIsSettingsOpen(true);
   }, []);
 
   const rightSlot = useMemo(
@@ -275,6 +518,11 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
     hasPatchedOnEntryRef.current = false;
     lastPatchedMsgIdRef.current = null;
   }, [roomId]);
+
+  useEffect(() => {
+    setRoomNameInput(data?.roomName ?? '');
+    setIsAlarmOnInput(data?.isAlarmOn ?? true);
+  }, [data?.isAlarmOn, data?.roomName, roomId]);
 
   useEffect(() => {
     return () => {
@@ -580,6 +828,189 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
         ) : null}
       </section>
 
+      {isSettingsOpen ? (
+        <div className="fixed inset-0 z-[180] flex items-end justify-center">
+          <button
+            type="button"
+            aria-label="설정 닫기"
+            onClick={handleCloseSettings}
+            className="absolute inset-0 bg-black/45"
+          />
+          <section className="relative z-10 w-full max-w-[430px] rounded-t-2xl bg-white p-4 shadow-2xl">
+            <h2 className="text-base font-semibold text-neutral-900">채팅방 설정</h2>
+
+            <div className="mt-4 rounded-xl border border-neutral-200 p-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-neutral-900">알림 설정</p>
+                <button
+                  type="button"
+                  onClick={() => setIsAlarmOnInput((prev) => !prev)}
+                  className={clsx(
+                    'relative inline-flex h-7 w-12 items-center rounded-full transition',
+                    isAlarmOnInput ? 'bg-[#0F172A]' : 'bg-neutral-300',
+                  )}
+                  aria-label="알림 토글"
+                >
+                  <span
+                    className={clsx(
+                      'inline-block h-5 w-5 rounded-full bg-white transition',
+                      isAlarmOnInput ? 'translate-x-6' : 'translate-x-1',
+                    )}
+                  />
+                </button>
+              </div>
+
+              <div className="mt-4">
+                <p className="mb-2 text-sm font-semibold text-neutral-900">채팅방 이름</p>
+                <input
+                  value={roomNameInput}
+                  onChange={(event) => setRoomNameInput(event.target.value)}
+                  disabled={isPrivateRoom}
+                  placeholder={isPrivateRoom ? '1:1 채팅방은 이름 수정이 불가합니다.' : '채팅방 이름을 입력하세요'}
+                  className="h-10 w-full rounded-lg border border-neutral-200 px-3 text-sm text-neutral-900 placeholder:text-neutral-400 disabled:bg-neutral-100 disabled:text-neutral-400"
+                />
+              </div>
+            </div>
+
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={handleOpenParticipantsModal}
+                className="rounded-lg border border-neutral-200 bg-white px-3 py-2.5 text-sm font-semibold text-neutral-800 hover:bg-neutral-50"
+              >
+                참여 유저 보기
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsLeaveConfirmOpen(true)}
+                className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-100"
+              >
+                채팅방 나가기
+              </button>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={handleCloseSettings}
+                className="rounded-lg border border-neutral-200 bg-white px-3 py-2.5 text-sm font-semibold text-neutral-800 hover:bg-neutral-50"
+              >
+                닫기
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  void handleSaveRoomSettings();
+                }}
+                disabled={putRoomSettingsMutation.isPending}
+                className="rounded-lg bg-[#0F172A] px-3 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {putRoomSettingsMutation.isPending ? '저장 중...' : '저장'}
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {isParticipantsModalOpen ? (
+        <div className="fixed inset-0 z-[190] flex items-center justify-center px-4">
+          <button
+            type="button"
+            aria-label="참여 유저 모달 닫기"
+            onClick={() => setIsParticipantsModalOpen(false)}
+            className="absolute inset-0 bg-black/45"
+          />
+          <section className="relative z-10 w-full max-w-[380px] rounded-2xl bg-white p-4 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-semibold text-neutral-900">참여 유저</h3>
+              <button
+                type="button"
+                onClick={() => setIsParticipantsModalOpen(false)}
+                className="rounded-md px-2 py-1 text-xs font-semibold text-neutral-500 hover:bg-neutral-100"
+              >
+                닫기
+              </button>
+            </div>
+
+            {isFollowingsLoading ? (
+              <p className="mt-3 text-xs text-neutral-500">팔로우 상태를 불러오는 중...</p>
+            ) : null}
+
+            {participants.length === 0 ? (
+              <p className="mt-4 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-5 text-center text-sm text-neutral-500">
+                아직 확인 가능한 참여 유저가 없습니다.
+              </p>
+            ) : (
+              <ul className="mt-3 space-y-2">
+                {participants.map((participant) => {
+                  const isMine = participant.userId === currentUserId;
+                  const isFollowing = isParticipantFollowing(participant.userId);
+                  const isBusy = activeParticipantUserId !== null;
+
+                  return (
+                    <li
+                      key={participant.userId}
+                      className="rounded-xl border border-neutral-200 bg-white px-3 py-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        {participant.profileImage ? (
+                          <Image
+                            src={participant.profileImage}
+                            alt={`${participant.nickname} 프로필`}
+                            width={40}
+                            height={40}
+                            className="h-10 w-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-200 text-sm font-semibold text-neutral-600">
+                            {participant.nickname.slice(0, 1)}
+                          </div>
+                        )}
+
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-neutral-900">
+                            {participant.nickname}
+                          </p>
+                        </div>
+
+                        {isMine ? (
+                          <span className="rounded-full bg-neutral-100 px-2 py-1 text-[11px] font-semibold text-neutral-600">
+                            나
+                          </span>
+                        ) : (
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              disabled={isBusy}
+                              onClick={() => {
+                                void handleToggleParticipantFollow(participant.userId);
+                              }}
+                              className="rounded-md border border-neutral-200 px-2.5 py-1.5 text-[11px] font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-60"
+                            >
+                              {isFollowing ? '언팔로우' : '팔로우'}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isBusy}
+                              onClick={() => {
+                                void handleCreatePrivateChatWithParticipant(participant.userId);
+                              }}
+                              className="rounded-md bg-[#0F172A] px-2.5 py-1.5 text-[11px] font-semibold text-white disabled:opacity-60"
+                            >
+                              1:1 채팅
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+        </div>
+      ) : null}
+
       <ConfirmModal
         isOpen={deleteTargetMessageId !== null}
         title="메시지를 삭제하시겠어요?"
@@ -594,6 +1025,23 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
             return;
           }
           setDeleteTargetMessageId(null);
+        }}
+      />
+
+      <ConfirmModal
+        isOpen={isLeaveConfirmOpen}
+        title="채팅방에서 나가시겠어요?"
+        message="나가면 이 채팅방의 메시지를 더 이상 확인할 수 없습니다."
+        confirmText={leaveChatRoomMutation.isPending ? '나가는 중...' : '나가기'}
+        cancelText="취소"
+        onConfirm={() => {
+          void handleLeaveChatRoom();
+        }}
+        onCancel={() => {
+          if (leaveChatRoomMutation.isPending) {
+            return;
+          }
+          setIsLeaveConfirmOpen(false);
         }}
       />
     </main>
