@@ -37,6 +37,34 @@ export type PrivateChatRoomCreateResponse = Readonly<{
   createdAt: string;
 }>;
 
+export type ChatRoomRecentImageResponse = Readonly<{
+  attachmentId: number;
+  s3Key: string;
+  originalName: string;
+  createdAt: string;
+}>;
+
+export type ChatRoomDetailResponse = Readonly<{
+  roomId: number;
+  type: ChatRoomType;
+  title: string | null;
+  isAlarmOn: boolean;
+  roomName: string | null;
+  inviteCode: string | null;
+  createdAt: string;
+  recentImages: ReadonlyArray<ChatRoomRecentImageResponse>;
+}>;
+
+export type PutRoomSettingsRequest = Readonly<{
+  roomName?: string;
+  isAlarmOn: boolean;
+}>;
+
+export type PutRoomSettingsResponse = Readonly<{
+  roomId: number;
+  roomName: string | null;
+}>;
+
 export async function fetchChatRooms(
   params?: FetchChatRoomsParams,
 ): Promise<ApiClientResult<ChatRoomListResponse>> {
@@ -67,4 +95,21 @@ export async function createPrivateChatRoom(
   body: PrivateChatRoomCreateRequest,
 ): Promise<ApiClientResult<PrivateChatRoomCreateResponse>> {
   return api.post<PrivateChatRoomCreateResponse>('/api/chatrooms/private', body);
+}
+
+export async function fetchChatRoomDetail(
+  roomId: number,
+): Promise<ApiClientResult<ChatRoomDetailResponse>> {
+  return api.get<ChatRoomDetailResponse>(`/api/chatrooms/${roomId}`);
+}
+
+export async function putRoomSettings(
+  roomId: number,
+  body: PutRoomSettingsRequest,
+): Promise<ApiClientResult<PutRoomSettingsResponse>> {
+  return api.put<PutRoomSettingsResponse>(`/api/chatrooms/${roomId}`, body);
+}
+
+export async function leaveChatRoom(roomId: number): Promise<ApiClientResult<void>> {
+  return api.delete<void>(`/api/chatrooms/${roomId}`);
 }
