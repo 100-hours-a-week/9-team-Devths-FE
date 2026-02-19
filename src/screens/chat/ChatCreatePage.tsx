@@ -1,0 +1,258 @@
+'use client';
+
+import { Check, Search } from 'lucide-react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+
+import { useHeader } from '@/components/layout/HeaderContext';
+import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
+import { useMyFollowingsInfiniteQuery } from '@/lib/hooks/chat/useMyFollowingsInfiniteQuery';
+import { toast } from '@/lib/toast/store';
+
+import type { ChatFollowingSummaryResponse } from '@/lib/api/chatFollowings';
+
+const MIN_NICKNAME_LENGTH = 2;
+const MAX_NICKNAME_LENGTH = 10;
+
+function sortByNickname(a: ChatFollowingSummaryResponse, b: ChatFollowingSummaryResponse) {
+  const nicknameCompare = a.nickname.localeCompare(b.nickname, 'ko');
+  if (nicknameCompare !== 0) {
+    return nicknameCompare;
+  }
+
+  return a.userId - b.userId;
+}
+
+export default function ChatCreatePage() {
+  const router = useRouter();
+  const { setOptions, resetOptions } = useHeader();
+  const [inputValue, setInputValue] = useState('');
+  const [submittedNickname, setSubmittedNickname] = useState<string | undefined>(undefined);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useMyFollowingsInfiniteQuery({ submittedNickname });
+
+  const followings = useMemo(() => {
+    const merged = data?.pages.flatMap((page) => page.followings) ?? [];
+    const byUserId = new Map<number, ChatFollowingSummaryResponse>();
+
+    for (const following of merged) {
+      if (!byUserId.has(following.userId)) {
+        byUserId.set(following.userId, following);
+      }
+    }
+
+    return Array.from(byUserId.values()).sort(sortByNickname);
+  }, [data]);
+
+  const activeSelectedUserId = useMemo(() => {
+    if (selectedUserId === null) {
+      return null;
+    }
+
+    const hasSelectedUser = followings.some((following) => following.userId === selectedUserId);
+    return hasSelectedUser ? selectedUserId : null;
+  }, [followings, selectedUserId]);
+
+  useEffect(() => {
+    setOptions({
+      title: '채팅방 생성',
+      showBackButton: true,
+      onBackClick: () => {
+        if (typeof window !== 'undefined' && window.history.length > 1) {
+          router.back();
+          return;
+        }
+        router.push('/chat');
+      },
+    });
+
+    return () => resetOptions();
+  }, [resetOptions, router, setOptions]);
+
+  const handleSearch = useCallback(() => {
+    const trimmed = inputValue.trim();
+
+    if (!trimmed) {
+      toast('검색어를 입력해 주세요.');
+      return;
+    }
+
+    if (trimmed.length < MIN_NICKNAME_LENGTH) {
+      toast(`검색어는 ${MIN_NICKNAME_LENGTH}자 이상 입력해 주세요.`);
+      return;
+    }
+
+    if (trimmed.length > MAX_NICKNAME_LENGTH) {
+      toast(`검색어는 ${MAX_NICKNAME_LENGTH}자 이하로 입력해 주세요.`);
+      return;
+    }
+
+    setSubmittedNickname(trimmed);
+    setSelectedUserId(null);
+  }, [inputValue]);
+
+  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    handleSearch();
+  };
+
+  const handleSelectUser = (userId: number) => {
+    if (activeSelectedUserId === userId) {
+      setSelectedUserId(null);
+      return;
+    }
+
+    if (activeSelectedUserId !== null && activeSelectedUserId !== userId) {
+      toast('1명만 선택할 수 있습니다.');
+      return;
+    }
+
+    setSelectedUserId(userId);
+  };
+
+  const handleComplete = () => {
+    if (activeSelectedUserId === null) {
+      toast('채팅할 유저를 1명 선택해 주세요.');
+      return;
+    }
+
+    toast('유저 선택이 완료되었습니다.');
+  };
+
+  return (
+    <main className="px-3 pt-4 pb-24">
+      <section className="rounded-2xl border border-neutral-200 bg-white px-4 py-3">
+        <p className="text-sm font-semibold text-neutral-900">유저 검색</p>
+        <form onSubmit={handleSearchSubmit} className="mt-2">
+          <div className="flex items-center gap-2 rounded-xl border border-neutral-200 px-3 py-2">
+            <input
+              value={inputValue}
+              onChange={(event) => setInputValue(event.target.value)}
+              placeholder="이름을 입력하세요"
+              className="h-6 w-full border-0 bg-transparent text-sm text-neutral-900 outline-none placeholder:text-neutral-400"
+              maxLength={MAX_NICKNAME_LENGTH}
+            />
+            <button
+              type="submit"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-700"
+              aria-label="유저 검색"
+            >
+              <Search className="h-4 w-4" />
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section className="mt-4 rounded-2xl border border-neutral-200 bg-white px-4 py-3">
+        <p className="text-sm font-semibold text-neutral-900">
+          팔로잉 유저 목록 <span className="text-red-500">*</span>
+        </p>
+
+        {isLoading ? (
+          <div className="mt-3 space-y-2">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="flex items-center gap-3 py-2">
+                <div className="h-10 w-10 animate-pulse rounded-full bg-neutral-200" />
+                <div className="h-4 w-28 animate-pulse rounded bg-neutral-200" />
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {!isLoading && isError ? (
+          <div className="mt-3 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-6 text-center">
+            <p className="text-sm text-neutral-700">팔로잉 목록을 불러오지 못했습니다.</p>
+            <button
+              type="button"
+              onClick={() => void refetch()}
+              className="mt-2 rounded-lg bg-neutral-900 px-3 py-2 text-xs font-semibold text-white"
+            >
+              다시 시도
+            </button>
+          </div>
+        ) : null}
+
+        {!isLoading && !isError && followings.length === 0 ? (
+          <p className="mt-3 py-6 text-center text-sm text-neutral-500">
+            조건에 맞는 팔로잉 유저가 없습니다.
+          </p>
+        ) : null}
+
+        {!isLoading && !isError && followings.length > 0 ? (
+          <div className="mt-2">
+            <ul className="divide-y divide-neutral-100">
+              {followings.map((following) => {
+                const isSelected = activeSelectedUserId === following.userId;
+                return (
+                  <li key={following.id}>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectUser(following.userId)}
+                      className="flex w-full items-center gap-3 py-3 text-left"
+                    >
+                      {following.profileImage ? (
+                        <Image
+                          src={following.profileImage}
+                          alt={`${following.nickname} 프로필`}
+                          width={40}
+                          height={40}
+                          className="h-10 w-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-neutral-200" />
+                      )}
+
+                      <p className="min-w-0 flex-1 truncate text-sm font-medium text-neutral-900">
+                        {following.nickname}
+                      </p>
+
+                      <span
+                        className={`inline-flex h-6 w-6 items-center justify-center rounded-full border transition ${
+                          isSelected
+                            ? 'border-neutral-900 bg-white text-neutral-900'
+                            : 'border-neutral-400 bg-white text-transparent'
+                        }`}
+                        aria-hidden="true"
+                      >
+                        <Check className="h-4 w-4" />
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+
+            <ListLoadMoreSentinel
+              onLoadMore={() => void fetchNextPage()}
+              hasNextPage={hasNextPage ?? false}
+              isFetchingNextPage={isFetchingNextPage}
+              loadingText="팔로잉 유저를 더 불러오는 중..."
+              hasNextText="스크롤하면 더 볼 수 있습니다"
+              endText=""
+            />
+          </div>
+        ) : null}
+      </section>
+
+      <section className="mt-4 rounded-2xl border border-neutral-200 bg-white px-4 py-5">
+        <button
+          type="button"
+          onClick={handleComplete}
+          className="mx-auto block h-11 w-full max-w-[180px] rounded-lg bg-neutral-400 text-sm font-semibold text-white"
+        >
+          완료
+        </button>
+      </section>
+    </main>
+  );
+}

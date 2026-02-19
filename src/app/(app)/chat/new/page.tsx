@@ -1,5 +1,5 @@
-import ChatCreatePlaceholderPage from '@/screens/chat/ChatCreatePlaceholderPage';
+import ChatCreatePage from '@/screens/chat/ChatCreatePage';
 
 export default function Page() {
-  return <ChatCreatePlaceholderPage />;
+  return <ChatCreatePage />;
 }
