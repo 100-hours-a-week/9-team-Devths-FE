@@ -9,6 +9,7 @@ import { useHeader } from '@/components/layout/HeaderContext';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { useChatMessagesInfiniteQuery } from '@/lib/hooks/chat/useChatMessagesInfiniteQuery';
 import { useChatRoomDetailQuery } from '@/lib/hooks/chat/useChatRoomDetailQuery';
+import { usePatchLastReadMutation } from '@/lib/hooks/chat/usePatchLastReadMutation';
 import { toast } from '@/lib/toast/store';
 
 import type { ChatMessageResponse } from '@/lib/api/chatMessages';
@@ -19,6 +20,8 @@ type ChatRoomPageProps = Readonly<{
 
 const MESSAGE_PAGE_SIZE = 20;
 const LONG_MESSAGE_THRESHOLD = 300;
+const TOP_FETCH_THRESHOLD = 80;
+const BOTTOM_CONFIRM_THRESHOLD = 32;
 
 function resolveTitle(roomName: string | null, title: string | null) {
   const trimmedRoomName = roomName?.trim();
@@ -102,9 +105,13 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
   const currentUserId = getUserIdFromAccessToken();
   const [expandedMessageIds, setExpandedMessageIds] = useState<Set<number>>(new Set());
   const messageListRef = useRef<HTMLDivElement>(null);
+  const unreadDividerRef = useRef<HTMLDivElement>(null);
   const hasInitialScrollRef = useRef(false);
   const isLoadingOlderRef = useRef(false);
   const prevScrollHeightRef = useRef(0);
+  const hasPatchedOnEntryRef = useRef(false);
+  const lastPatchedMsgIdRef = useRef<number | null>(null);
+  const patchLastReadMutation = usePatchLastReadMutation(roomId ?? 0);
 
   const {
     data: messageData,
@@ -138,6 +145,16 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
     });
   }, [messageData?.pages]);
 
+  const serverLastReadMsgId = messageData?.pages[0]?.lastReadMsgId ?? null;
+  const latestMessageId = messages.length > 0 ? messages[messages.length - 1].messageId : null;
+  const unreadStartIndex = useMemo(() => {
+    if (serverLastReadMsgId === null) {
+      return -1;
+    }
+
+    return messages.findIndex((message) => message.messageId > serverLastReadMsgId);
+  }, [messages, serverLastReadMsgId]);
+
   const toggleExpandedMessage = useCallback((messageId: number) => {
     setExpandedMessageIds((prev) => {
       const next = new Set(prev);
@@ -149,6 +166,32 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
       return next;
     });
   }, []);
+
+  const patchLastReadOnce = useCallback(
+    (targetMessageId: number) => {
+      if (roomId === null) {
+        return;
+      }
+
+      if (targetMessageId <= 0 || patchLastReadMutation.isPending) {
+        return;
+      }
+
+      if (
+        lastPatchedMsgIdRef.current !== null &&
+        targetMessageId <= lastPatchedMsgIdRef.current
+      ) {
+        return;
+      }
+
+      patchLastReadMutation.mutate(targetMessageId, {
+        onSuccess: () => {
+          lastPatchedMsgIdRef.current = targetMessageId;
+        },
+      });
+    },
+    [patchLastReadMutation, roomId],
+  );
 
   const handleBackClick = useCallback(() => {
     if (typeof window !== 'undefined' && window.history.length > 1) {
@@ -191,7 +234,19 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
     hasInitialScrollRef.current = false;
     isLoadingOlderRef.current = false;
     prevScrollHeightRef.current = 0;
+    hasPatchedOnEntryRef.current = false;
+    lastPatchedMsgIdRef.current = null;
   }, [roomId]);
+
+  useEffect(() => {
+    if (serverLastReadMsgId === null) {
+      return;
+    }
+
+    if (lastPatchedMsgIdRef.current === null) {
+      lastPatchedMsgIdRef.current = serverLastReadMsgId;
+    }
+  }, [serverLastReadMsgId]);
 
   useLayoutEffect(() => {
     const container = messageListRef.current;
@@ -200,7 +255,12 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
     }
 
     if (!hasInitialScrollRef.current) {
-      container.scrollTop = container.scrollHeight;
+      if (unreadStartIndex >= 0 && unreadDividerRef.current) {
+        const dividerTop = unreadDividerRef.current.offsetTop;
+        container.scrollTop = Math.max(0, dividerTop - container.clientHeight * 0.35);
+      } else {
+        container.scrollTop = container.scrollHeight;
+      }
       hasInitialScrollRef.current = true;
       return;
     }
@@ -211,7 +271,26 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
       container.scrollTop += scrollDiff;
       isLoadingOlderRef.current = false;
     }
-  }, [messages]);
+  }, [messages, unreadStartIndex]);
+
+  useEffect(() => {
+    if (roomId === null || isMessagesLoading || isMessagesError || latestMessageId === null) {
+      return;
+    }
+
+    if (hasPatchedOnEntryRef.current) {
+      return;
+    }
+
+    hasPatchedOnEntryRef.current = true;
+    patchLastReadOnce(latestMessageId);
+  }, [
+    isMessagesError,
+    isMessagesLoading,
+    latestMessageId,
+    patchLastReadOnce,
+    roomId,
+  ]);
 
   const handleMessageScroll = useCallback(() => {
     const container = messageListRef.current;
@@ -219,18 +298,23 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
       return;
     }
 
+    const distanceFromBottom = container.scrollHeight - (container.scrollTop + container.clientHeight);
+    if (distanceFromBottom <= BOTTOM_CONFIRM_THRESHOLD && latestMessageId !== null) {
+      patchLastReadOnce(latestMessageId);
+    }
+
     if (!hasNextPage || isFetchingNextPage) {
       return;
     }
 
-    if (container.scrollTop > 80) {
+    if (container.scrollTop > TOP_FETCH_THRESHOLD) {
       return;
     }
 
     prevScrollHeightRef.current = container.scrollHeight;
     isLoadingOlderRef.current = true;
     void fetchNextPage();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, latestMessageId, patchLastReadOnce]);
 
   if (roomId === null) {
     return (
@@ -338,6 +422,7 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
               const shouldShowDateSeparator =
                 prevMessage === null ||
                 formatDateKey(prevMessage.createdAt) !== formatDateKey(message.createdAt);
+              const shouldShowLastReadDivider = index === unreadStartIndex;
               const isMine = message.sender?.userId === currentUserId;
               const isLongText =
                 !message.isDeleted &&
@@ -357,6 +442,16 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
                       <span className="rounded-full border border-neutral-200 bg-white/95 px-3 py-1 text-[11px] font-medium text-neutral-600">
                         {formatStickyDateLabel(message.createdAt)}
                       </span>
+                    </div>
+                  ) : null}
+
+                  {shouldShowLastReadDivider ? (
+                    <div ref={unreadDividerRef} className="my-3 flex items-center gap-2">
+                      <span className="h-px flex-1 bg-neutral-200" />
+                      <span className="text-[11px] font-medium text-neutral-500">
+                        여기까지 읽었습니다
+                      </span>
+                      <span className="h-px flex-1 bg-neutral-200" />
                     </div>
                   ) : null}
 
