@@ -13,6 +13,7 @@ import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { useChatMessagesInfiniteQuery } from '@/lib/hooks/chat/useChatMessagesInfiniteQuery';
 import { useChatRealtimeConnection } from '@/lib/hooks/chat/useChatRealtimeConnection';
 import { useChatRoomDetailQuery } from '@/lib/hooks/chat/useChatRoomDetailQuery';
+import { useChatSubscriptions } from '@/lib/hooks/chat/useChatSubscriptions';
 import { useCreatePrivateRoomMutation } from '@/lib/hooks/chat/useCreatePrivateRoomMutation';
 import { useDeleteMessageMutation } from '@/lib/hooks/chat/useDeleteMessageMutation';
 import { useLeaveChatRoomMutation } from '@/lib/hooks/chat/useLeaveChatRoomMutation';
@@ -148,6 +149,11 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
   const followUserMutation = useFollowUserMutation();
   const unfollowUserMutation = useUnfollowUserMutation();
   useChatRealtimeConnection({ enabled: roomId !== null });
+  useChatSubscriptions({
+    enabled: roomId !== null && currentUserId !== null,
+    roomId,
+    userId: currentUserId,
+  });
 
   const {
     data: messageData,
