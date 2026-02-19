@@ -175,19 +175,14 @@ class ChatStompManager {
       },
       onStompError: (frame) => {
         this.setStatus('error');
-        this.logError(
-          `stomp error: ${frame.headers.message ?? 'unknown'}`,
-          frame.body ?? '',
-        );
+        this.logError(`stomp error: ${frame.headers.message ?? 'unknown'}`, frame.body ?? '');
         this.notifyFailureOnce('stomp-error', '실시간 연결에 실패했습니다. 재시도합니다.');
       },
       onWebSocketError: (event) => {
         this.logError('websocket error', event);
       },
       onWebSocketClose: (event) => {
-        this.logWarn(
-          `websocket closed (code=${event.code}, reason=${event.reason || 'none'})`,
-        );
+        this.logWarn(`websocket closed (code=${event.code}, reason=${event.reason || 'none'})`);
 
         if (!this.connectRequested) {
           this.setStatus('disconnected');

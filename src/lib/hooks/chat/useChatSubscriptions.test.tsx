@@ -24,9 +24,7 @@ describe('useChatSubscriptions', () => {
     const roomUnsubscribe = vi.fn();
     const userUnsubscribe = vi.fn();
 
-    subscribeMock
-      .mockReturnValueOnce(roomUnsubscribe)
-      .mockReturnValueOnce(userUnsubscribe);
+    subscribeMock.mockReturnValueOnce(roomUnsubscribe).mockReturnValueOnce(userUnsubscribe);
 
     const onRoomMessage = vi.fn();
     const onUserNotification = vi.fn();

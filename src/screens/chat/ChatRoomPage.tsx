@@ -285,10 +285,7 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
         return;
       }
 
-      if (
-        lastPatchedMsgIdRef.current !== null &&
-        targetMessageId <= lastPatchedMsgIdRef.current
-      ) {
+      if (lastPatchedMsgIdRef.current !== null && targetMessageId <= lastPatchedMsgIdRef.current) {
         return;
       }
 
@@ -539,12 +536,7 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
         setActiveParticipantUserId(null);
       }
     },
-    [
-      activeParticipantUserId,
-      followUserMutation,
-      isParticipantFollowing,
-      unfollowUserMutation,
-    ],
+    [activeParticipantUserId, followUserMutation, isParticipantFollowing, unfollowUserMutation],
   );
 
   const handleCreatePrivateChatWithParticipant = useCallback(
@@ -592,7 +584,7 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
     try {
       await putRoomSettingsMutation.mutateAsync({
         isAlarmOn: isAlarmOnInput,
-        roomName: isPrivateRoom ? undefined : (trimmedRoomName || undefined),
+        roomName: isPrivateRoom ? undefined : trimmedRoomName || undefined,
       });
       toast('채팅방 설정이 저장되었습니다.');
       setIsSettingsOpen(false);
@@ -600,13 +592,7 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
       const err = error as Error & { serverMessage?: string };
       toast(err.serverMessage ?? '채팅방 설정 저장에 실패했습니다.');
     }
-  }, [
-    isAlarmOnInput,
-    isPrivateRoom,
-    putRoomSettingsMutation,
-    roomId,
-    roomNameInput,
-  ]);
+  }, [isAlarmOnInput, isPrivateRoom, putRoomSettingsMutation, roomId, roomNameInput]);
 
   const handleLeaveChatRoom = useCallback(async () => {
     if (roomId === null || leaveChatRoomMutation.isPending) {
@@ -736,13 +722,7 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
 
     hasPatchedOnEntryRef.current = true;
     patchLastReadOnce(latestMessageId);
-  }, [
-    isMessagesError,
-    isMessagesLoading,
-    latestMessageId,
-    patchLastReadOnce,
-    roomId,
-  ]);
+  }, [isMessagesError, isMessagesLoading, latestMessageId, patchLastReadOnce, roomId]);
 
   const handleMessageScroll = useCallback(() => {
     const container = messageListRef.current;
@@ -750,7 +730,8 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
       return;
     }
 
-    const distanceFromBottom = container.scrollHeight - (container.scrollTop + container.clientHeight);
+    const distanceFromBottom =
+      container.scrollHeight - (container.scrollTop + container.clientHeight);
     if (distanceFromBottom <= BOTTOM_CONFIRM_THRESHOLD && latestMessageId !== null) {
       patchLastReadOnce(latestMessageId);
     }
@@ -828,7 +809,9 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
       >
         {hasNextPage ? (
           <div className="pb-2 text-center text-[11px] text-neutral-400">
-            {isFetchingNextPage ? '이전 메시지를 불러오는 중...' : '위로 스크롤하면 이전 메시지를 불러옵니다'}
+            {isFetchingNextPage
+              ? '이전 메시지를 불러오는 중...'
+              : '위로 스크롤하면 이전 메시지를 불러옵니다'}
           </div>
         ) : null}
 
@@ -837,10 +820,7 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
             {Array.from({ length: 8 }).map((_, index) => (
               <div
                 key={index}
-                className={clsx(
-                  'flex',
-                  index % 2 === 0 ? 'justify-start' : 'justify-end',
-                )}
+                className={clsx('flex', index % 2 === 0 ? 'justify-start' : 'justify-end')}
               >
                 <div className="h-16 w-[70%] animate-pulse rounded-2xl bg-neutral-200" />
               </div>
@@ -909,7 +889,9 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
                   ) : null}
 
                   <div className={clsx('mt-2 flex', isMine ? 'justify-end' : 'justify-start')}>
-                    <div className={clsx('max-w-[78%]', message.type === 'SYSTEM' ? 'max-w-full' : '')}>
+                    <div
+                      className={clsx('max-w-[78%]', message.type === 'SYSTEM' ? 'max-w-full' : '')}
+                    >
                       {!isMine && message.type !== 'SYSTEM' && message.sender?.nickname ? (
                         <p className="mb-1 px-1 text-[11px] text-neutral-500">
                           {message.sender.nickname}
@@ -954,7 +936,7 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
                         >
                           <p
                             className={clsx(
-                              'whitespace-pre-wrap break-words text-sm',
+                              'text-sm break-words whitespace-pre-wrap',
                               message.isDeleted ? 'text-neutral-400' : '',
                             )}
                           >
@@ -1047,7 +1029,11 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
                   value={roomNameInput}
                   onChange={(event) => setRoomNameInput(event.target.value)}
                   disabled={isPrivateRoom}
-                  placeholder={isPrivateRoom ? '1:1 채팅방은 이름 수정이 불가합니다.' : '채팅방 이름을 입력하세요'}
+                  placeholder={
+                    isPrivateRoom
+                      ? '1:1 채팅방은 이름 수정이 불가합니다.'
+                      : '채팅방 이름을 입력하세요'
+                  }
                   className="h-10 w-full rounded-lg border border-neutral-200 px-3 text-sm text-neutral-900 placeholder:text-neutral-400 disabled:bg-neutral-100 disabled:text-neutral-400"
                 />
               </div>

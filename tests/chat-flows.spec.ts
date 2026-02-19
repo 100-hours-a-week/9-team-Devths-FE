@@ -367,12 +367,13 @@ async function installMockBackend(page: Page) {
       const messages = [...(state.messagesByRoomId[roomId] ?? [])].sort(
         (a, b) => b.messageId - a.messageId,
       );
-      const filtered = messages.filter((message) => (lastId > 0 ? message.messageId < lastId : true));
+      const filtered = messages.filter((message) =>
+        lastId > 0 ? message.messageId < lastId : true,
+      );
       const pageItemsDesc = filtered.slice(0, size);
       const pageItemsAsc = [...pageItemsDesc].reverse();
       const hasNext = filtered.length > size;
-      const nextCursor =
-        hasNext && pageItemsAsc.length > 0 ? pageItemsAsc[0].messageId : null;
+      const nextCursor = hasNext && pageItemsAsc.length > 0 ? pageItemsAsc[0].messageId : null;
 
       await fulfillJson(route, {
         messages: pageItemsAsc,
@@ -387,8 +388,7 @@ async function installMockBackend(page: Page) {
     if (roomMatch && method === 'GET') {
       const roomId = Number(roomMatch[1]);
       const room =
-        state.rooms.find((candidate) => candidate.roomId === roomId) ??
-        state.leftRoomsById[roomId];
+        state.rooms.find((candidate) => candidate.roomId === roomId) ?? state.leftRoomsById[roomId];
       if (!room) {
         await route.fulfill({
           status: 404,
@@ -424,7 +424,8 @@ async function installMockBackend(page: Page) {
 
     if (roomMatch && method === 'PUT') {
       const roomId = Number(roomMatch[1]);
-      const body = (request.postDataJSON() as { roomName?: string; isAlarmOn?: boolean } | null) ?? null;
+      const body =
+        (request.postDataJSON() as { roomName?: string; isAlarmOn?: boolean } | null) ?? null;
       const room = state.rooms.find((candidate) => candidate.roomId === roomId);
       if (room) {
         if (typeof body?.isAlarmOn === 'boolean') {
@@ -461,7 +462,11 @@ async function installMockBackend(page: Page) {
     await route.fulfill({
       status: 404,
       headers: corsHeaders(route),
-      body: JSON.stringify({ message: `Unhandled mock: ${method} ${path}`, data: null, timestamp: nowIso() }),
+      body: JSON.stringify({
+        message: `Unhandled mock: ${method} ${path}`,
+        data: null,
+        timestamp: nowIso(),
+      }),
     });
   });
 
@@ -539,11 +544,13 @@ test.describe('채팅 핵심 플로우', () => {
 
     await expect(page.getByText('채팅방 설정이 저장되었습니다.')).toBeVisible();
     await expect.poll(() => state.putRoomSettingsBodies.length).toBe(1);
-    await expect.poll(() => state.putRoomSettingsBodies[0]).toEqual({
-      roomId: 2,
-      roomName: '팀채팅',
-      isAlarmOn: false,
-    });
+    await expect
+      .poll(() => state.putRoomSettingsBodies[0])
+      .toEqual({
+        roomId: 2,
+        roomName: '팀채팅',
+        isAlarmOn: false,
+      });
   });
 
   test('채팅방 나가기 성공 시 목록으로 이동한다', async ({ page }) => {

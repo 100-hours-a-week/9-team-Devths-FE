@@ -37,15 +37,8 @@ export default function ChatCreatePage() {
   } | null>(null);
   const createPrivateRoomMutation = useCreatePrivateRoomMutation();
 
-  const {
-    data,
-    isLoading,
-    isError,
-    refetch,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useMyFollowingsInfiniteQuery({ submittedNickname });
+  const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useMyFollowingsInfiniteQuery({ submittedNickname });
 
   const followings = useMemo(() => {
     const merged = data?.pages.flatMap((page) => page.followings) ?? [];
@@ -167,9 +160,7 @@ export default function ChatCreatePage() {
 
       setSuccessModal({
         roomId: responseData.roomId,
-        message: responseData.isNew
-          ? '채팅방이 생성되었습니다.'
-          : '기존 채팅방으로 이동합니다.',
+        message: responseData.isNew ? '채팅방이 생성되었습니다.' : '기존 채팅방으로 이동합니다.',
       });
     } catch (error) {
       const err = error as Error & { serverMessage?: string };
