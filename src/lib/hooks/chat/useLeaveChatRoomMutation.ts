@@ -26,8 +26,10 @@ export function useLeaveChatRoomMutation(roomId: number) {
 
       return result;
     },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: chatKeys.all });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: chatKeys.rooms() });
+      await queryClient.invalidateQueries({ queryKey: chatKeys.roomDetail(roomId) });
+      await queryClient.invalidateQueries({ queryKey: chatKeys.all });
     },
   });
 }
