@@ -3,13 +3,21 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 
 import { useHeader } from '@/components/layout/HeaderContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
+import { getUserIdFromAccessToken } from '@/lib/auth/token';
+import { applyRealtimeRoomNotification } from '@/lib/chat/realtimeRoomCache';
 import { chatKeys } from '@/lib/hooks/chat/queryKeys';
+import { useChatRealtimeConnection } from '@/lib/hooks/chat/useChatRealtimeConnection';
 import { useChatRoomsInfiniteQuery } from '@/lib/hooks/chat/useChatRoomsInfiniteQuery';
+import { useChatSubscriptions } from '@/lib/hooks/chat/useChatSubscriptions';
+
+import type { ChatRoomNotificationResponse } from '@/lib/api/chatMessages';
+import type { ChatRoomListResponse } from '@/lib/api/chatRooms';
+import type { IMessage } from '@stomp/stompjs';
 
 const ROOM_PAGE_SIZE = 10;
 const ROOM_NAME_MAX_LENGTH = 6;
@@ -76,11 +84,55 @@ function truncateRoomName(title: string | null): string {
   return `${trimmed.slice(0, ROOM_NAME_MAX_LENGTH)}…`;
 }
 
+function parseStompJson<T>(body: string): T | null {
+  try {
+    return JSON.parse(body) as T;
+  } catch {
+    return null;
+  }
+}
+
+function resolveTimestamp(value: string | null): number | null {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = parseKstDateTime(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return parsed.getTime();
+}
+
+type ChatRoomCard = ChatRoomListResponse['chatRooms'][number];
+
+function compareRoomsByLastMessage(a: ChatRoomCard, b: ChatRoomCard): number {
+  const aTimestamp = resolveTimestamp(a.lastMessageAt);
+  const bTimestamp = resolveTimestamp(b.lastMessageAt);
+
+  if (aTimestamp !== null && bTimestamp !== null && aTimestamp !== bTimestamp) {
+    return bTimestamp - aTimestamp;
+  }
+
+  if (aTimestamp === null && bTimestamp !== null) {
+    return 1;
+  }
+
+  if (aTimestamp !== null && bTimestamp === null) {
+    return -1;
+  }
+
+  return b.roomId - a.roomId;
+}
+
 export default function ChatPlaceholderPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const currentUserId = getUserIdFromAccessToken();
   const { setOptions, resetOptions } = useHeader();
   const { requestNavigation } = useNavigationGuard();
+  useChatRealtimeConnection({ enabled: currentUserId !== null });
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useChatRoomsInfiniteQuery({
       size: ROOM_PAGE_SIZE,
@@ -90,14 +142,38 @@ export default function ChatPlaceholderPage() {
   const rooms = useMemo(() => {
     const merged = data?.pages.flatMap((page) => page.chatRooms) ?? [];
     const seen = new Set<number>();
-    return merged.filter((room) => {
-      if (seen.has(room.roomId)) {
-        return false;
-      }
-      seen.add(room.roomId);
-      return true;
-    });
+    return merged
+      .filter((room) => {
+        if (seen.has(room.roomId)) {
+          return false;
+        }
+        seen.add(room.roomId);
+        return true;
+      })
+      .sort(compareRoomsByLastMessage);
   }, [data]);
+
+  const handleUserNotification = useCallback(
+    (frame: IMessage) => {
+      const notification = parseStompJson<ChatRoomNotificationResponse>(frame.body);
+      if (!notification || typeof notification.roomId !== 'number') {
+        return;
+      }
+
+      const roomUpdated = applyRealtimeRoomNotification(queryClient, notification);
+      if (!roomUpdated) {
+        void queryClient.invalidateQueries({ queryKey: chatKeys.rooms() });
+      }
+    },
+    [queryClient],
+  );
+
+  useChatSubscriptions({
+    enabled: currentUserId !== null,
+    roomId: null,
+    userId: currentUserId,
+    onUserNotification: handleUserNotification,
+  });
 
   useEffect(() => {
     setOptions({

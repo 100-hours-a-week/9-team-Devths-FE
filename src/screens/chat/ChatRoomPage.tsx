@@ -19,6 +19,7 @@ import ConfirmModal from '@/components/common/ConfirmModal';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { fetchMyFollowings } from '@/lib/api/users';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
+import { applyRealtimeRoomNotification } from '@/lib/chat/realtimeRoomCache';
 import { chatStompManager } from '@/lib/chat/stompManager';
 import { chatKeys } from '@/lib/hooks/chat/queryKeys';
 import { useChatMessagesInfiniteQuery } from '@/lib/hooks/chat/useChatMessagesInfiniteQuery';
@@ -133,6 +134,11 @@ function resolveMessageContent(message: ChatMessageResponse): string {
   }
 
   return message.content ?? '';
+}
+
+function resolveLastMessagePreview(message: ChatMessageResponse): string {
+  const preview = resolveMessageContent(message).trim();
+  return preview || '(내용 없음)';
 }
 
 function parseStompJson<T>(body: string): T | null {
@@ -306,6 +312,15 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
         return;
       }
 
+      const roomUpdated = applyRealtimeRoomNotification(queryClient, {
+        roomId,
+        lastMessageContent: resolveLastMessagePreview(incomingMessage),
+        lastMessageAt: incomingMessage.createdAt,
+      });
+      if (!roomUpdated) {
+        void queryClient.invalidateQueries({ queryKey: chatKeys.rooms() });
+      }
+
       const container = messageListRef.current;
       const shouldStickToBottom =
         !container ||
@@ -375,6 +390,11 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
       const notification = parseStompJson<ChatRoomNotificationResponse>(frame.body);
       if (!notification || typeof notification.roomId !== 'number') {
         return;
+      }
+
+      const roomUpdated = applyRealtimeRoomNotification(queryClient, notification);
+      if (!roomUpdated) {
+        void queryClient.invalidateQueries({ queryKey: chatKeys.rooms() });
       }
 
       if (roomId !== null && notification.roomId === roomId) {
