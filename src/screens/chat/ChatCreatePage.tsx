@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 
 import { useHeader } from '@/components/layout/HeaderContext';
 import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
+import { useCreatePrivateRoomMutation } from '@/lib/hooks/chat/useCreatePrivateRoomMutation';
 import { useMyFollowingsInfiniteQuery } from '@/lib/hooks/chat/useMyFollowingsInfiniteQuery';
 import { toast } from '@/lib/toast/store';
 
@@ -30,6 +31,11 @@ export default function ChatCreatePage() {
   const [inputValue, setInputValue] = useState('');
   const [submittedNickname, setSubmittedNickname] = useState<string | undefined>(undefined);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [successModal, setSuccessModal] = useState<{
+    roomId: number;
+    message: string;
+  } | null>(null);
+  const createPrivateRoomMutation = useCreatePrivateRoomMutation();
 
   const {
     data,
@@ -79,6 +85,20 @@ export default function ChatCreatePage() {
     return () => resetOptions();
   }, [resetOptions, router, setOptions]);
 
+  useEffect(() => {
+    if (!successModal) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      const { roomId } = successModal;
+      setSuccessModal(null);
+      router.push(`/chat/${roomId}`);
+    }, 1000);
+
+    return () => window.clearTimeout(timer);
+  }, [router, successModal]);
+
   const handleSearch = useCallback(() => {
     const trimmed = inputValue.trim();
 
@@ -97,9 +117,14 @@ export default function ChatCreatePage() {
       return;
     }
 
+    if (submittedNickname === trimmed) {
+      void refetch();
+      return;
+    }
+
     setSubmittedNickname(trimmed);
     setSelectedUserId(null);
-  }, [inputValue]);
+  }, [inputValue, refetch, submittedNickname]);
 
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -120,13 +145,36 @@ export default function ChatCreatePage() {
     setSelectedUserId(userId);
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     if (activeSelectedUserId === null) {
       toast('채팅할 유저를 1명 선택해 주세요.');
       return;
     }
 
-    toast('유저 선택이 완료되었습니다.');
+    if (createPrivateRoomMutation.isPending) {
+      return;
+    }
+
+    try {
+      const result = await createPrivateRoomMutation.mutateAsync({
+        userId: activeSelectedUserId,
+      });
+      const responseData = result.json && 'data' in result.json ? result.json.data : null;
+
+      if (!responseData) {
+        throw new Error('Invalid response');
+      }
+
+      setSuccessModal({
+        roomId: responseData.roomId,
+        message: responseData.isNew
+          ? '채팅방이 생성되었습니다.'
+          : '기존 채팅방으로 이동합니다.',
+      });
+    } catch (error) {
+      const err = error as Error & { serverMessage?: string };
+      toast(err.serverMessage ?? '채팅방 생성에 실패했습니다.');
+    }
   };
 
   return (
@@ -248,11 +296,21 @@ export default function ChatCreatePage() {
         <button
           type="button"
           onClick={handleComplete}
+          disabled={createPrivateRoomMutation.isPending}
           className="mx-auto block h-11 w-full max-w-[180px] rounded-lg bg-neutral-400 text-sm font-semibold text-white"
         >
-          완료
+          {createPrivateRoomMutation.isPending ? '생성 중...' : '완료'}
         </button>
       </section>
+
+      {successModal ? (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/45" />
+          <div className="relative z-10 mx-4 w-full max-w-[280px] rounded-2xl bg-white px-5 py-6 text-center shadow-xl">
+            <p className="text-base font-semibold text-neutral-900">{successModal.message}</p>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
