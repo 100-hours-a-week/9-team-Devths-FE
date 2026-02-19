@@ -5,10 +5,12 @@ import { Menu } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
+import ConfirmModal from '@/components/common/ConfirmModal';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { useChatMessagesInfiniteQuery } from '@/lib/hooks/chat/useChatMessagesInfiniteQuery';
 import { useChatRoomDetailQuery } from '@/lib/hooks/chat/useChatRoomDetailQuery';
+import { useDeleteMessageMutation } from '@/lib/hooks/chat/useDeleteMessageMutation';
 import { usePatchLastReadMutation } from '@/lib/hooks/chat/usePatchLastReadMutation';
 import { toast } from '@/lib/toast/store';
 
@@ -22,6 +24,7 @@ const MESSAGE_PAGE_SIZE = 20;
 const LONG_MESSAGE_THRESHOLD = 300;
 const TOP_FETCH_THRESHOLD = 80;
 const BOTTOM_CONFIRM_THRESHOLD = 32;
+const DELETE_LONG_PRESS_MS = 2000;
 
 function resolveTitle(roomName: string | null, title: string | null) {
   const trimmedRoomName = roomName?.trim();
@@ -104,14 +107,17 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
   const { data, isLoading, isError, refetch } = useChatRoomDetailQuery(roomId);
   const currentUserId = getUserIdFromAccessToken();
   const [expandedMessageIds, setExpandedMessageIds] = useState<Set<number>>(new Set());
+  const [deleteTargetMessageId, setDeleteTargetMessageId] = useState<number | null>(null);
   const messageListRef = useRef<HTMLDivElement>(null);
   const unreadDividerRef = useRef<HTMLDivElement>(null);
+  const deleteLongPressTimerRef = useRef<number | null>(null);
   const hasInitialScrollRef = useRef(false);
   const isLoadingOlderRef = useRef(false);
   const prevScrollHeightRef = useRef(0);
   const hasPatchedOnEntryRef = useRef(false);
   const lastPatchedMsgIdRef = useRef<number | null>(null);
   const patchLastReadMutation = usePatchLastReadMutation(roomId ?? 0);
+  const deleteMessageMutation = useDeleteMessageMutation(roomId ?? 0);
 
   const {
     data: messageData,
@@ -193,6 +199,38 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
     [patchLastReadMutation, roomId],
   );
 
+  const clearDeleteLongPressTimer = useCallback(() => {
+    if (deleteLongPressTimerRef.current !== null) {
+      window.clearTimeout(deleteLongPressTimerRef.current);
+      deleteLongPressTimerRef.current = null;
+    }
+  }, []);
+
+  const startDeleteLongPress = useCallback(
+    (messageId: number) => {
+      clearDeleteLongPressTimer();
+      deleteLongPressTimerRef.current = window.setTimeout(() => {
+        setDeleteTargetMessageId(messageId);
+      }, DELETE_LONG_PRESS_MS);
+    },
+    [clearDeleteLongPressTimer],
+  );
+
+  const handleDeleteMessage = useCallback(async () => {
+    if (deleteTargetMessageId === null || deleteMessageMutation.isPending) {
+      return;
+    }
+
+    try {
+      await deleteMessageMutation.mutateAsync(deleteTargetMessageId);
+      toast('메시지가 삭제되었습니다.');
+      setDeleteTargetMessageId(null);
+    } catch (error) {
+      const err = error as Error & { serverMessage?: string };
+      toast(err.serverMessage ?? '메시지 삭제에 실패했습니다.');
+    }
+  }, [deleteMessageMutation, deleteTargetMessageId]);
+
   const handleBackClick = useCallback(() => {
     if (typeof window !== 'undefined' && window.history.length > 1) {
       router.back();
@@ -237,6 +275,12 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
     hasPatchedOnEntryRef.current = false;
     lastPatchedMsgIdRef.current = null;
   }, [roomId]);
+
+  useEffect(() => {
+    return () => {
+      clearDeleteLongPressTimer();
+    };
+  }, [clearDeleteLongPressTimer]);
 
   useEffect(() => {
     if (serverLastReadMsgId === null) {
@@ -424,6 +468,7 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
                 formatDateKey(prevMessage.createdAt) !== formatDateKey(message.createdAt);
               const shouldShowLastReadDivider = index === unreadStartIndex;
               const isMine = message.sender?.userId === currentUserId;
+              const canDeleteMessage = isMine && !message.isDeleted && message.type !== 'SYSTEM';
               const isLongText =
                 !message.isDeleted &&
                 message.type === 'TEXT' &&
@@ -477,6 +522,27 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
                                 ? 'border-[#0F172A] bg-[#0F172A] text-white'
                                 : 'border-neutral-200 bg-white text-neutral-900',
                           )}
+                          onMouseDown={
+                            canDeleteMessage
+                              ? () => startDeleteLongPress(message.messageId)
+                              : undefined
+                          }
+                          onMouseUp={canDeleteMessage ? clearDeleteLongPressTimer : undefined}
+                          onMouseLeave={canDeleteMessage ? clearDeleteLongPressTimer : undefined}
+                          onTouchStart={
+                            canDeleteMessage
+                              ? () => startDeleteLongPress(message.messageId)
+                              : undefined
+                          }
+                          onTouchEnd={canDeleteMessage ? clearDeleteLongPressTimer : undefined}
+                          onTouchCancel={canDeleteMessage ? clearDeleteLongPressTimer : undefined}
+                          onContextMenu={
+                            canDeleteMessage
+                              ? (event) => {
+                                  event.preventDefault();
+                                }
+                              : undefined
+                          }
                         >
                           <p
                             className={clsx(
@@ -513,6 +579,23 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
           </div>
         ) : null}
       </section>
+
+      <ConfirmModal
+        isOpen={deleteTargetMessageId !== null}
+        title="메시지를 삭제하시겠어요?"
+        message="삭제된 메시지는 복구할 수 없습니다."
+        confirmText={deleteMessageMutation.isPending ? '삭제 중...' : '삭제'}
+        cancelText="취소"
+        onConfirm={() => {
+          void handleDeleteMessage();
+        }}
+        onCancel={() => {
+          if (deleteMessageMutation.isPending) {
+            return;
+          }
+          setDeleteTargetMessageId(null);
+        }}
+      />
     </main>
   );
 }
