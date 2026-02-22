@@ -3,13 +3,14 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useHeader } from '@/components/layout/HeaderContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
 import { fetchChatMessages } from '@/lib/api/chatMessages';
+import { fetchChatRooms } from '@/lib/api/chatRooms';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { applyRealtimeRoomNotification } from '@/lib/chat/realtimeRoomCache';
 import { chatKeys } from '@/lib/hooks/chat/queryKeys';
@@ -131,11 +132,13 @@ function compareRoomsByLastMessage(a: ChatRoomCard, b: ChatRoomCard): number {
 
 export default function ChatPlaceholderPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const currentUserId = getUserIdFromAccessToken();
   const { setOptions, resetOptions } = useHeader();
   const { requestNavigation } = useNavigationGuard();
   const [roomProfileImages, setRoomProfileImages] = useState<RoomProfileImageMap>({});
+  const handledTargetRouteRef = useRef<string | null>(null);
   useChatRealtimeConnection({ enabled: currentUserId !== null });
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useChatRoomsInfiniteQuery({
@@ -191,6 +194,89 @@ export default function ChatPlaceholderPage() {
   useEffect(() => {
     queryClient.setQueryData<number>(chatKeys.realtimeUnread(), 0);
   }, [queryClient]);
+
+  useEffect(() => {
+    const targetUserIdParam = searchParams.get('targetUserId');
+    if (!targetUserIdParam) {
+      handledTargetRouteRef.current = null;
+      return;
+    }
+
+    const targetUserId = Number(targetUserIdParam);
+    if (!Number.isInteger(targetUserId) || targetUserId <= 0) {
+      return;
+    }
+
+    const targetNickname = searchParams.get('targetNickname')?.trim() ?? '';
+    const targetKey = `${targetUserId}:${targetNickname}`;
+    if (handledTargetRouteRef.current === targetKey) {
+      return;
+    }
+    handledTargetRouteRef.current = targetKey;
+
+    let cancelled = false;
+
+    const routeToTargetChat = async () => {
+      if (!targetNickname) {
+        const params = new URLSearchParams();
+        params.set('targetUserId', String(targetUserId));
+        requestNavigation(() => router.push(`/chat/new?${params.toString()}`));
+        return;
+      }
+
+      const normalizedTargetNickname = targetNickname.trim();
+      let cursor: ChatRoomListResponse['cursor'] = null;
+      let matchedRoomId: number | null = null;
+
+      do {
+        const result = await fetchChatRooms({
+          type: 'PRIVATE',
+          size: 100,
+          cursor,
+        });
+
+        const page = result.ok && result.json && 'data' in result.json ? result.json.data : null;
+        if (!page) {
+          break;
+        }
+
+        const matchedRoom = page.chatRooms.find(
+          (room) => room.title?.trim() === normalizedTargetNickname,
+        );
+
+        if (matchedRoom) {
+          matchedRoomId = matchedRoom.roomId;
+          break;
+        }
+
+        if (!page.hasNext || !page.cursor) {
+          break;
+        }
+
+        cursor = page.cursor;
+      } while (!cancelled);
+
+      if (cancelled) {
+        return;
+      }
+
+      if (matchedRoomId !== null) {
+        requestNavigation(() => router.push(`/chat/${matchedRoomId}`));
+        return;
+      }
+
+      const params = new URLSearchParams();
+      params.set('targetUserId', String(targetUserId));
+      params.set('targetNickname', normalizedTargetNickname);
+      requestNavigation(() => router.push(`/chat/new?${params.toString()}`));
+    };
+
+    void routeToTargetChat();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [requestNavigation, router, searchParams]);
 
   useEffect(() => {
     if (currentUserId === null || rooms.length === 0) {

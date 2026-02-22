@@ -480,7 +480,12 @@ export default function BoardListPage() {
         onStartChat={() => {
           if (modalUserId === null || isMine) return;
           setIsMiniProfileOpen(false);
-          requestNavigation(() => router.push(`/chat?targetUserId=${modalUserId}`));
+          const params = new URLSearchParams();
+          params.set('targetUserId', String(modalUserId));
+          if (modalUser?.nickname) {
+            params.set('targetNickname', modalUser.nickname);
+          }
+          requestNavigation(() => router.push(`/chat?${params.toString()}`));
         }}
         onToggleFollow={() => void handleToggleFollow()}
       />
