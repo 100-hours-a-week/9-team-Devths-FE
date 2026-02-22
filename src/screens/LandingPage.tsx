@@ -71,12 +71,20 @@ export default function LandingPage() {
           </section>
 
           <footer className="w-full text-center">
-            <Link
-              href="/privacy"
-              className="text-xs text-neutral-500 underline underline-offset-2 hover:text-neutral-700"
-            >
-              개인정보 처리방침
-            </Link>
+            <div className="flex flex-col items-center gap-1">
+              <Link
+                href="/privacy"
+                className="text-xs text-neutral-500 underline underline-offset-2 hover:text-neutral-700"
+              >
+                개인정보 처리방침
+              </Link>
+              <Link
+                href="/terms"
+                className="text-xs text-neutral-500 underline underline-offset-2 hover:text-neutral-700"
+              >
+                서비스 이용약관
+              </Link>
+            </div>
           </footer>
         </div>
       </div>
