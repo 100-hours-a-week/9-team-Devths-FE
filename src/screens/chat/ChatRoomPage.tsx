@@ -871,7 +871,7 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
               return (
                 <div key={message.messageId}>
                   {shouldShowDateSeparator ? (
-                    <div className="sticky top-14 z-10 my-2 flex justify-center">
+                    <div className="sticky top-0 z-10 my-2 flex justify-center">
                       <span className="rounded-full border border-neutral-200 bg-white/95 px-3 py-1 text-[11px] font-medium text-neutral-600">
                         {formatStickyDateLabel(message.createdAt)}
                       </span>
@@ -888,7 +888,13 @@ export default function ChatRoomPage({ roomId }: ChatRoomPageProps) {
                     </div>
                   ) : null}
 
-                  <div className={clsx('mt-2 flex', isMine ? 'justify-end' : 'justify-start')}>
+                  <div
+                    className={clsx(
+                      'flex',
+                      shouldShowDateSeparator ? 'mt-3' : 'mt-2',
+                      isMine ? 'justify-end' : 'justify-start',
+                    )}
+                  >
                     <div
                       className={clsx('max-w-[78%]', message.type === 'SYSTEM' ? 'max-w-full' : '')}
                     >
