@@ -310,8 +310,8 @@ export default function ChatCreatePage() {
         <button
           type="button"
           onClick={handleComplete}
-          disabled={createPrivateRoomMutation.isPending}
-          className="mx-auto block h-11 w-full max-w-[180px] rounded-lg bg-neutral-400 text-sm font-semibold text-white"
+          disabled={createPrivateRoomMutation.isPending || activeSelectedUserId === null}
+          className="mx-auto block h-11 w-full max-w-[180px] rounded-lg bg-neutral-900 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-neutral-400"
         >
           {createPrivateRoomMutation.isPending ? '생성 중...' : '완료'}
         </button>
