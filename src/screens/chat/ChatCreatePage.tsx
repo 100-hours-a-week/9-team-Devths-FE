@@ -2,8 +2,8 @@
 
 import { Check, Search } from 'lucide-react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 
 import { useHeader } from '@/components/layout/HeaderContext';
 import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
@@ -27,6 +27,7 @@ function sortByNickname(a: ChatFollowingSummaryResponse, b: ChatFollowingSummary
 
 export default function ChatCreatePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { setOptions, resetOptions } = useHeader();
   const [inputValue, setInputValue] = useState('');
   const [submittedNickname, setSubmittedNickname] = useState<string | undefined>(undefined);
@@ -36,6 +37,7 @@ export default function ChatCreatePage() {
     message: string;
   } | null>(null);
   const createPrivateRoomMutation = useCreatePrivateRoomMutation();
+  const initializedFromQueryRef = useRef(false);
 
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useMyFollowingsInfiniteQuery({ submittedNickname });
@@ -61,6 +63,27 @@ export default function ChatCreatePage() {
     const hasSelectedUser = followings.some((following) => following.userId === selectedUserId);
     return hasSelectedUser ? selectedUserId : null;
   }, [followings, selectedUserId]);
+
+  useEffect(() => {
+    if (initializedFromQueryRef.current) {
+      return;
+    }
+
+    const targetUserIdParam = searchParams.get('targetUserId');
+    const targetNicknameParam = searchParams.get('targetNickname')?.trim() ?? '';
+
+    const targetUserId = targetUserIdParam ? Number(targetUserIdParam) : null;
+    if (targetUserId !== null && Number.isInteger(targetUserId) && targetUserId > 0) {
+      setSelectedUserId(targetUserId);
+    }
+
+    if (targetNicknameParam) {
+      setInputValue(targetNicknameParam);
+      setSubmittedNickname(targetNicknameParam);
+    }
+
+    initializedFromQueryRef.current = true;
+  }, [searchParams]);
 
   useEffect(() => {
     setOptions({
@@ -287,8 +310,8 @@ export default function ChatCreatePage() {
         <button
           type="button"
           onClick={handleComplete}
-          disabled={createPrivateRoomMutation.isPending}
-          className="mx-auto block h-11 w-full max-w-[180px] rounded-lg bg-neutral-400 text-sm font-semibold text-white"
+          disabled={createPrivateRoomMutation.isPending || activeSelectedUserId === null}
+          className="mx-auto block h-11 w-full max-w-[180px] rounded-lg bg-neutral-900 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-neutral-400"
         >
           {createPrivateRoomMutation.isPending ? '생성 중...' : '완료'}
         </button>

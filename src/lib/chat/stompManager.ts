@@ -165,23 +165,50 @@ class ChatStompManager {
         this.logInfo('beforeConnect injected latest Authorization header');
       },
       onConnect: () => {
+        if (this.client !== client) {
+          this.logInfo('ignore onConnect from stale client');
+          return;
+        }
+
         this.retryAttempt = 0;
         this.setStatus('connected');
         this.logInfo('stomp connected');
         this.rebindAllSubscriptions();
       },
       onDisconnect: () => {
+        if (this.client !== client) {
+          this.logInfo('ignore onDisconnect from stale client');
+          return;
+        }
+
         this.logInfo('stomp disconnected by client');
       },
       onStompError: (frame) => {
+        if (this.client !== client) {
+          this.logInfo('ignore onStompError from stale client');
+          return;
+        }
+
         this.setStatus('error');
         this.logError(`stomp error: ${frame.headers.message ?? 'unknown'}`, frame.body ?? '');
         this.notifyFailureOnce('stomp-error', '실시간 연결에 실패했습니다. 재시도합니다.');
       },
       onWebSocketError: (event) => {
+        if (this.client !== client) {
+          this.logInfo('ignore onWebSocketError from stale client');
+          return;
+        }
+
         this.logError('websocket error', event);
       },
       onWebSocketClose: (event) => {
+        if (this.client !== client) {
+          this.logInfo(
+            `ignore websocket close from stale client (code=${event.code}, reason=${event.reason || 'none'})`,
+          );
+          return;
+        }
+
         this.logWarn(`websocket closed (code=${event.code}, reason=${event.reason || 'none'})`);
 
         if (!this.connectRequested) {
