@@ -18,7 +18,6 @@ import {
   startTransition,
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -34,7 +33,6 @@ import {
   LONG_MESSAGE_THRESHOLD,
   MESSAGE_PAGE_SIZE,
   MESSAGE_SEND_DESTINATION,
-  TOP_FETCH_THRESHOLD,
 } from '@/constants/chat';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { applyRealtimeRoomMessage } from '@/lib/chat/realtimeMessageCache';
@@ -45,10 +43,10 @@ import { chatKeys } from '@/lib/hooks/chat/queryKeys';
 import { useAttachmentHandler } from '@/lib/hooks/chat/useAttachmentHandler';
 import { useChatMessagesInfiniteQuery } from '@/lib/hooks/chat/useChatMessagesInfiniteQuery';
 import { useChatRoomDetailQuery } from '@/lib/hooks/chat/useChatRoomDetailQuery';
+import { useChatScroll } from '@/lib/hooks/chat/useChatScroll';
 import { useChatSubscriptions } from '@/lib/hooks/chat/useChatSubscriptions';
 import { useDeleteMessageMutation } from '@/lib/hooks/chat/useDeleteMessageMutation';
 import { useLeaveChatRoomMutation } from '@/lib/hooks/chat/useLeaveChatRoomMutation';
-import { usePatchLastReadMutation } from '@/lib/hooks/chat/usePatchLastReadMutation';
 import { usePutRoomSettingsMutation } from '@/lib/hooks/chat/usePutRoomSettingsMutation';
 import { toast } from '@/lib/toast/store';
 import { formatDateKey, formatMessageTime, formatStickyDateLabel } from '@/lib/utils/chatDate';
@@ -140,18 +138,8 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
   const isSettingsPage = mode === 'settings';
   const activeRoomId = isLeavingRoom ? null : roomId;
   const { data, isLoading, isError, refetch } = useChatRoomDetailQuery(activeRoomId);
-  const messageListRef = useRef<HTMLDivElement>(null);
-  const unreadDividerRef = useRef<HTMLDivElement>(null);
   const deleteLongPressTimerRef = useRef<number | null>(null);
   const isMessageInputComposingRef = useRef(false);
-  const initialScrollResyncTimerRef = useRef<number | null>(null);
-  const hasInitialScrollRef = useRef(false);
-  const hasNoUnreadInitialBottomResyncedRef = useRef(false);
-  const isLoadingOlderRef = useRef(false);
-  const prevScrollHeightRef = useRef(0);
-  const hasPatchedOnEntryRef = useRef(false);
-  const lastPatchedMsgIdRef = useRef<number | null>(null);
-  const patchLastReadMutation = usePatchLastReadMutation(roomId ?? 0);
   const deleteMessageMutation = useDeleteMessageMutation(roomId ?? 0);
   const putRoomSettingsMutation = usePutRoomSettingsMutation(roomId ?? 0);
   const leaveChatRoomMutation = useLeaveChatRoomMutation(roomId ?? 0);
@@ -203,6 +191,20 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
 
   const isPrivateRoom = data?.type === 'PRIVATE';
 
+  const { messageListRef, unreadDividerRef, handleMessageScroll, patchLastReadOnce } =
+    useChatScroll({
+      roomId,
+      messages,
+      unreadStartIndex,
+      serverLastReadMsgId,
+      latestMessageId,
+      isMessagesLoading,
+      isMessagesError,
+      fetchNextPage,
+      hasNextPage,
+      isFetchingNextPage,
+    });
+
   const {
     isAttachmentUploading,
     isAttachmentPickerOpen,
@@ -228,29 +230,6 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
       return next;
     });
   }, []);
-
-  const patchLastReadOnce = useCallback(
-    (targetMessageId: number) => {
-      if (roomId === null) {
-        return;
-      }
-
-      if (targetMessageId <= 0 || patchLastReadMutation.isPending) {
-        return;
-      }
-
-      if (lastPatchedMsgIdRef.current !== null && targetMessageId <= lastPatchedMsgIdRef.current) {
-        return;
-      }
-
-      patchLastReadMutation.mutate(targetMessageId, {
-        onSuccess: () => {
-          lastPatchedMsgIdRef.current = targetMessageId;
-        },
-      });
-    },
-    [patchLastReadMutation, roomId],
-  );
 
   const handleRealtimeRoomMessage = useCallback(
     (frame: IMessage) => {
@@ -300,7 +279,7 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
         });
       }
     },
-    [currentUserId, patchLastReadOnce, queryClient, roomId],
+    [currentUserId, messageListRef, patchLastReadOnce, queryClient, roomId],
   );
 
   const handleSendMessage = useCallback(
@@ -504,16 +483,6 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
   ]);
 
   useEffect(() => {
-    if (initialScrollResyncTimerRef.current !== null) {
-      window.clearTimeout(initialScrollResyncTimerRef.current);
-      initialScrollResyncTimerRef.current = null;
-    }
-    hasInitialScrollRef.current = false;
-    hasNoUnreadInitialBottomResyncedRef.current = false;
-    isLoadingOlderRef.current = false;
-    prevScrollHeightRef.current = 0;
-    hasPatchedOnEntryRef.current = false;
-    lastPatchedMsgIdRef.current = null;
     startTransition(() => {
       setIsLeavingRoom(false);
       setMessageInput('');
@@ -541,136 +510,8 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
   useEffect(() => {
     return () => {
       clearDeleteLongPressTimer();
-      if (initialScrollResyncTimerRef.current !== null) {
-        window.clearTimeout(initialScrollResyncTimerRef.current);
-        initialScrollResyncTimerRef.current = null;
-      }
     };
   }, [clearDeleteLongPressTimer]);
-
-  useEffect(() => {
-    if (serverLastReadMsgId === null) {
-      return;
-    }
-
-    if (lastPatchedMsgIdRef.current === null) {
-      lastPatchedMsgIdRef.current = serverLastReadMsgId;
-    }
-  }, [serverLastReadMsgId]);
-
-  useLayoutEffect(() => {
-    const container = messageListRef.current;
-    if (!container || messages.length === 0) {
-      return;
-    }
-
-    if (!hasInitialScrollRef.current) {
-      if (unreadStartIndex >= 0 && unreadDividerRef.current) {
-        const dividerTop = unreadDividerRef.current.offsetTop;
-        container.scrollTop = Math.max(0, dividerTop - container.clientHeight * 0.35);
-      } else {
-        container.scrollTop = container.scrollHeight;
-        requestAnimationFrame(() => {
-          const currentContainer = messageListRef.current;
-          if (!currentContainer) {
-            return;
-          }
-          currentContainer.scrollTop = currentContainer.scrollHeight;
-        });
-        if (initialScrollResyncTimerRef.current !== null) {
-          window.clearTimeout(initialScrollResyncTimerRef.current);
-        }
-        initialScrollResyncTimerRef.current = window.setTimeout(() => {
-          const currentContainer = messageListRef.current;
-          if (!currentContainer) {
-            return;
-          }
-          currentContainer.scrollTop = currentContainer.scrollHeight;
-          initialScrollResyncTimerRef.current = null;
-        }, 300);
-      }
-      hasInitialScrollRef.current = true;
-      return;
-    }
-
-    if (isLoadingOlderRef.current) {
-      const newScrollHeight = container.scrollHeight;
-      const scrollDiff = newScrollHeight - prevScrollHeightRef.current;
-      container.scrollTop += scrollDiff;
-      isLoadingOlderRef.current = false;
-    }
-  }, [messages, unreadStartIndex]);
-
-  useEffect(() => {
-    if (!hasInitialScrollRef.current) {
-      return;
-    }
-
-    if (hasNoUnreadInitialBottomResyncedRef.current) {
-      return;
-    }
-
-    if (messages.length === 0 || unreadStartIndex >= 0) {
-      return;
-    }
-
-    const container = messageListRef.current;
-    if (!container) {
-      return;
-    }
-
-    hasNoUnreadInitialBottomResyncedRef.current = true;
-
-    const timerId = window.setTimeout(() => {
-      const currentContainer = messageListRef.current;
-      if (!currentContainer) {
-        return;
-      }
-      currentContainer.scrollTop = currentContainer.scrollHeight;
-    }, 150);
-
-    return () => {
-      window.clearTimeout(timerId);
-    };
-  }, [messages.length, unreadStartIndex]);
-
-  useEffect(() => {
-    if (roomId === null || isMessagesLoading || isMessagesError || latestMessageId === null) {
-      return;
-    }
-
-    if (hasPatchedOnEntryRef.current) {
-      return;
-    }
-
-    hasPatchedOnEntryRef.current = true;
-    patchLastReadOnce(latestMessageId);
-  }, [isMessagesError, isMessagesLoading, latestMessageId, patchLastReadOnce, roomId]);
-
-  const handleMessageScroll = useCallback(() => {
-    const container = messageListRef.current;
-    if (!container) {
-      return;
-    }
-
-    const distanceFromBottom =
-      container.scrollHeight - (container.scrollTop + container.clientHeight);
-    if (distanceFromBottom <= BOTTOM_CONFIRM_THRESHOLD && latestMessageId !== null) {
-      patchLastReadOnce(latestMessageId);
-    }
-
-    if (!hasNextPage || isFetchingNextPage) {
-      return;
-    }
-
-    if (container.scrollTop > TOP_FETCH_THRESHOLD) {
-      return;
-    }
-
-    prevScrollHeightRef.current = container.scrollHeight;
-    isLoadingOlderRef.current = true;
-    void fetchNextPage();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage, latestMessageId, patchLastReadOnce]);
 
   if (roomId === null) {
     return (
