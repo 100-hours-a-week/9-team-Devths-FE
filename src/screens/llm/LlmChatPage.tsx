@@ -70,7 +70,27 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
     deleteFailedMessage,
   } = useLlmStreaming(numericRoomId);
 
-  const session = useInterviewSession(numericRoomId, model, streamEvaluation, streamInitialQuestion);
+  const session = useInterviewSession(numericRoomId, model, streamInitialQuestion);
+
+  const handleEndInterview = useCallback(
+    async (options?: { userMessageId?: string; retry?: boolean; interviewId?: number }) => {
+      const isRetry = options?.retry === true;
+      const targetInterviewId = options?.interviewId ?? session.session?.interviewId ?? null;
+      if (!targetInterviewId) return;
+
+      if (!isRetry) session.beginEnding();
+
+      await streamEvaluation({
+        interviewId: targetInterviewId,
+        retry: isRetry,
+        userMessageId: options?.userMessageId,
+        onActive: () => session.recoverToActive(),
+        onIdle: () => session.setIdle(),
+        onSessionClear: () => session.clearSession(),
+      });
+    },
+    [session, streamEvaluation],
+  );
 
   const messages = useMemo<UIMessage[]>(
     () => [...serverMessages, ...localMessages],
@@ -80,7 +100,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
   const evaluation = useInterviewEvaluation(
     messages,
     isRetryingEvaluation,
-    (opts) => void session.endInterview(opts),
+    handleEndInterview,
     () => session.finishSession(),
   );
 
@@ -258,7 +278,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
               </span>
               <button
                 type="button"
-                onClick={() => session.endInterview()}
+                onClick={() => void handleEndInterview()}
                 className="ml-auto rounded-2xl border border-neutral-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-neutral-900 shadow-sm hover:bg-neutral-50"
               >
                 면접 종료
