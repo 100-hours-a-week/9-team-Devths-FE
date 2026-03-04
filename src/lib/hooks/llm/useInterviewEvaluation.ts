@@ -25,11 +25,12 @@ export function useInterviewEvaluation(
     return null;
   }, [messages]);
 
-  const isActionsDisabled =
-    (latestInterviewEvaluationMessage?.id !== null &&
-      latestInterviewEvaluationMessage?.id !== undefined &&
-      latestInterviewEvaluationMessage.id === finishedEvaluationMessageId) ||
-    isRetryingEvaluation;
+  const isEvaluationAlreadyFinished =
+    latestInterviewEvaluationMessage?.id !== null &&
+    latestInterviewEvaluationMessage?.id !== undefined &&
+    latestInterviewEvaluationMessage.id === finishedEvaluationMessageId;
+
+  const isActionsDisabled = isEvaluationAlreadyFinished || isRetryingEvaluation;
 
   const retryEvaluation = useCallback(() => {
     const targetInterviewId = latestInterviewEvaluationMessage?.interviewId;
