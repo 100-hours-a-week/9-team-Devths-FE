@@ -16,15 +16,6 @@ export type InterviewSession = {
 
 export type InterviewUIState = 'idle' | 'select' | 'starting' | 'active' | 'ending';
 
-type StreamEvaluationFn = (opts: {
-  interviewId: number;
-  retry?: boolean;
-  userMessageId?: string;
-  onActive?: () => void;
-  onIdle?: () => void;
-  onSessionClear?: () => void;
-}) => Promise<void>;
-
 type StreamInitialQuestionFn = (opts: {
   model: LlmModel;
   interviewId: number;
@@ -34,7 +25,6 @@ type StreamInitialQuestionFn = (opts: {
 export function useInterviewSession(
   numericRoomId: number,
   model: LlmModel,
-  streamEvaluation: StreamEvaluationFn,
   streamInitialQuestion: StreamInitialQuestionFn,
 ) {
   // --- state ---
@@ -127,27 +117,10 @@ export function useInterviewSession(
     [startInterviewMutation, model, streamInitialQuestion],
   );
 
-  const endInterview = useCallback(
-    async (options?: { userMessageId?: string; retry?: boolean; interviewId?: number }) => {
-      const isRetry = options?.retry === true;
-      const targetInterviewId = options?.interviewId ?? session?.interviewId ?? null;
-      if (!targetInterviewId) return;
-
-      if (!isRetry) {
-        setUIState('ending');
-      }
-
-      await streamEvaluation({
-        interviewId: targetInterviewId,
-        retry: isRetry,
-        userMessageId: options?.userMessageId,
-        onActive: () => setUIState('active'),
-        onIdle: () => setUIState('idle'),
-        onSessionClear: () => setSession(null),
-      });
-    },
-    [session, streamEvaluation],
-  );
+  const beginEnding = useCallback(() => setUIState('ending'), []);
+  const recoverToActive = useCallback(() => setUIState('active'), []);
+  const clearSession = useCallback(() => setSession(null), []);
+  const setIdle = useCallback(() => setUIState('idle'), []);
 
   return {
     uiState,
@@ -157,6 +130,9 @@ export function useInterviewSession(
     finishSession,
     incrementQuestionCount,
     startInterview,
-    endInterview,
+    beginEnding,
+    recoverToActive,
+    clearSession,
+    setIdle,
   };
 }
