@@ -6,13 +6,12 @@ import { useAppFrame } from '@/components/layout/AppFrameContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import LlmComposer from '@/components/llm/chat/LlmComposer';
 import LlmMessageList from '@/components/llm/chat/LlmMessageList';
-import { endInterviewStream, getCurrentInterview, sendMessageStream } from '@/lib/api/llmRooms';
+import { getCurrentInterview } from '@/lib/api/llmRooms';
+import { useLlmStreaming } from '@/lib/hooks/llm/useLlmStreaming';
 import { useMessagesInfiniteQuery } from '@/lib/hooks/llm/useMessagesInfiniteQuery';
 import { useStartInterviewMutation } from '@/lib/hooks/llm/useStartInterviewMutation';
 import { toast } from '@/lib/toast/store';
-import { nowTimeLabel } from '@/lib/utils/datetime';
 import { toUIMessage } from '@/lib/utils/llm';
-import { readSseStream } from '@/lib/utils/sse';
 
 import type { UIMessage } from '@/lib/utils/llm';
 import type { InterviewType, LlmModel } from '@/types/llm';
@@ -67,17 +66,23 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
     return allMessages.map(toUIMessage);
   }, [data]);
 
-  const [localMessages, setLocalMessages] = useState<UIMessage[]>([]);
+  const {
+    localMessages,
+    streamingAiId,
+    isSending,
+    isRetryingEvaluation,
+    sendMessage,
+    streamEvaluation,
+    streamInitialQuestion,
+    removeLocalMessage,
+  } = useLlmStreaming(numericRoomId);
 
   const [interviewUIState, setInterviewUIState] = useState<InterviewUIState>('idle');
   const [interviewSession, setInterviewSession] = useState<InterviewSession | null>(null);
   const [model] = useState<LlmModel>(() => parseModel(initialModel));
-  const [isSending, setIsSending] = useState(false);
-  const [isRetryingEvaluation, setIsRetryingEvaluation] = useState(false);
   const [finishedEvaluationMessageId, setFinishedEvaluationMessageId] = useState<string | null>(
     null,
   );
-  const [streamingAiId, setStreamingAiId] = useState<string | null>(null);
   const notifiedDeletedRef = useRef(false);
   const { setBlocked, setBlockMessage } = useNavigationGuard();
 
@@ -148,237 +153,36 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
       const targetInterviewId = options?.interviewId ?? interviewSession?.interviewId ?? null;
       if (!targetInterviewId) return;
 
-      const userMessageId = options?.userMessageId;
-
-      if (isRetry) {
-        setIsRetryingEvaluation(true);
-      } else {
+      if (!isRetry) {
         setInterviewUIState('ending');
       }
 
-      const systemId = `sys-${Date.now()}`;
-      const evalId = `temp-eval-${Date.now()}`;
-
-      setStreamingAiId(evalId);
-      setLocalMessages((prev) => [
-        ...prev,
-        ...(isRetry
-          ? []
-          : [
-              {
-                id: systemId,
-                role: 'SYSTEM' as const,
-                text: '면접이 종료되었습니다. 평가를 시작합니다.',
-              },
-            ]),
-        {
-          id: evalId,
-          role: 'AI',
-          text: '',
-          time: '평가 중...',
-          interviewId: targetInterviewId,
-          isInterviewEvaluation: true,
-        },
-      ]);
-
-      try {
-        const response = await endInterviewStream(numericRoomId, {
-          interviewId: targetInterviewId,
-          retry: isRetry,
-        });
-
-        if (!response.ok) {
-          throw new Error(`SSE 요청 실패 (HTTP ${response.status})`);
-        }
-
-        let evalText = '';
-
-        await readSseStream(response, ({ event, data }) => {
-          if (event === 'error') {
-            let errorMessage = '면접 평가에 실패했습니다.';
-            try {
-              const parsed = JSON.parse(data) as { message?: string };
-              if (parsed.message) errorMessage = parsed.message;
-            } catch {
-              errorMessage = data || errorMessage;
-            }
-
-            setStreamingAiId((prev) => (prev === evalId ? null : prev));
-            setLocalMessages((prev) =>
-              prev.map((m) => {
-                if (m.id === evalId) {
-                  return { ...m, text: errorMessage, time: nowTimeLabel() };
-                }
-                if (m.id === userMessageId) {
-                  return { ...m, status: 'failed', time: '전송 실패' };
-                }
-                return m;
-              }),
-            );
-            if (!isRetry) {
-              setInterviewUIState('active');
-            }
-            toast(errorMessage);
-            return false;
-          }
-
-          if (event === 'done') {
-            setStreamingAiId((prev) => (prev === evalId ? null : prev));
-            setLocalMessages((prev) =>
-              prev.map((m) => (m.id === evalId ? { ...m, text: evalText, time: nowTimeLabel() } : m)),
-            );
-            if (!isRetry) {
-              setInterviewSession(null);
-            }
-            setInterviewUIState('idle');
-            return false;
-          }
-
-          evalText += data;
-          setLocalMessages((prev) =>
-            prev.map((m) => (m.id === evalId ? { ...m, text: evalText } : m)),
-          );
-          return true;
-        });
-      } catch {
-        toast(isRetry ? '면접 평가 재요청에 실패했습니다.' : '면접 종료에 실패했습니다.');
-        if (!isRetry) {
-          setInterviewUIState('active');
-        }
-        setStreamingAiId((prev) => (prev === evalId ? null : prev));
-        if (userMessageId) {
-          setLocalMessages((prev) =>
-            prev.map((m) =>
-              m.id === userMessageId ? { ...m, status: 'failed', time: '전송 실패' } : m,
-            ),
-          );
-        }
-      } finally {
-        if (isRetry) {
-          setIsRetryingEvaluation(false);
-        }
-      }
+      await streamEvaluation({
+        interviewId: targetInterviewId,
+        retry: isRetry,
+        userMessageId: options?.userMessageId,
+        onActive: () => setInterviewUIState('active'),
+        onIdle: () => setInterviewUIState('idle'),
+        onSessionClear: () => setInterviewSession(null),
+      });
     },
-    [interviewSession, numericRoomId],
+    [interviewSession, streamEvaluation],
   );
 
   const handleSendMessage = useCallback(
     async (text: string) => {
-      const trimmed = text.trim();
-
-      if (!trimmed) return;
-
-      setIsSending(true);
-
-      const tempUserId = `temp-user-${Date.now()}`;
-      const tempAiId = `temp-ai-${Date.now()}`;
-
-      const pendingUserMessage: UIMessage = {
-        id: tempUserId,
-        role: 'USER',
-        text: trimmed,
-        time: nowTimeLabel(),
-        status: 'sent',
-      };
-
-      const pendingAiMessage: UIMessage = {
-        id: tempAiId,
-        role: 'AI',
-        text: '',
-        time: '응답 중...',
-      };
-
-      setLocalMessages((prev) => [...prev, pendingUserMessage, pendingAiMessage]);
-
-      setStreamingAiId(tempAiId);
-
-      await new Promise<void>((resolve) => {
-        requestAnimationFrame(() => resolve());
+      await sendMessage(text, {
+        model,
+        interviewId: interviewSession?.interviewId ?? null,
+        onQuestionCountIncrement: interviewSession
+          ? () =>
+              setInterviewSession((prev) =>
+                prev ? { ...prev, questionCount: prev.questionCount + 1 } : null,
+              )
+          : undefined,
       });
-
-      try {
-        const response = await sendMessageStream(numericRoomId, {
-          content: trimmed,
-          model,
-          interviewId: interviewSession?.interviewId ?? null,
-        });
-
-        if (!response.ok) {
-          throw new Error(`SSE 요청 실패 (HTTP ${response.status})`);
-        }
-
-        setLocalMessages((prev) =>
-          prev.map((m) => (m.id === tempUserId ? { ...m, status: 'sent', time: nowTimeLabel() } : m)),
-        );
-
-        let aiText = '';
-
-        await readSseStream(response, ({ event, data }) => {
-          if (event === 'error') {
-            let errorMessage = '메시지 전송에 실패했습니다.';
-            try {
-              const parsed = JSON.parse(data) as { message?: string };
-              if (parsed.message) errorMessage = parsed.message;
-            } catch {
-              errorMessage = data || errorMessage;
-            }
-
-            setStreamingAiId((prev) => (prev === tempAiId ? null : prev));
-            setLocalMessages((prev) =>
-              prev.map((m) =>
-                m.id === tempUserId
-                  ? { ...m, status: 'failed', time: '전송 실패' }
-                  : m.id === tempAiId
-                    ? { ...m, text: errorMessage, time: nowTimeLabel() }
-                    : m,
-              ),
-            );
-            toast(errorMessage);
-            return false;
-          }
-
-          if (event === 'done') {
-            setStreamingAiId((prev) => (prev === tempAiId ? null : prev));
-            setLocalMessages((prev) =>
-              prev.map((m) => {
-                if (m.id === tempUserId) {
-                  return { ...m, status: 'sent', time: nowTimeLabel() };
-                }
-                if (m.id === tempAiId) {
-                  return { ...m, text: aiText, time: nowTimeLabel() };
-                }
-                return m;
-              }),
-            );
-
-            if (interviewSession) {
-              const newCount = interviewSession.questionCount + 1;
-              setInterviewSession((prev) => (prev ? { ...prev, questionCount: newCount } : null));
-            }
-
-            return false;
-          }
-
-          aiText += data;
-          setLocalMessages((prev) =>
-            prev.map((m) => (m.id === tempAiId ? { ...m, text: aiText } : m)),
-          );
-
-          return true;
-        });
-      } catch {
-        setStreamingAiId((prev) => (prev === tempAiId ? null : prev));
-        setLocalMessages((prev) =>
-          prev
-            .filter((m) => m.id !== tempAiId)
-            .map((m) => (m.id === tempUserId ? { ...m, status: 'failed', time: '전송 실패' } : m)),
-        );
-        toast('메시지 전송에 실패했습니다.');
-      } finally {
-        setIsSending(false);
-      }
     },
-    [interviewSession, model, numericRoomId],
+    [interviewSession, model, sendMessage],
   );
 
   const handleRetry = useCallback(
@@ -386,15 +190,18 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
       const failedMessage = localMessages.find((m) => m.id === messageId);
       if (!failedMessage) return;
 
-      setLocalMessages((prev) => prev.filter((m) => m.id !== messageId));
+      removeLocalMessage(messageId);
       handleSendMessage(failedMessage.text);
     },
-    [localMessages, handleSendMessage],
+    [localMessages, handleSendMessage, removeLocalMessage],
   );
 
-  const handleDeleteFailed = useCallback((messageId: string) => {
-    setLocalMessages((prev) => prev.filter((m) => m.id !== messageId));
-  }, []);
+  const handleDeleteFailed = useCallback(
+    (messageId: string) => {
+      removeLocalMessage(messageId);
+    },
+    [removeLocalMessage],
+  );
 
   const handleStartInterview = useCallback(
     (type: InterviewType) => {
@@ -420,66 +227,12 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
               return;
             }
 
-            const tempAiId = `temp-ai-interview-${Date.now()}`;
-            setStreamingAiId(tempAiId);
-            setLocalMessages((prev) => [
-              ...prev,
-              {
-                id: tempAiId,
-                role: 'AI',
-                text: '',
-                time: '질문 생성 중...',
-              },
-            ]);
-
-            try {
-              const streamResponse = await sendMessageStream(numericRoomId, {
-                content: '면접을 시작해주세요.',
-                model,
-                interviewId: response.interviewId,
-              });
-
-              if (!streamResponse.ok) {
-                throw new Error(`SSE 요청 실패 (HTTP ${streamResponse.status})`);
-              }
-
-              let aiText = '';
-
-              await readSseStream(streamResponse, ({ event, data }) => {
-                if (event === 'error') {
-                  setStreamingAiId((prev) => (prev === tempAiId ? null : prev));
-                  setLocalMessages((prev) =>
-                    prev.map((m) =>
-                      m.id === tempAiId
-                        ? { ...m, text: '질문 생성에 실패했습니다.', time: nowTimeLabel() }
-                        : m,
-                    ),
-                  );
-                  return false;
-                }
-
-                if (event === 'done') {
-                  setStreamingAiId((prev) => (prev === tempAiId ? null : prev));
-                  setLocalMessages((prev) =>
-                    prev.map((m) =>
-                      m.id === tempAiId ? { ...m, text: aiText, time: nowTimeLabel() } : m,
-                    ),
-                  );
-                  setInterviewSession((prev) => (prev ? { ...prev, questionCount: 1 } : null));
-                  return false;
-                }
-
-                aiText += data;
-                setLocalMessages((prev) =>
-                  prev.map((m) => (m.id === tempAiId ? { ...m, text: aiText } : m)),
-                );
-                return true;
-              });
-            } catch {
-              setStreamingAiId((prev) => (prev === tempAiId ? null : prev));
-              setLocalMessages((prev) => prev.filter((m) => m.id !== tempAiId));
-              toast('면접 질문 생성에 실패했습니다.');
-            }
+            await streamInitialQuestion({
+              model,
+              interviewId: response.interviewId,
+              onQuestionCountSet: () =>
+                setInterviewSession((prev) => (prev ? { ...prev, questionCount: 1 } : null)),
+            });
           },
           onError: () => {
             toast('면접 모드 시작에 실패했습니다.');
@@ -488,7 +241,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
         },
       );
     },
-    [startInterviewMutation, model, numericRoomId],
+    [startInterviewMutation, model, streamInitialQuestion],
   );
 
   const messages = useMemo<UIMessage[]>(
