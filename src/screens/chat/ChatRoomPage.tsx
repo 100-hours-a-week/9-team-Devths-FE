@@ -28,6 +28,19 @@ import {
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { useAppFrame } from '@/components/layout/AppFrameContext';
 import { useHeader } from '@/components/layout/HeaderContext';
+import {
+  ALLOWED_FILE_MIME_TYPES,
+  ALLOWED_IMAGE_MIME_TYPES,
+  BOTTOM_CONFIRM_THRESHOLD,
+  DELETE_LONG_PRESS_MS,
+  LONG_MESSAGE_THRESHOLD,
+  MAX_ATTACHMENT_FILE_SIZE_BYTES,
+  MAX_IMAGE_ATTACHMENTS_PER_PICK,
+  MESSAGE_PAGE_SIZE,
+  MESSAGE_SEND_DESTINATION,
+  PDF_FILE_EXTENSION_REGEX,
+  TOP_FETCH_THRESHOLD,
+} from '@/constants/chat';
 import { fetchChatMessages } from '@/lib/api/chatMessages';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { applyRealtimeRoomMessage } from '@/lib/chat/realtimeMessageCache';
@@ -52,24 +65,6 @@ type ChatRoomPageProps = Readonly<{
   roomId: number | null;
   mode?: 'room' | 'settings';
 }>;
-
-const MESSAGE_PAGE_SIZE = 20;
-const LONG_MESSAGE_THRESHOLD = 300;
-const TOP_FETCH_THRESHOLD = 80;
-const BOTTOM_CONFIRM_THRESHOLD = 32;
-const DELETE_LONG_PRESS_MS = 2000;
-const MESSAGE_SEND_DESTINATION = '/app/chat/message';
-const MAX_IMAGE_ATTACHMENTS_PER_PICK = 9;
-const MAX_ATTACHMENT_FILE_SIZE_BYTES = 5 * 1024 * 1024;
-const ALLOWED_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
-const ALLOWED_FILE_MIME_TYPES = new Set([
-  'application/pdf',
-  'application/x-pdf',
-  'application/acrobat',
-  'applications/vnd.pdf',
-  'text/pdf',
-]);
-const PDF_FILE_EXTENSION_REGEX = /\.pdf$/i;
 
 function isPdfFile(file: File): boolean {
   const mimeType = file.type.trim().toLowerCase();

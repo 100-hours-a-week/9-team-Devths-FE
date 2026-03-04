@@ -9,15 +9,13 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
+import { ROOM_NAME_MAX_LENGTH, ROOM_PAGE_SIZE } from '@/constants/chat';
 import { fetchChatRooms } from '@/lib/api/chatRooms';
 import { chatKeys } from '@/lib/hooks/chat/queryKeys';
 import { useChatRoomsInfiniteQuery } from '@/lib/hooks/chat/useChatRoomsInfiniteQuery';
 
 import type { ChatRoomListResponse } from '@/lib/api/chatRooms';
 import type { RejoinedRoomUiOverrideMap } from '@/lib/chat/rejoinedRoomUiCache';
-
-const ROOM_PAGE_SIZE = 10;
-const ROOM_NAME_MAX_LENGTH = 6;
 
 function parseKstDateTime(value: string): Date {
   const normalized = value.includes(' ') ? value.replace(' ', 'T') : value;
