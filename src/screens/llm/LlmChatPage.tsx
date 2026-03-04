@@ -23,6 +23,8 @@ type Props = {
 };
 
 const DEFAULT_MODEL: LlmModel = 'GEMINI';
+const BLOCK_MSG_STREAMING = '답변 생성 중에는 이동할 수 없습니다.';
+const BLOCK_MSG_INTERVIEW = '면접 진행 중에는 이동할 수 없습니다.';
 function parseModel(value: string | null | undefined): LlmModel {
   if (value === 'GEMINI' || value === 'VLLM') {
     return value;
@@ -124,11 +126,9 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
       session.uiState === 'ending';
     const shouldBlock = Boolean(streamingAiId) || isInterviewInProgress;
 
-    setBlockMessage(
-      streamingAiId
-        ? '답변 생성 중에는 이동할 수 없습니다.'
-        : '면접 진행 중에는 이동할 수 없습니다.',
-    );
+    if (shouldBlock) {
+      setBlockMessage(streamingAiId ? BLOCK_MSG_STREAMING : BLOCK_MSG_INTERVIEW);
+    }
     setBlocked(shouldBlock);
     return () => setBlocked(false);
   }, [session.uiState, setBlocked, setBlockMessage, streamingAiId]);
