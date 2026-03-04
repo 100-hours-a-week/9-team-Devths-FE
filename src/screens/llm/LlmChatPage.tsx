@@ -6,6 +6,7 @@ import { useAppFrame } from '@/components/layout/AppFrameContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import LlmComposer from '@/components/llm/chat/LlmComposer';
 import LlmMessageList from '@/components/llm/chat/LlmMessageList';
+import { BLOCK_MSG_INTERVIEW, BLOCK_MSG_STREAMING, DEFAULT_LLM_MODEL } from '@/constants/llm';
 import { useInterviewEvaluation } from '@/lib/hooks/llm/useInterviewEvaluation';
 import { useInterviewSession } from '@/lib/hooks/llm/useInterviewSession';
 import { useLlmStreaming } from '@/lib/hooks/llm/useLlmStreaming';
@@ -22,14 +23,11 @@ type Props = {
   initialModel?: string | null;
 };
 
-const DEFAULT_MODEL: LlmModel = 'GEMINI';
-const BLOCK_MSG_STREAMING = '답변 생성 중에는 이동할 수 없습니다.';
-const BLOCK_MSG_INTERVIEW = '면접 진행 중에는 이동할 수 없습니다.';
 function parseModel(value: string | null | undefined): LlmModel {
   if (value === 'GEMINI' || value === 'VLLM') {
     return value;
   }
-  return DEFAULT_MODEL;
+  return DEFAULT_LLM_MODEL;
 }
 
 export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialModel }: Props) {
