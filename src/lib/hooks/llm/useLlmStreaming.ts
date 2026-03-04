@@ -255,11 +255,7 @@ export function useLlmStreaming(numericRoomId: number) {
   );
 
   const streamInitialQuestion = useCallback(
-    async (opts: {
-      model: LlmModel;
-      interviewId: number;
-      onQuestionCountSet?: () => void;
-    }) => {
+    async (opts: { model: LlmModel; interviewId: number; onQuestionCountSet?: () => void }) => {
       const tempAiId = `temp-ai-interview-${Date.now()}`;
       setStreamingAiId(tempAiId);
       setLocalMessages((prev) => [
