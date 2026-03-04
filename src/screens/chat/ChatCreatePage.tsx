@@ -8,15 +8,13 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 
 import { useHeader } from '@/components/layout/HeaderContext';
 import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
+import { MAX_NICKNAME_LENGTH, MIN_NICKNAME_LENGTH } from '@/constants/chat';
 import { applyRejoinedRoomUiOverride } from '@/lib/chat/rejoinedRoomUiCache';
 import { useCreatePrivateRoomMutation } from '@/lib/hooks/chat/useCreatePrivateRoomMutation';
 import { useMyFollowingsInfiniteQuery } from '@/lib/hooks/chat/useMyFollowingsInfiniteQuery';
 import { toast } from '@/lib/toast/store';
 
 import type { ChatFollowingSummaryResponse } from '@/lib/api/chatFollowings';
-
-const MIN_NICKNAME_LENGTH = 2;
-const MAX_NICKNAME_LENGTH = 10;
 
 function sortByNickname(a: ChatFollowingSummaryResponse, b: ChatFollowingSummaryResponse) {
   const nicknameCompare = a.nickname.localeCompare(b.nickname, 'ko');

@@ -12,7 +12,14 @@ import BoardUserMiniProfile from '@/components/board/BoardUserMiniProfile';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
-import { BOARD_TAG_MAX, POPULAR_MIN_LIKES } from '@/constants/board';
+import {
+  BOARD_PAGE_SIZE,
+  BOARD_TAG_MAX,
+  FOLLOWINGS_FETCH_SIZE,
+  POPULAR_MIN_LIKES,
+  PULL_MAX,
+  PULL_THRESHOLD,
+} from '@/constants/board';
 import { fetchMyFollowings, fetchUserProfile } from '@/lib/api/users';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { useBoardListInfiniteQuery } from '@/lib/hooks/boards/useBoardListInfiniteQuery';
@@ -24,11 +31,6 @@ import { toast } from '@/lib/toast/store';
 import { parseBoardDateTime } from '@/lib/utils/board';
 
 import type { BoardSort, BoardTag } from '@/types/board';
-
-const PAGE_SIZE = 10;
-const FOLLOWINGS_FETCH_SIZE = 100;
-const PULL_MAX = 120;
-const PULL_THRESHOLD = 72;
 
 export default function BoardListPage() {
   const router = useRouter();
@@ -54,7 +56,7 @@ export default function BoardListPage() {
 
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useBoardListInfiniteQuery({
-      size: PAGE_SIZE,
+      size: BOARD_PAGE_SIZE,
       sort,
       tags: selectedTags,
     });

@@ -15,10 +15,9 @@ import {
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
+  startTransition,
   useCallback,
-  type ChangeEvent,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -28,22 +27,29 @@ import {
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { useAppFrame } from '@/components/layout/AppFrameContext';
 import { useHeader } from '@/components/layout/HeaderContext';
-import { fetchChatMessages } from '@/lib/api/chatMessages';
+import {
+  BOTTOM_CONFIRM_THRESHOLD,
+  DELETE_LONG_PRESS_MS,
+  LONG_MESSAGE_THRESHOLD,
+  MESSAGE_PAGE_SIZE,
+  MESSAGE_SEND_DESTINATION,
+} from '@/constants/chat';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { applyRealtimeRoomMessage } from '@/lib/chat/realtimeMessageCache';
 import { applyRealtimeRoomNotification } from '@/lib/chat/realtimeRoomCache';
 import { clearRejoinedRoomUiOverride } from '@/lib/chat/rejoinedRoomUiCache';
 import { chatStompManager } from '@/lib/chat/stompManager';
 import { chatKeys } from '@/lib/hooks/chat/queryKeys';
+import { useAttachmentHandler } from '@/lib/hooks/chat/useAttachmentHandler';
 import { useChatMessagesInfiniteQuery } from '@/lib/hooks/chat/useChatMessagesInfiniteQuery';
 import { useChatRoomDetailQuery } from '@/lib/hooks/chat/useChatRoomDetailQuery';
+import { useChatScroll } from '@/lib/hooks/chat/useChatScroll';
 import { useChatSubscriptions } from '@/lib/hooks/chat/useChatSubscriptions';
 import { useDeleteMessageMutation } from '@/lib/hooks/chat/useDeleteMessageMutation';
 import { useLeaveChatRoomMutation } from '@/lib/hooks/chat/useLeaveChatRoomMutation';
-import { usePatchLastReadMutation } from '@/lib/hooks/chat/usePatchLastReadMutation';
 import { usePutRoomSettingsMutation } from '@/lib/hooks/chat/usePutRoomSettingsMutation';
 import { toast } from '@/lib/toast/store';
-import { uploadFile } from '@/lib/upload/uploadFile';
+import { formatDateKey, formatMessageTime, formatStickyDateLabel } from '@/lib/utils/chatDate';
 
 import type { ChatMessageResponse, SendChatMessagePayload } from '@/lib/api/chatMessages';
 import type { IMessage } from '@stomp/stompjs';
@@ -52,42 +58,6 @@ type ChatRoomPageProps = Readonly<{
   roomId: number | null;
   mode?: 'room' | 'settings';
 }>;
-
-const MESSAGE_PAGE_SIZE = 20;
-const LONG_MESSAGE_THRESHOLD = 300;
-const TOP_FETCH_THRESHOLD = 80;
-const BOTTOM_CONFIRM_THRESHOLD = 32;
-const DELETE_LONG_PRESS_MS = 2000;
-const MESSAGE_SEND_DESTINATION = '/app/chat/message';
-const MAX_IMAGE_ATTACHMENTS_PER_PICK = 9;
-const MAX_ATTACHMENT_FILE_SIZE_BYTES = 5 * 1024 * 1024;
-const ALLOWED_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
-const ALLOWED_FILE_MIME_TYPES = new Set([
-  'application/pdf',
-  'application/x-pdf',
-  'application/acrobat',
-  'applications/vnd.pdf',
-  'text/pdf',
-]);
-const PDF_FILE_EXTENSION_REGEX = /\.pdf$/i;
-
-function isPdfFile(file: File): boolean {
-  const mimeType = file.type.trim().toLowerCase();
-  if (mimeType && ALLOWED_FILE_MIME_TYPES.has(mimeType)) {
-    return true;
-  }
-
-  return PDF_FILE_EXTENSION_REGEX.test(file.name);
-}
-
-function resolveAttachmentMimeType(file: File, isImageAttachment: boolean): string {
-  if (isImageAttachment) {
-    return file.type || 'application/octet-stream';
-  }
-
-  // Some environments return empty/variant MIME for PDF. Normalize to application/pdf.
-  return isPdfFile(file) ? 'application/pdf' : file.type || 'application/octet-stream';
-}
 
 function resolveChatAssetUrl(s3KeyOrUrl: string | null): string | null {
   if (!s3KeyOrUrl) {
@@ -120,56 +90,6 @@ function resolveTitle(roomName: string | null, title: string | null) {
   }
 
   return '채팅방';
-}
-
-function parseKstDateTime(value: string): Date {
-  const normalized = value.includes(' ') ? value.replace(' ', 'T') : value;
-  const hasTimezone = /([zZ]|[+-]\d{2}:\d{2})$/.test(normalized);
-  if (hasTimezone) {
-    return new Date(normalized);
-  }
-
-  // Backend chat timestamps are currently serialized without timezone info but represent UTC.
-  return new Date(`${normalized}Z`);
-}
-
-function formatDateKey(value: string): string {
-  const date = parseKstDateTime(value);
-  if (Number.isNaN(date.getTime())) {
-    return value.slice(0, 10);
-  }
-
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function formatStickyDateLabel(value: string): string {
-  const date = parseKstDateTime(value);
-  if (Number.isNaN(date.getTime())) {
-    return value.slice(0, 10);
-  }
-
-  return date.toLocaleDateString('ko-KR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    weekday: 'short',
-  });
-}
-
-function formatMessageTime(value: string): string {
-  const date = parseKstDateTime(value);
-  if (Number.isNaN(date.getTime())) {
-    return '';
-  }
-
-  return date.toLocaleTimeString('ko-KR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
 }
 
 function resolveMessageContent(message: ChatMessageResponse): string {
@@ -211,11 +131,6 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
   const [isLeavingRoom, setIsLeavingRoom] = useState(false);
   const [roomNameInput, setRoomNameInput] = useState('');
   const [isAlarmOnInput, setIsAlarmOnInput] = useState(true);
-  const [isAttachmentUploading, setIsAttachmentUploading] = useState(false);
-  const [isAttachmentPickerOpen, setIsAttachmentPickerOpen] = useState(false);
-  const [attachmentValidationMessage, setAttachmentValidationMessage] = useState<string | null>(
-    null,
-  );
   const [imagePreview, setImagePreview] = useState<{
     src: string;
     alt: string;
@@ -223,21 +138,8 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
   const isSettingsPage = mode === 'settings';
   const activeRoomId = isLeavingRoom ? null : roomId;
   const { data, isLoading, isError, refetch } = useChatRoomDetailQuery(activeRoomId);
-  const messageListRef = useRef<HTMLDivElement>(null);
-  const imageAttachmentInputRef = useRef<HTMLInputElement>(null);
-  const fileAttachmentInputRef = useRef<HTMLInputElement>(null);
-  const unreadDividerRef = useRef<HTMLDivElement>(null);
   const deleteLongPressTimerRef = useRef<number | null>(null);
   const isMessageInputComposingRef = useRef(false);
-  const initialScrollResyncTimerRef = useRef<number | null>(null);
-  const hasInitialScrollRef = useRef(false);
-  const hasNoUnreadInitialBottomResyncedRef = useRef(false);
-  const isLoadingOlderRef = useRef(false);
-  const prevScrollHeightRef = useRef(0);
-  const hasPatchedOnEntryRef = useRef(false);
-  const lastPatchedMsgIdRef = useRef<number | null>(null);
-  const attachmentEchoFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const patchLastReadMutation = usePatchLastReadMutation(roomId ?? 0);
   const deleteMessageMutation = useDeleteMessageMutation(roomId ?? 0);
   const putRoomSettingsMutation = usePutRoomSettingsMutation(roomId ?? 0);
   const leaveChatRoomMutation = useLeaveChatRoomMutation(roomId ?? 0);
@@ -289,6 +191,34 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
 
   const isPrivateRoom = data?.type === 'PRIVATE';
 
+  const { messageListRef, unreadDividerRef, handleMessageScroll, patchLastReadOnce } =
+    useChatScroll({
+      roomId,
+      messages,
+      unreadStartIndex,
+      serverLastReadMsgId,
+      latestMessageId,
+      isMessagesLoading,
+      isMessagesError,
+      fetchNextPage,
+      hasNextPage,
+      isFetchingNextPage,
+    });
+
+  const {
+    isAttachmentUploading,
+    isAttachmentPickerOpen,
+    setIsAttachmentPickerOpen,
+    attachmentValidationMessage,
+    setAttachmentValidationMessage,
+    imageAttachmentInputRef,
+    fileAttachmentInputRef,
+    handleAttachmentButtonClick,
+    handlePickImageAttachments,
+    handlePickFileAttachment,
+    handleAttachmentChange,
+  } = useAttachmentHandler({ roomId, queryClient });
+
   const toggleExpandedMessage = useCallback((messageId: number) => {
     setExpandedMessageIds((prev) => {
       const next = new Set(prev);
@@ -300,29 +230,6 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
       return next;
     });
   }, []);
-
-  const patchLastReadOnce = useCallback(
-    (targetMessageId: number) => {
-      if (roomId === null) {
-        return;
-      }
-
-      if (targetMessageId <= 0 || patchLastReadMutation.isPending) {
-        return;
-      }
-
-      if (lastPatchedMsgIdRef.current !== null && targetMessageId <= lastPatchedMsgIdRef.current) {
-        return;
-      }
-
-      patchLastReadMutation.mutate(targetMessageId, {
-        onSuccess: () => {
-          lastPatchedMsgIdRef.current = targetMessageId;
-        },
-      });
-    },
-    [patchLastReadMutation, roomId],
-  );
 
   const handleRealtimeRoomMessage = useCallback(
     (frame: IMessage) => {
@@ -372,7 +279,7 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
         });
       }
     },
-    [currentUserId, patchLastReadOnce, queryClient, roomId],
+    [currentUserId, messageListRef, patchLastReadOnce, queryClient, roomId],
   );
 
   const handleSendMessage = useCallback(
@@ -404,147 +311,6 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
       setMessageInput('');
     },
     [messageInput, roomId],
-  );
-
-  const handleAttachmentButtonClick = useCallback(() => {
-    if (isAttachmentUploading) {
-      return;
-    }
-
-    setIsAttachmentPickerOpen(true);
-  }, [isAttachmentUploading]);
-
-  const openAttachmentValidationModal = useCallback((message: string) => {
-    setIsAttachmentPickerOpen(false);
-    setAttachmentValidationMessage(message);
-  }, []);
-
-  const handlePickImageAttachments = useCallback(() => {
-    if (isAttachmentUploading) {
-      return;
-    }
-
-    setIsAttachmentPickerOpen(false);
-    imageAttachmentInputRef.current?.click();
-  }, [isAttachmentUploading]);
-
-  const handlePickFileAttachment = useCallback(() => {
-    if (isAttachmentUploading) {
-      return;
-    }
-
-    setIsAttachmentPickerOpen(false);
-    fileAttachmentInputRef.current?.click();
-  }, [isAttachmentUploading]);
-
-  const handleAttachmentChange = useCallback(
-    async (event: ChangeEvent<HTMLInputElement>) => {
-      const selectedFiles = Array.from(event.target.files ?? []);
-      event.target.value = '';
-
-      if (selectedFiles.length === 0 || roomId === null || isAttachmentUploading) {
-        return;
-      }
-
-      const imageFiles = selectedFiles.filter((file) => ALLOWED_IMAGE_MIME_TYPES.has(file.type));
-      const nonImageFiles = selectedFiles.filter(
-        (file) => !ALLOWED_IMAGE_MIME_TYPES.has(file.type),
-      );
-
-      if (imageFiles.length > 0 && nonImageFiles.length > 0) {
-        openAttachmentValidationModal('이미지와 파일은 동시에 첨부할 수 없습니다.');
-        return;
-      }
-
-      if (imageFiles.length > MAX_IMAGE_ATTACHMENTS_PER_PICK) {
-        openAttachmentValidationModal(
-          `이미지는 한 번에 최대 ${MAX_IMAGE_ATTACHMENTS_PER_PICK}장까지 첨부할 수 있습니다.`,
-        );
-        return;
-      }
-
-      if (nonImageFiles.length > 1) {
-        openAttachmentValidationModal('파일은 한 번에 1개만 첨부할 수 있습니다.');
-        return;
-      }
-
-      for (const file of selectedFiles) {
-        if (file.size > MAX_ATTACHMENT_FILE_SIZE_BYTES) {
-          openAttachmentValidationModal('파일 용량은 5MB 이하만 첨부할 수 있습니다.');
-          return;
-        }
-      }
-
-      if (nonImageFiles.length === 1 && !isPdfFile(nonImageFiles[0]!)) {
-        openAttachmentValidationModal('파일 첨부는 PDF 형식만 지원합니다.');
-        return;
-      }
-
-      setIsAttachmentUploading(true);
-
-      try {
-        for (const file of selectedFiles) {
-          const isImageAttachment = ALLOWED_IMAGE_MIME_TYPES.has(file.type);
-          const normalizedMimeType = resolveAttachmentMimeType(file, isImageAttachment);
-
-          const uploaded = await uploadFile({
-            file,
-            category: 'AI_CHAT_ATTACHMENT',
-            refType: 'CHATROOM',
-            refId: roomId,
-            mimeType: normalizedMimeType,
-          });
-
-          const payload: SendChatMessagePayload = isImageAttachment
-            ? {
-                roomId,
-                type: 'IMAGE',
-                content: null,
-                s3Key: uploaded.s3Key,
-              }
-            : {
-                roomId,
-                type: 'PDF',
-                content: uploaded.s3Key,
-                s3Key: uploaded.s3Key,
-              };
-
-          const published = chatStompManager.publishJson(MESSAGE_SEND_DESTINATION, payload);
-          if (!published) {
-            toast('첨부 메시지 전송에 실패했습니다. 잠시 후 다시 시도해 주세요.');
-            return;
-          }
-
-          // STOMP echo fallback: 백엔드가 FILE/IMAGE 메시지를 브로드캐스트하지 않는 경우
-          // 2초 후 REST API로 최신 메시지를 가져와 캐시에 병합합니다.
-          if (attachmentEchoFallbackTimerRef.current !== null) {
-            clearTimeout(attachmentEchoFallbackTimerRef.current);
-          }
-          const fallbackRoomId = roomId;
-          attachmentEchoFallbackTimerRef.current = setTimeout(() => {
-            attachmentEchoFallbackTimerRef.current = null;
-            void fetchChatMessages(fallbackRoomId, { size: MESSAGE_PAGE_SIZE }).then((result) => {
-              if (!result.ok || !result.json || !('data' in result.json) || !result.json.data) {
-                return;
-              }
-              for (const msg of result.json.data.messages) {
-                applyRealtimeRoomMessage(queryClient, {
-                  roomId: fallbackRoomId,
-                  size: MESSAGE_PAGE_SIZE,
-                  message: msg,
-                });
-              }
-            });
-          }, 2000);
-        }
-      } catch (error) {
-        const err = error as Error;
-        toast(err.message || '파일 업로드에 실패했습니다.');
-      } finally {
-        setIsAttachmentUploading(false);
-      }
-    },
-    [isAttachmentUploading, openAttachmentValidationModal, queryClient, roomId],
   );
 
   useChatSubscriptions({
@@ -717,18 +483,10 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
   ]);
 
   useEffect(() => {
-    if (attachmentEchoFallbackTimerRef.current !== null) {
-      clearTimeout(attachmentEchoFallbackTimerRef.current);
-      attachmentEchoFallbackTimerRef.current = null;
-    }
-    hasInitialScrollRef.current = false;
-    hasNoUnreadInitialBottomResyncedRef.current = false;
-    isLoadingOlderRef.current = false;
-    prevScrollHeightRef.current = 0;
-    hasPatchedOnEntryRef.current = false;
-    lastPatchedMsgIdRef.current = null;
-    setIsLeavingRoom(false);
-    setMessageInput('');
+    startTransition(() => {
+      setIsLeavingRoom(false);
+      setMessageInput('');
+    });
   }, [roomId]);
 
   useEffect(() => {
@@ -743,143 +501,17 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
   }, [queryClient, roomId]);
 
   useEffect(() => {
-    setRoomNameInput(data?.roomName ?? '');
-    setIsAlarmOnInput(data?.isAlarmOn ?? true);
+    startTransition(() => {
+      setRoomNameInput(data?.roomName ?? '');
+      setIsAlarmOnInput(data?.isAlarmOn ?? true);
+    });
   }, [data?.isAlarmOn, data?.roomName, roomId]);
 
   useEffect(() => {
     return () => {
       clearDeleteLongPressTimer();
-      if (initialScrollResyncTimerRef.current !== null) {
-        window.clearTimeout(initialScrollResyncTimerRef.current);
-        initialScrollResyncTimerRef.current = null;
-      }
     };
   }, [clearDeleteLongPressTimer]);
-
-  useEffect(() => {
-    if (serverLastReadMsgId === null) {
-      return;
-    }
-
-    if (lastPatchedMsgIdRef.current === null) {
-      lastPatchedMsgIdRef.current = serverLastReadMsgId;
-    }
-  }, [serverLastReadMsgId]);
-
-  useLayoutEffect(() => {
-    const container = messageListRef.current;
-    if (!container || messages.length === 0) {
-      return;
-    }
-
-    if (!hasInitialScrollRef.current) {
-      if (unreadStartIndex >= 0 && unreadDividerRef.current) {
-        const dividerTop = unreadDividerRef.current.offsetTop;
-        container.scrollTop = Math.max(0, dividerTop - container.clientHeight * 0.35);
-      } else {
-        container.scrollTop = container.scrollHeight;
-        requestAnimationFrame(() => {
-          const currentContainer = messageListRef.current;
-          if (!currentContainer) {
-            return;
-          }
-          currentContainer.scrollTop = currentContainer.scrollHeight;
-        });
-        if (initialScrollResyncTimerRef.current !== null) {
-          window.clearTimeout(initialScrollResyncTimerRef.current);
-        }
-        initialScrollResyncTimerRef.current = window.setTimeout(() => {
-          const currentContainer = messageListRef.current;
-          if (!currentContainer) {
-            return;
-          }
-          currentContainer.scrollTop = currentContainer.scrollHeight;
-          initialScrollResyncTimerRef.current = null;
-        }, 300);
-      }
-      hasInitialScrollRef.current = true;
-      return;
-    }
-
-    if (isLoadingOlderRef.current) {
-      const newScrollHeight = container.scrollHeight;
-      const scrollDiff = newScrollHeight - prevScrollHeightRef.current;
-      container.scrollTop += scrollDiff;
-      isLoadingOlderRef.current = false;
-    }
-  }, [messages, unreadStartIndex]);
-
-  useEffect(() => {
-    if (!hasInitialScrollRef.current) {
-      return;
-    }
-
-    if (hasNoUnreadInitialBottomResyncedRef.current) {
-      return;
-    }
-
-    if (messages.length === 0 || unreadStartIndex >= 0) {
-      return;
-    }
-
-    const container = messageListRef.current;
-    if (!container) {
-      return;
-    }
-
-    hasNoUnreadInitialBottomResyncedRef.current = true;
-
-    const timerId = window.setTimeout(() => {
-      const currentContainer = messageListRef.current;
-      if (!currentContainer) {
-        return;
-      }
-      currentContainer.scrollTop = currentContainer.scrollHeight;
-    }, 150);
-
-    return () => {
-      window.clearTimeout(timerId);
-    };
-  }, [messages.length, unreadStartIndex]);
-
-  useEffect(() => {
-    if (roomId === null || isMessagesLoading || isMessagesError || latestMessageId === null) {
-      return;
-    }
-
-    if (hasPatchedOnEntryRef.current) {
-      return;
-    }
-
-    hasPatchedOnEntryRef.current = true;
-    patchLastReadOnce(latestMessageId);
-  }, [isMessagesError, isMessagesLoading, latestMessageId, patchLastReadOnce, roomId]);
-
-  const handleMessageScroll = useCallback(() => {
-    const container = messageListRef.current;
-    if (!container) {
-      return;
-    }
-
-    const distanceFromBottom =
-      container.scrollHeight - (container.scrollTop + container.clientHeight);
-    if (distanceFromBottom <= BOTTOM_CONFIRM_THRESHOLD && latestMessageId !== null) {
-      patchLastReadOnce(latestMessageId);
-    }
-
-    if (!hasNextPage || isFetchingNextPage) {
-      return;
-    }
-
-    if (container.scrollTop > TOP_FETCH_THRESHOLD) {
-      return;
-    }
-
-    prevScrollHeightRef.current = container.scrollHeight;
-    isLoadingOlderRef.current = true;
-    void fetchNextPage();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage, latestMessageId, patchLastReadOnce]);
 
   if (roomId === null) {
     return (

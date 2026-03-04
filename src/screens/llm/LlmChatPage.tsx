@@ -6,6 +6,7 @@ import { useAppFrame } from '@/components/layout/AppFrameContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import LlmComposer from '@/components/llm/chat/LlmComposer';
 import LlmMessageList from '@/components/llm/chat/LlmMessageList';
+import { BLOCK_MSG_INTERVIEW, BLOCK_MSG_STREAMING, DEFAULT_LLM_MODEL } from '@/constants/llm';
 import { useInterviewEvaluation } from '@/lib/hooks/llm/useInterviewEvaluation';
 import { useInterviewSession } from '@/lib/hooks/llm/useInterviewSession';
 import { useLlmStreaming } from '@/lib/hooks/llm/useLlmStreaming';
@@ -22,12 +23,11 @@ type Props = {
   initialModel?: string | null;
 };
 
-const DEFAULT_MODEL: LlmModel = 'GEMINI';
 function parseModel(value: string | null | undefined): LlmModel {
   if (value === 'GEMINI' || value === 'VLLM') {
     return value;
   }
-  return DEFAULT_MODEL;
+  return DEFAULT_LLM_MODEL;
 }
 
 export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialModel }: Props) {
@@ -124,11 +124,9 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
       session.uiState === 'ending';
     const shouldBlock = Boolean(streamingAiId) || isInterviewInProgress;
 
-    setBlockMessage(
-      streamingAiId
-        ? '답변 생성 중에는 이동할 수 없습니다.'
-        : '면접 진행 중에는 이동할 수 없습니다.',
-    );
+    if (shouldBlock) {
+      setBlockMessage(streamingAiId ? BLOCK_MSG_STREAMING : BLOCK_MSG_INTERVIEW);
+    }
     setBlocked(shouldBlock);
     return () => setBlocked(false);
   }, [session.uiState, setBlocked, setBlockMessage, streamingAiId]);
