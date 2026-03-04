@@ -10,6 +10,7 @@ import { endInterviewStream, getCurrentInterview, sendMessageStream } from '@/li
 import { useMessagesInfiniteQuery } from '@/lib/hooks/llm/useMessagesInfiniteQuery';
 import { useStartInterviewMutation } from '@/lib/hooks/llm/useStartInterviewMutation';
 import { toast } from '@/lib/toast/store';
+import { nowTimeLabel } from '@/lib/utils/datetime';
 import { toUIMessage } from '@/lib/utils/llm';
 import { readSseStream } from '@/lib/utils/sse';
 
@@ -191,12 +192,6 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
         }
 
         let evalText = '';
-        const nowLabel = () =>
-          new Date().toLocaleTimeString('ko-KR', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true,
-          });
 
         await readSseStream(response, ({ event, data }) => {
           if (event === 'error') {
@@ -212,7 +207,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
             setLocalMessages((prev) =>
               prev.map((m) => {
                 if (m.id === evalId) {
-                  return { ...m, text: errorMessage, time: nowLabel() };
+                  return { ...m, text: errorMessage, time: nowTimeLabel() };
                 }
                 if (m.id === userMessageId) {
                   return { ...m, status: 'failed', time: '전송 실패' };
@@ -230,7 +225,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
           if (event === 'done') {
             setStreamingAiId((prev) => (prev === evalId ? null : prev));
             setLocalMessages((prev) =>
-              prev.map((m) => (m.id === evalId ? { ...m, text: evalText, time: nowLabel() } : m)),
+              prev.map((m) => (m.id === evalId ? { ...m, text: evalText, time: nowTimeLabel() } : m)),
             );
             if (!isRetry) {
               setInterviewSession(null);
@@ -275,13 +270,6 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
 
       setIsSending(true);
 
-      const nowLabel = () =>
-        new Date().toLocaleTimeString('ko-KR', {
-          hour: 'numeric',
-          minute: '2-digit',
-          hour12: true,
-        });
-
       const tempUserId = `temp-user-${Date.now()}`;
       const tempAiId = `temp-ai-${Date.now()}`;
 
@@ -289,7 +277,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
         id: tempUserId,
         role: 'USER',
         text: trimmed,
-        time: nowLabel(),
+        time: nowTimeLabel(),
         status: 'sent',
       };
 
@@ -320,7 +308,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
         }
 
         setLocalMessages((prev) =>
-          prev.map((m) => (m.id === tempUserId ? { ...m, status: 'sent', time: nowLabel() } : m)),
+          prev.map((m) => (m.id === tempUserId ? { ...m, status: 'sent', time: nowTimeLabel() } : m)),
         );
 
         let aiText = '';
@@ -341,7 +329,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
                 m.id === tempUserId
                   ? { ...m, status: 'failed', time: '전송 실패' }
                   : m.id === tempAiId
-                    ? { ...m, text: errorMessage, time: nowLabel() }
+                    ? { ...m, text: errorMessage, time: nowTimeLabel() }
                     : m,
               ),
             );
@@ -354,10 +342,10 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
             setLocalMessages((prev) =>
               prev.map((m) => {
                 if (m.id === tempUserId) {
-                  return { ...m, status: 'sent', time: nowLabel() };
+                  return { ...m, status: 'sent', time: nowTimeLabel() };
                 }
                 if (m.id === tempAiId) {
-                  return { ...m, text: aiText, time: nowLabel() };
+                  return { ...m, text: aiText, time: nowTimeLabel() };
                 }
                 return m;
               }),
@@ -456,12 +444,6 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
               }
 
               let aiText = '';
-              const nowLabel = () =>
-                new Date().toLocaleTimeString('ko-KR', {
-                  hour: 'numeric',
-                  minute: '2-digit',
-                  hour12: true,
-                });
 
               await readSseStream(streamResponse, ({ event, data }) => {
                 if (event === 'error') {
@@ -469,7 +451,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
                   setLocalMessages((prev) =>
                     prev.map((m) =>
                       m.id === tempAiId
-                        ? { ...m, text: '질문 생성에 실패했습니다.', time: nowLabel() }
+                        ? { ...m, text: '질문 생성에 실패했습니다.', time: nowTimeLabel() }
                         : m,
                     ),
                   );
@@ -480,7 +462,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
                   setStreamingAiId((prev) => (prev === tempAiId ? null : prev));
                   setLocalMessages((prev) =>
                     prev.map((m) =>
-                      m.id === tempAiId ? { ...m, text: aiText, time: nowLabel() } : m,
+                      m.id === tempAiId ? { ...m, text: aiText, time: nowTimeLabel() } : m,
                     ),
                   );
                   setInterviewSession((prev) => (prev ? { ...prev, questionCount: 1 } : null));
