@@ -21,6 +21,7 @@ import { userKeys } from '@/lib/hooks/users/queryKeys';
 import { useFollowUserMutation } from '@/lib/hooks/users/useFollowUserMutation';
 import { useUnfollowUserMutation } from '@/lib/hooks/users/useUnfollowUserMutation';
 import { toast } from '@/lib/toast/store';
+import { parseBoardDateTime } from '@/lib/utils/board';
 
 import type { BoardSort, BoardTag } from '@/types/board';
 
@@ -114,7 +115,9 @@ export default function BoardListPage() {
           if (b.stats.likeCount !== a.stats.likeCount) {
             return b.stats.likeCount - a.stats.likeCount;
           }
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            parseBoardDateTime(b.createdAt).getTime() - parseBoardDateTime(a.createdAt).getTime()
+          );
         });
     }
 

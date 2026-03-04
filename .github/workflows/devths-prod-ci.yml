@@ -16,7 +16,6 @@ env:
   # 공통 설정
   NODE_VERSION: '22.x'
   BRANCH_NAME: ${{ github.ref_name }}
-  IS_PROD: ${{ github.ref_name == 'main' }}
   ENV_TYPE: '🚀 운영(PROD)'
 
   # AWS 설정
@@ -165,9 +164,8 @@ jobs:
           echo "📝 빌드용 환경 변수 파일 생성 완료"
           echo "환경: $ENV_NAME"
           echo "파일: .env.production (Docker 빌드는 항상 NODE_ENV=production)"
-          echo ""
-          echo "파일 내용:"
-          cat .env.production
+          ENV_VAR_COUNT=$(grep -c '^[A-Za-z_][A-Za-z0-9_]*=' .env.production || true)
+          echo "변수 개수: $ENV_VAR_COUNT"
 
       - name: Docker 이미지 빌드 및 ECR 푸시
         env:
@@ -190,7 +188,7 @@ jobs:
           ECR_REGISTRY: ${{ env.ECR_REGISTRY }}
           ECR_REPOSITORY: ${{ env.ECR_TARGET_REPO }}
         run: |
-          ARTIFACT_NAME="deploy-$IMAGE_TAG.zip"
+          ARTIFACT_NAME="$IMAGE_TAG.zip"
           echo "artifact_name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
 
           echo "📦 배포 아티팩트를 생성합니다: $ARTIFACT_NAME"
@@ -224,8 +222,8 @@ jobs:
           # NEXT_PUBLIC_ 변수들만 추출하여 런타임용 .env 파일 생성
           grep '^NEXT_PUBLIC_' .env.production > "deploy-temp/$ENV_FILE_NAME" || true
 
-          echo "✅ 생성된 런타임 환경 변수 파일 ($ENV_FILE_NAME):"
-          cat "deploy-temp/$ENV_FILE_NAME"
+          RUNTIME_ENV_COUNT=$(wc -l < "deploy-temp/$ENV_FILE_NAME" | tr -d ' ')
+          echo "✅ 생성된 런타임 환경 변수 파일: $ENV_FILE_NAME (NEXT_PUBLIC_ 변수 ${RUNTIME_ENV_COUNT}개)"
 
           # 압축 파일 생성
           cd deploy-temp
@@ -245,101 +243,19 @@ jobs:
 
           echo "✅ S3 업로드 완료: $S3_URL"
 
-  # 4. CodeDeploy 배포
-  upload:
-    needs: [build]
-    runs-on: ubuntu-22.04
-    timeout-minutes: 15
-    # main은 CI까지만 수행 (배포는 별도 운영 프로세스로 진행)
-    if: github.ref_name != 'main'
-    outputs:
-      deployment_id: ${{ steps.create.outputs.deployment_id }}
-      deployment_status: ${{ steps.result.outputs.status }}
-      deployment_error: ${{ steps.result.outputs.error_message }}
-    steps:
-      - name: AWS 자격 증명 설정
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: CodeDeploy 배포 시작
-        id: create
-        run: |
-          set -euo pipefail
-          echo "🚀 CodeDeploy 배포를 시작합니다..."
-
-          # build job에서 생성된 S3 키 정보가 필요하므로,
-          # 여기서는 최신 아티팩트를 찾아 배포합니다
-          DEPLOYMENT_ID=$(aws deploy create-deployment \
-            --application-name "${{ env.CODEDEPLOY_APP_NAME }}" \
-            --deployment-group-name "${{ env.CODEDEPLOY_DEPLOYMENT_GROUP }}" \
-            --s3-location bucket="${{ env.S3_BUCKET }}",key="${{ needs.build.outputs.s3_key }}",bundleType=zip \
-            --description "Deploy from GitHub Actions - ${{ needs.build.outputs.artifact_name }}" \
-            --query 'deploymentId' \
-            --output text)
-            
-          echo "deployment_id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
-          echo "✅ 배포 ID: $DEPLOYMENT_ID"
-
-      - name: 배포 완료(헬스체크 포함)까지 대기
-        id: wait
-        run: |
-          set -euo pipefail
-          DEPLOYMENT_ID="${{ steps.create.outputs.deployment_id }}"
-          echo "⏳ 배포 상태를 확인합니다 (ID: $DEPLOYMENT_ID)..."
-
-          # 배포 완료까지 대기 (최대 3분)
-          aws deploy wait deployment-successful \
-            --deployment-id "$DEPLOYMENT_ID" \
-            --cli-read-timeout 180
-
-          echo "✅ CodeDeploy 배포가 성공적으로 완료되었습니다!"
-
-      - name: 배포 결과 조회
-        id: result
-        if: always()
-        run: |
-          set -euo pipefail
-
-          DEPLOYMENT_ID="${{ steps.create.outputs.deployment_id }}"
-          if [ -z "${DEPLOYMENT_ID:-}" ]; then
-            echo "status=UNKNOWN" >> $GITHUB_OUTPUT
-            echo "error_message=Failed to create deployment (deployment_id missing)" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          STATUS=$(aws deploy get-deployment --deployment-id "$DEPLOYMENT_ID" --query 'deploymentInfo.status' --output text)
-          ERROR_MESSAGE=$(aws deploy get-deployment --deployment-id "$DEPLOYMENT_ID" --query 'deploymentInfo.errorInformation.message' --output text 2>/dev/null || true)
-
-          if [ "${ERROR_MESSAGE:-}" = "None" ] || [ "${ERROR_MESSAGE:-}" = "null" ]; then
-            ERROR_MESSAGE=""
-          fi
-
-          ERROR_MESSAGE_CLEAN=$(echo "${ERROR_MESSAGE:-}" | tr '\n' ' ' | head -c 400)
-
-          echo "status=$STATUS" >> $GITHUB_OUTPUT
-          echo "error_message=$ERROR_MESSAGE_CLEAN" >> $GITHUB_OUTPUT
-
-          echo "📌 최종 상태: $STATUS"
-          if [ -n "$ERROR_MESSAGE_CLEAN" ]; then
-            echo "📌 에러: $ERROR_MESSAGE_CLEAN"
-          fi
-
-  # 5. CI 디스코드 알림
+  # 운영 배포는 수동 트리거로 작동함
   notify-ci:
     runs-on: ubuntu-22.04
     timeout-minutes: 15
-    needs: [lint, static-analysis, build, upload]
+    needs: [lint, static-analysis, build]
     if: always()
     steps:
-      - name: Discord 알림 전송
+      - name: 운영용 Discord 알림 전송
         uses: sarisia/actions-status-discord@v1
         with:
           webhook: ${{env.DISCORD_WEBHOOK_URL_PROD}}
-          status: ${{ (needs.lint.result == 'success' && needs.static-analysis.result == 'success' && needs.build.result == 'success' && needs.upload.result == 'success') && 'success' || 'failure' }}
-          title: "${{ env.BRANCH_NAME }} CI 결과 [${{ (needs.lint.result == 'success' && needs.static-analysis.result == 'success' && needs.build.result == 'success') && '✅성공' || '❌실패' }}]"
+          status: ${{ (needs.lint.result == 'success' && needs.static-analysis.result == 'success' && needs.build.result == 'success') && 'success' || 'failure' }}
+          title: "운영용 CI 결과 [${{ (needs.lint.result == 'success' && needs.static-analysis.result == 'success' && needs.build.result == 'success') && '✅성공' || '❌실패' }}]"
           description: |
             **커밋 메시지**: ${{ github.event.head_commit.message }}
             **브랜치**: `${{ env.BRANCH_NAME }}`

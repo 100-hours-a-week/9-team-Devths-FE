@@ -3,8 +3,8 @@ name: Devths-FE 운영용 CD 파이프라인
 on:
   workflow_dispatch:
     inputs:
-      artifact_key:
-        description: 'S3 아티팩트 키 (예: FE/main/20250127_123456-abc1234.zip)'
+      ecr_name:
+        description: 'ECR 이미지 태그 (예: 20260301_052438-06f0205)'
         required: true
         type: string
       deployment_comment:
@@ -18,7 +18,7 @@ env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
   AWS_REGION: ${{ secrets.AWS_REGION }}
-  S3_BUCKET: ${{ secrets.AWS_S3_BUCKET_PROD }}
+  S3_BUCKET: ${{ secrets.AWS_S3_BUCKET_PROD_V2 }}
 
   # CodeDeploy 설정
   CODEDEPLOY_APP_NAME: ${{ secrets.CODEDEPLOY_APP_NAME }}
@@ -33,9 +33,10 @@ jobs:
   notify-approval-request:
     name: Notify Approval Request
     runs-on: ubuntu-22.04
-    if: github.ref == 'refs/heads/main'
+    if: ${{ github.ref_name == 'main' }}
     steps:
       - name: 브랜치 검증
+        id: branch-check
         run: |
           if [ "${{ github.ref_name }}" != "main" ]; then
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -44,7 +45,9 @@ jobs:
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             exit 1
           fi
-          echo "✅ 브랜치 검증 완료: main"
+          echo "✅ 브랜치 검증 완료: ${{ github.ref_name }}"
+          REQUESTED_AT="$(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          echo "requested_at=$REQUESTED_AT" >> $GITHUB_OUTPUT
 
       - name: Discord 승인 요청 알림
         uses: sarisia/actions-status-discord@v1
@@ -55,16 +58,17 @@ jobs:
           title: '🔔 운영 배포 승인 요청'
           description: |
             **배포 요청자**: ${{ github.actor }}
-            **요청 시각**: ${{ github.event.created_at }}
+            **요청 시각**: ${{ steps.branch-check.outputs.requested_at }}
 
-            **📦 아티팩트**: `${{ inputs.artifact_key }}`
+            **🐳 Docker 이미지**: `${{ inputs.ecr_name }}`
+            **🪣 S3 Key**: `FE/${{ github.ref_name }}/${{ inputs.ecr_name }}.zip`
             **💬 배포 메모**: ${{ inputs.deployment_comment }}
             **🌍 환경**: 🚀 운영(PROD)
 
             ⏳ **2단계 교차 승인 대기 중...**
 
             **승인 프로세스**:
-            1️⃣ **1차 승인** (DevOps/TechLead) → 2️⃣ **2차 승인** (TeamLead) → 🚀 **배포 실행**
+            1️⃣ **1차 승인** (DevOps) → 2️⃣ **2차 승인** (TechLead) → 🚀 **배포 실행**
 
             **승인 방법**:
             1. [워크플로우 페이지](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})로 이동
@@ -73,7 +77,7 @@ jobs:
 
             **⚠️ 주의**: 2명 모두 승인해야 배포가 시작됩니다.
           color: 16776960
-          username: GitHub FE Approval Bot
+          username: GitHub FE Prod Approval Bot
           avatar_url: ${{ env.DISCORD_AVATAR_URL }}
 
   # 1차 승인
@@ -81,14 +85,42 @@ jobs:
     name: 1차 승인 (DevOps/TechLead)
     runs-on: ubuntu-22.04
     needs: [notify-approval-request]
+    if: ${{ github.ref_name == 'main' }}
     environment:
       name: production-approval-1
     steps:
+      - name: 1차 승인자 조회
+        id: first-approver
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_ENV: production-approval-1
+        run: |
+          set -euo pipefail
+
+          APPROVALS=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/approvals")
+          APPROVER=$(echo "$APPROVALS" | jq -r --arg env_name "$TARGET_ENV" '
+            [
+              .[]
+              | select(.state == "approved")
+              | select(any(.environments[]?; .name == $env_name))
+            ]
+            | last
+            | .user.login // ""
+          ')
+
+          if [ -z "$APPROVER" ]; then
+            APPROVER="${{ github.actor }}"
+          fi
+
+          echo "approver=$APPROVER" >> $GITHUB_OUTPUT
+          APPROVED_AT="$(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          echo "approved_at=$APPROVED_AT" >> $GITHUB_OUTPUT
+
       - name: 1차 승인 완료
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "✅ 1차 승인 완료"
-          echo "승인자: ${{ github.actor }}"
+          echo "승인자: ${{ steps.first-approver.outputs.approver }}"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: Discord 1차 승인 완료 알림
@@ -97,35 +129,63 @@ jobs:
           webhook: ${{ env.DISCORD_WEBHOOK_URL }}
           status: 'success'
           content: '@everyone'
-          title: '✅ 1차 승인 완료 (DevOps/TechLead)'
+          title: '✅ 1차 승인 완료 (DevOps)'
           description: |
-            **1차 승인자**: ${{ github.actor }}
-            **승인 시각**: ${{ github.event.head_commit.timestamp }}
+            **1차 승인자**: ${{ steps.first-approver.outputs.approver }}
+            **승인 시각**: ${{ steps.first-approver.outputs.approved_at }}
 
             **💬 배포 메모**: ${{ inputs.deployment_comment }}
             **🌍 환경**: 🚀 운영(PROD)
 
             ⏳ **2차 승인 대기 중...**
 
-            **다음 단계**: TeamLead의 2차 승인이 필요합니다.
+            **다음 단계**: TechLead의 2차 승인이 필요합니다.
             **승인 방법**: [워크플로우 페이지](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})에서 **Review deployments** 버튼 클릭
           color: 65280
-          username: GitHub FE Approval Bot
+          username: GitHub FE Prod Approval Bot
           avatar_url: ${{ env.DISCORD_AVATAR_URL }}
 
   # 2차 승인
   second-approval:
-    name: 2차 승인 (TeamLead)
+    name: 2차 승인 (TechLead)
     runs-on: ubuntu-22.04
     needs: [first-approval]
+    if: ${{ github.ref_name == 'main' }}
     environment:
       name: production-approval-2
     steps:
+      - name: 2차 승인자 조회
+        id: second-approver
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_ENV: production-approval-2
+        run: |
+          set -euo pipefail
+
+          APPROVALS=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/approvals")
+          APPROVER=$(echo "$APPROVALS" | jq -r --arg env_name "$TARGET_ENV" '
+            [
+              .[]
+              | select(.state == "approved")
+              | select(any(.environments[]?; .name == $env_name))
+            ]
+            | last
+            | .user.login // ""
+          ')
+
+          if [ -z "$APPROVER" ]; then
+            APPROVER="${{ github.actor }}"
+          fi
+
+          echo "approver=$APPROVER" >> $GITHUB_OUTPUT
+          APPROVED_AT="$(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          echo "approved_at=$APPROVED_AT" >> $GITHUB_OUTPUT
+
       - name: 2차 승인 완료
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "✅ 2차 승인 완료 - 배포 시작 가능"
-          echo "승인자: ${{ github.actor }}"
+          echo "승인자: ${{ steps.second-approver.outputs.approver }}"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: Discord 2차 승인 완료 알림
@@ -133,10 +193,10 @@ jobs:
         with:
           webhook: ${{ env.DISCORD_WEBHOOK_URL }}
           status: 'success'
-          title: '✅ 2차 승인 완료 (TeamLead) - 배포 시작'
+          title: '✅ 2차 승인 완료 (TechLead) - 배포 시작'
           description: |
-            **2차 승인자**: ${{ github.actor }}
-            **승인 시각**: ${{ github.event.head_commit.timestamp }}
+            **2차 승인자**: ${{ steps.second-approver.outputs.approver }}
+            **승인 시각**: ${{ steps.second-approver.outputs.approved_at }}
 
             **💬 배포 메모**: ${{ inputs.deployment_comment }}
             **🌍 환경**: 🚀 운영(PROD)
@@ -145,7 +205,7 @@ jobs:
 
             **진행 상황**: [워크플로우 페이지](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})에서 확인 가능
           color: 3066993
-          username: GitHub FE Approval Bot
+          username: GitHub FE Prod Approval Bot
           avatar_url: ${{ env.DISCORD_AVATAR_URL }}
 
   # 운영 배포 (2차 승인 후 자동 실행)
@@ -153,13 +213,16 @@ jobs:
     name: Production Deployment
     runs-on: ubuntu-22.04
     needs: [second-approval]
+    if: ${{ github.ref_name == 'main' }}
     environment:
       name: production
       url: https://www.devths.com
     outputs:
-      deployment_id: ${{ steps.deploy.outputs.deployment_id }}
-      deployment_status: ${{ steps.deploy.outputs.deployment_status }}
-      deployment_error: ${{ steps.deploy.outputs.deployment_error }}
+      deployment_id: ${{ steps.create.outputs.deployment_id }}
+      deployment_status: ${{ steps.result.outputs.status }}
+      deployment_error: ${{ steps.result.outputs.error_message }}
+    env:
+      ARTIFACT_KEY: FE/${{ github.ref_name }}/${{ inputs.ecr_name }}.zip
 
     steps:
       - name: 배포 정보 확인
@@ -167,7 +230,8 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🚀 Production Deployment Information"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📦 Artifact: ${{ inputs.artifact_key }}"
+          echo "🐳 Docker 이미지: ${{ inputs.ecr_name }}"
+          echo "📦 아티팩트: ${{ env.ARTIFACT_KEY }}"
           echo "🪣 S3 Bucket: ${{ env.S3_BUCKET }}"
           echo "🎯 Deployment Group: ${{ env.CODEDEPLOY_DEPLOYMENT_GROUP }}"
           echo "💬 Comment: ${{ inputs.deployment_comment }}"
@@ -184,61 +248,84 @@ jobs:
       - name: S3 아티팩트 존재 확인
         run: |
           echo "🔍 Checking if artifact exists in S3..."
-          if aws s3 ls "s3://${{ env.S3_BUCKET }}/${{ inputs.artifact_key }}" > /dev/null 2>&1; then
-            echo "✅ Artifact found: s3://${{ env.S3_BUCKET }}/${{ inputs.artifact_key }}"
+          if aws s3 ls "s3://${{ env.S3_BUCKET }}/${{ env.ARTIFACT_KEY }}" > /dev/null 2>&1; then
+            echo "✅ Artifact found: s3://${{ env.S3_BUCKET }}/${{ env.ARTIFACT_KEY }}"
 
             # 파일 크기 확인
-            SIZE=$(aws s3 ls "s3://${{ env.S3_BUCKET }}/${{ inputs.artifact_key }}" | awk '{print $3}')
+            SIZE=$(aws s3 ls "s3://${{ env.S3_BUCKET }}/${{ env.ARTIFACT_KEY }}" | awk '{print $3}')
             SIZE_MB=$(echo "scale=2; $SIZE/1024/1024" | bc)
             echo "📊 Artifact size: ${SIZE_MB}MB"
           else
-            echo "❌ Artifact not found: s3://${{ env.S3_BUCKET }}/${{ inputs.artifact_key }}"
+            echo "❌ Artifact not found: s3://${{ env.S3_BUCKET }}/${{ env.ARTIFACT_KEY }}"
             echo "💡 Please check the artifact key and try again."
             exit 1
           fi
 
       - name: CodeDeploy 배포 시작
-        id: deploy
+        id: create
         run: |
-          echo "🚀 Starting deployment to Production..."
+          set -euo pipefail
+          echo "🚀 CodeDeploy 배포를 시작합니다..."
 
           DEPLOYMENT_ID=$(aws deploy create-deployment \
             --application-name ${{ env.CODEDEPLOY_APP_NAME }} \
             --deployment-group-name ${{ env.CODEDEPLOY_DEPLOYMENT_GROUP }} \
-            --s3-location bucket=${{ env.S3_BUCKET }},key=${{ inputs.artifact_key }},bundleType=zip \
+            --s3-location bucket=${{ env.S3_BUCKET }},key=${{ env.ARTIFACT_KEY }},bundleType=zip \
             --description "${{ inputs.deployment_comment }} (by ${{ github.actor }})" \
             --query 'deploymentId' \
             --output text)
 
           echo "deployment_id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
-          echo "✅ Deployment started: $DEPLOYMENT_ID"
-          echo "🔗 AWS Console: https://${{ env.AWS_REGION }}.console.aws.amazon.com/codesuite/codedeploy/deployments/$DEPLOYMENT_ID"
+          echo "✅ 배포 ID: $DEPLOYMENT_ID"
 
-          # 배포 상태 모니터링
-          echo ""
-          echo "⏳ Monitoring deployment progress..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      - name: 배포 완료(헬스체크 포함)까지 대기
+        id: wait
+        run: |
+          set -euo pipefail
+          DEPLOYMENT_ID="${{ steps.create.outputs.deployment_id }}"
+          echo "⏳ 배포 상태를 확인합니다 (ID: $DEPLOYMENT_ID)..."
 
-          if aws deploy wait deployment-successful --deployment-id $DEPLOYMENT_ID; then
-            echo "deployment_status=Success" >> $GITHUB_OUTPUT
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "✅ Deployment completed successfully!"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          else
-            ERROR_MSG=$(aws deploy get-deployment --deployment-id $DEPLOYMENT_ID --query 'deploymentInfo.errorInformation.message' --output text 2>&1 || echo "Unknown error")
-            echo "deployment_status=Failed" >> $GITHUB_OUTPUT
-            echo "deployment_error=$ERROR_MSG" >> $GITHUB_OUTPUT
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "❌ Deployment failed: $ERROR_MSG"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            exit 1
+          aws deploy wait deployment-successful \
+            --deployment-id "$DEPLOYMENT_ID" \
+            --cli-read-timeout 180
+
+          echo "✅ CodeDeploy 배포가 성공적으로 완료되었습니다!"
+
+      - name: 배포 결과 조회
+        id: result
+        if: always()
+        run: |
+          set -euo pipefail
+
+          DEPLOYMENT_ID="${{ steps.create.outputs.deployment_id }}"
+          if [ -z "${DEPLOYMENT_ID:-}" ]; then
+            echo "status=UNKNOWN" >> $GITHUB_OUTPUT
+            echo "error_message=Failed to create deployment (deployment_id missing)" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          STATUS=$(aws deploy get-deployment --deployment-id "$DEPLOYMENT_ID" --query 'deploymentInfo.status' --output text)
+          ERROR_MESSAGE=$(aws deploy get-deployment --deployment-id "$DEPLOYMENT_ID" --query 'deploymentInfo.errorInformation.message' --output text 2>/dev/null || true)
+
+          if [ "${ERROR_MESSAGE:-}" = "None" ] || [ "${ERROR_MESSAGE:-}" = "null" ]; then
+            ERROR_MESSAGE=""
+          fi
+
+          ERROR_MESSAGE_CLEAN=$(echo "${ERROR_MESSAGE:-}" | tr '\n' ' ' | head -c 400)
+
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          echo "error_message=$ERROR_MESSAGE_CLEAN" >> $GITHUB_OUTPUT
+
+          echo "📌 최종 상태: $STATUS"
+          if [ -n "$ERROR_MESSAGE_CLEAN" ]; then
+            echo "📌 에러: $ERROR_MESSAGE_CLEAN"
           fi
 
   # Discord 알림
   notify-discord:
     runs-on: ubuntu-22.04
     needs: [first-approval, second-approval, deploy-production]
-    if: always()
+    if: ${{ always() && (github.ref_name == 'main' ) }}
     steps:
       - name: Discord 배포 결과 알림
         if: needs.deploy-production.result == 'success' || needs.deploy-production.result == 'failure'
@@ -253,7 +340,8 @@ jobs:
             **환경**: 🚀 운영(PROD)
             **트리거**: ${{ github.actor }}
 
-            **📦 아티팩트**: `${{ inputs.artifact_key }}`
+            **🐳 Docker 이미지**: `${{ inputs.ecr_name }}`
+            **📦 아티팩트**: `FE/${{ github.ref_name }}/${{ inputs.ecr_name }}.zip`
             **🪣 S3 Bucket**: `${{ env.S3_BUCKET }}`
             **🚀 배포 결과**: ${{ needs.deploy-production.outputs.deployment_status }}
             **🆔 Deployment ID**: `${{ needs.deploy-production.outputs.deployment_id }}`
@@ -262,7 +350,7 @@ jobs:
 
             **🔗 링크**: [워크플로우 확인하기](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
           color: "${{ needs.deploy-production.result == 'success' && 65280 || 16711680 }}"
-          username: GitHub FE Production Deploy Bot
+          username: GitHub FE Prod Deploy Bot
           avatar_url: ${{ env.DISCORD_AVATAR_URL }}
 
       - name: Discord 취소 알림
@@ -281,7 +369,8 @@ jobs:
             **환경**: 🚀 운영(PROD)
             **취소자**: ${{ github.actor }}
 
-            **📦 아티팩트**: `${{ inputs.artifact_key }}`
+            **🐳 Docker 이미지**: `${{ inputs.ecr_name }}`
+            **📦 아티팩트**: `FE/${{ github.ref_name }}/${{ inputs.ecr_name }}.zip`
             **💬 배포 메모**: ${{ inputs.deployment_comment }}
 
             **취소 단계**:
@@ -293,5 +382,5 @@ jobs:
 
             **🔗 링크**: [워크플로우 확인하기](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
           color: 16776960
-          username: GitHub Production FE Deploy Bot
+          username: GitHub FE Prod Deploy Bot
           avatar_url: ${{ env.DISCORD_AVATAR_URL }}

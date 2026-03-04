@@ -1,7 +1,9 @@
+import { parseBoardDateTime } from '@/lib/utils/board';
+
 import type { CommentItem, CommentThread } from '@/types/boardDetail';
 
 function toTimestamp(value: string) {
-  const date = new Date(value);
+  const date = parseBoardDateTime(value);
   return Number.isNaN(date.getTime()) ? 0 : date.getTime();
 }
 

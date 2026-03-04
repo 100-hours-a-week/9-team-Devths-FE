@@ -11,7 +11,7 @@ import { HeaderContext, type HeaderOptions } from '@/components/layout/HeaderCon
 import { NavigationGuardContext } from '@/components/layout/NavigationGuardContext';
 import LlmAnalysisTaskWatcher from '@/components/llm/analysis/LlmAnalysisTaskWatcher';
 import { ensureAccessToken } from '@/lib/api/client';
-import { getAccessToken, getUserIdFromAccessToken, setAuthRedirect } from '@/lib/auth/token';
+import { clearAccessToken, getUserIdFromAccessToken, setAuthRedirect } from '@/lib/auth/token';
 import { applyRealtimeRoomNotification } from '@/lib/chat/realtimeRoomCache';
 import { clearRejoinedRoomUiOverride } from '@/lib/chat/rejoinedRoomUiCache';
 import { chatKeys } from '@/lib/hooks/chat/queryKeys';
@@ -149,14 +149,6 @@ export default function AppFrame({
     let isCancelled = false;
 
     const checkAuth = async () => {
-      const token = getAccessToken();
-      if (token) {
-        if (!isCancelled) {
-          setIsAuthed(true);
-        }
-        return;
-      }
-
       const restored = await ensureAccessToken();
       if (isCancelled) {
         return;
@@ -167,6 +159,8 @@ export default function AppFrame({
         return;
       }
 
+      clearAccessToken();
+      toast('로그인이 만료되었습니다. 다시 로그인해 주세요.');
       const query = searchParams?.toString() ?? '';
       const redirectPath = `${pathname}${query ? `?${query}` : ''}`;
       setAuthRedirect(redirectPath);

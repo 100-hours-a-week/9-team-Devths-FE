@@ -1,4 +1,9 @@
-import { clearAccessToken, getAccessToken, setAccessToken } from '@/lib/auth/token';
+import {
+  clearAccessToken,
+  getAccessToken,
+  isAccessTokenExpired,
+  setAccessToken,
+} from '@/lib/auth/token';
 
 import type { ApiErrorResponse, ApiResponse } from '@/types/api';
 
@@ -38,7 +43,7 @@ async function refreshAccessToken(): Promise<boolean> {
 
 export async function ensureAccessToken(): Promise<boolean> {
   const token = getAccessToken();
-  if (token) {
+  if (token && !isAccessTokenExpired(token)) {
     return true;
   }
 
@@ -117,6 +122,7 @@ export async function apiStreamRequest(
   }
 
   if (withAuth) {
+    await ensureAccessToken();
     const token = getAccessToken();
     if (token) {
       finalHeaders.Authorization = `Bearer ${token}`;
@@ -181,6 +187,7 @@ export async function apiRequest<T>(
   }
 
   if (withAuth) {
+    await ensureAccessToken();
     const token = getAccessToken();
     if (token) {
       finalHeaders.Authorization = `Bearer ${token}`;

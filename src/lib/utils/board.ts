@@ -1,3 +1,14 @@
+export function parseBoardDateTime(value: string): Date {
+  const normalized = value.includes(' ') ? value.replace(' ', 'T') : value;
+  const hasTimezone = /([zZ]|[+-]\d{2}:\d{2})$/.test(normalized);
+  if (hasTimezone) {
+    return new Date(normalized);
+  }
+
+  // Board timestamps are serialized without timezone info but represent UTC.
+  return new Date(`${normalized}Z`);
+}
+
 export function formatCountCompact(value: number, fractionDigits = 1): string {
   if (!Number.isFinite(value)) return '0';
 
@@ -23,7 +34,7 @@ export function formatCountCompact(value: number, fractionDigits = 1): string {
 }
 
 export function formatRelativeTime(dateIso: string, now = new Date()): string {
-  const date = new Date(dateIso);
+  const date = parseBoardDateTime(dateIso);
   if (Number.isNaN(date.getTime())) return dateIso;
 
   const diffMs = now.getTime() - date.getTime();

@@ -37,7 +37,6 @@ export function usePatchLastReadMutation(roomId: number) {
           [roomId]: false,
         };
       });
-      void queryClient.invalidateQueries({ queryKey: chatKeys.roomDetail(roomId) });
       void queryClient.invalidateQueries({ queryKey: chatKeys.rooms() });
     },
   });
