@@ -16,3 +16,13 @@ export const BOARD_SORT_OPTIONS = [
 ] as const satisfies readonly { key: BoardSort; label: string }[];
 
 export const POPULAR_MIN_LIKES = 500;
+
+export const BOARD_PAGE_SIZE = 10;
+export const FOLLOWINGS_FETCH_SIZE = 100;
+export const PULL_MAX = 120;
+export const PULL_THRESHOLD = 72;
+
+export const RECENT_SEARCH_STORAGE_KEY = 'devths_board_recent_searches';
+export const MAX_RECENT_SEARCH_COUNT = 10;
+export const SEARCH_PAGE_SIZE = 20;
+export const SEARCH_QUERY_PARAM_KEY = 'q';

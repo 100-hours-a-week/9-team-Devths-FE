@@ -7,12 +7,13 @@ import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 're
 import BoardPostCard from '@/components/board/BoardPostCard';
 import { useHeader } from '@/components/layout/HeaderContext';
 import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
+import {
+  MAX_RECENT_SEARCH_COUNT,
+  RECENT_SEARCH_STORAGE_KEY,
+  SEARCH_PAGE_SIZE,
+  SEARCH_QUERY_PARAM_KEY,
+} from '@/constants/board';
 import { useBoardSearchInfiniteQuery } from '@/lib/hooks/boards/useBoardSearchInfiniteQuery';
-
-const RECENT_SEARCH_STORAGE_KEY = 'devths_board_recent_searches';
-const MAX_RECENT_SEARCH_COUNT = 10;
-const SEARCH_PAGE_SIZE = 20;
-const SEARCH_QUERY_PARAM_KEY = 'q';
 
 type KeywordValidationResult = {
   isValid: boolean;
