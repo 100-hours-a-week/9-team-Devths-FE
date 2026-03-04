@@ -74,7 +74,8 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
     sendMessage,
     streamEvaluation,
     streamInitialQuestion,
-    removeLocalMessage,
+    retryMessage,
+    deleteFailedMessage,
   } = useLlmStreaming(numericRoomId);
 
   const [interviewUIState, setInterviewUIState] = useState<InterviewUIState>('idle');
@@ -186,21 +187,8 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
   );
 
   const handleRetry = useCallback(
-    (messageId: string) => {
-      const failedMessage = localMessages.find((m) => m.id === messageId);
-      if (!failedMessage) return;
-
-      removeLocalMessage(messageId);
-      handleSendMessage(failedMessage.text);
-    },
-    [localMessages, handleSendMessage, removeLocalMessage],
-  );
-
-  const handleDeleteFailed = useCallback(
-    (messageId: string) => {
-      removeLocalMessage(messageId);
-    },
-    [removeLocalMessage],
+    (messageId: string) => retryMessage(messageId, handleSendMessage),
+    [retryMessage, handleSendMessage],
   );
 
   const handleStartInterview = useCallback(
@@ -332,7 +320,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
           hasMore={hasNextPage}
           isLoadingMore={isFetchingNextPage}
           onRetry={handleRetry}
-          onDeleteFailed={handleDeleteFailed}
+          onDeleteFailed={deleteFailedMessage}
           retryEvaluationMessageId={
             interviewUIState === 'idle' ? (latestInterviewEvaluationMessage?.id ?? null) : null
           }

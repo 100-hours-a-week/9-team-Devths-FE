@@ -324,6 +324,24 @@ export function useLlmStreaming(numericRoomId: number) {
     [numericRoomId],
   );
 
+  const retryMessage = useCallback(
+    (messageId: string, onResend: (text: string) => void) => {
+      const failedMessage = localMessages.find((m) => m.id === messageId);
+      if (!failedMessage) return;
+
+      removeLocalMessage(messageId);
+      onResend(failedMessage.text);
+    },
+    [localMessages, removeLocalMessage],
+  );
+
+  const deleteFailedMessage = useCallback(
+    (messageId: string) => {
+      removeLocalMessage(messageId);
+    },
+    [removeLocalMessage],
+  );
+
   return {
     localMessages,
     streamingAiId,
@@ -332,6 +350,7 @@ export function useLlmStreaming(numericRoomId: number) {
     sendMessage,
     streamEvaluation,
     streamInitialQuestion,
-    removeLocalMessage,
+    retryMessage,
+    deleteFailedMessage,
   };
 }
