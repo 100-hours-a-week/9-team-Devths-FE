@@ -6,6 +6,7 @@ import { useAppFrame } from '@/components/layout/AppFrameContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import LlmComposer from '@/components/llm/chat/LlmComposer';
 import LlmMessageList from '@/components/llm/chat/LlmMessageList';
+import { useInterviewEvaluation } from '@/lib/hooks/llm/useInterviewEvaluation';
 import { useInterviewSession } from '@/lib/hooks/llm/useInterviewSession';
 import { useLlmStreaming } from '@/lib/hooks/llm/useLlmStreaming';
 import { useMessagesInfiniteQuery } from '@/lib/hooks/llm/useMessagesInfiniteQuery';
@@ -71,9 +72,18 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
 
   const session = useInterviewSession(numericRoomId, model, streamEvaluation, streamInitialQuestion);
 
-  const [finishedEvaluationMessageId, setFinishedEvaluationMessageId] = useState<string | null>(
-    null,
+  const messages = useMemo<UIMessage[]>(
+    () => [...serverMessages, ...localMessages],
+    [serverMessages, localMessages],
   );
+
+  const evaluation = useInterviewEvaluation(
+    messages,
+    isRetryingEvaluation,
+    (opts) => void session.endInterview(opts),
+    () => session.finishSession(),
+  );
+
   const notifiedDeletedRef = useRef(false);
   const { setBlocked, setBlockMessage } = useNavigationGuard();
 
@@ -125,43 +135,6 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
     (messageId: string) => retryMessage(messageId, handleSendMessage),
     [retryMessage, handleSendMessage],
   );
-
-  const messages = useMemo<UIMessage[]>(
-    () => [...serverMessages, ...localMessages],
-    [serverMessages, localMessages],
-  );
-
-  const latestInterviewEvaluationMessage = useMemo(() => {
-    for (let i = messages.length - 1; i >= 0; i -= 1) {
-      if (messages[i].isInterviewEvaluation) {
-        return messages[i];
-      }
-    }
-    return null;
-  }, [messages]);
-
-  const handleRetryInterviewEvaluation = useCallback(() => {
-    const targetInterviewId = latestInterviewEvaluationMessage?.interviewId;
-    if (!targetInterviewId) {
-      toast('재시도할 면접 평가 정보를 찾을 수 없습니다.');
-      return;
-    }
-    void session.endInterview({ retry: true, interviewId: targetInterviewId });
-  }, [session, latestInterviewEvaluationMessage]);
-
-  const handleFinishInterview = useCallback(
-    (messageId: string) => {
-      setFinishedEvaluationMessageId(messageId);
-      session.finishSession();
-    },
-    [session],
-  );
-
-  const isInterviewEvaluationActionsDisabled =
-    (latestInterviewEvaluationMessage?.id !== null &&
-      latestInterviewEvaluationMessage?.id !== undefined &&
-      latestInterviewEvaluationMessage.id === finishedEvaluationMessageId) ||
-    isRetryingEvaluation;
 
   const isComposerDisabled =
     isSending ||
@@ -219,12 +192,14 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
           onRetry={handleRetry}
           onDeleteFailed={deleteFailedMessage}
           retryEvaluationMessageId={
-            session.uiState === 'idle' ? (latestInterviewEvaluationMessage?.id ?? null) : null
+            session.uiState === 'idle'
+              ? (evaluation.latestInterviewEvaluationMessage?.id ?? null)
+              : null
           }
-          onRetryEvaluation={() => handleRetryInterviewEvaluation()}
-          onFinishInterview={handleFinishInterview}
+          onRetryEvaluation={evaluation.retryEvaluation}
+          onFinishInterview={evaluation.finishInterview}
           isRetryEvaluationLoading={isRetryingEvaluation}
-          isInterviewEvaluationActionsDisabled={isInterviewEvaluationActionsDisabled}
+          isInterviewEvaluationActionsDisabled={evaluation.isActionsDisabled}
         />
 
         <div className="bg-white px-3 py-2">
