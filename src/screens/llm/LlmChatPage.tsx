@@ -6,15 +6,14 @@ import { useAppFrame } from '@/components/layout/AppFrameContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import LlmComposer from '@/components/llm/chat/LlmComposer';
 import LlmMessageList from '@/components/llm/chat/LlmMessageList';
-import { getCurrentInterview } from '@/lib/api/llmRooms';
+import { useInterviewSession } from '@/lib/hooks/llm/useInterviewSession';
 import { useLlmStreaming } from '@/lib/hooks/llm/useLlmStreaming';
 import { useMessagesInfiniteQuery } from '@/lib/hooks/llm/useMessagesInfiniteQuery';
-import { useStartInterviewMutation } from '@/lib/hooks/llm/useStartInterviewMutation';
 import { toast } from '@/lib/toast/store';
 import { toUIMessage } from '@/lib/utils/llm';
 
 import type { UIMessage } from '@/lib/utils/llm';
-import type { InterviewType, LlmModel } from '@/types/llm';
+import type { LlmModel } from '@/types/llm';
 
 type Props = {
   roomId: string;
@@ -29,14 +28,6 @@ function parseModel(value: string | null | undefined): LlmModel {
   }
   return DEFAULT_MODEL;
 }
-
-type InterviewSession = {
-  interviewId: number;
-  type: InterviewType;
-  questionCount: number;
-};
-
-type InterviewUIState = 'idle' | 'select' | 'starting' | 'active' | 'ending';
 
 export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialModel }: Props) {
   const { setOptions, resetOptions } = useAppFrame();
@@ -57,14 +48,14 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
     isFetchingNextPage,
   } = useMessagesInfiniteQuery(numericRoomId);
 
-  const startInterviewMutation = useStartInterviewMutation(numericRoomId);
-
   const serverMessages = useMemo<UIMessage[]>(() => {
     if (!data?.pages) return [];
 
     const allMessages = [...data.pages].reverse().flatMap((page) => page?.messages ?? []);
     return allMessages.map(toUIMessage);
   }, [data]);
+
+  const [model] = useState<LlmModel>(() => parseModel(initialModel));
 
   const {
     localMessages,
@@ -78,9 +69,8 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
     deleteFailedMessage,
   } = useLlmStreaming(numericRoomId);
 
-  const [interviewUIState, setInterviewUIState] = useState<InterviewUIState>('idle');
-  const [interviewSession, setInterviewSession] = useState<InterviewSession | null>(null);
-  const [model] = useState<LlmModel>(() => parseModel(initialModel));
+  const session = useInterviewSession(numericRoomId, model, streamEvaluation, streamInitialQuestion);
+
   const [finishedEvaluationMessageId, setFinishedEvaluationMessageId] = useState<string | null>(
     null,
   );
@@ -92,36 +82,6 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
   const isDeletedRoom = isError && (errorStatus === 404 || errorMessage.includes('채팅방'));
 
   useEffect(() => {
-    let isMounted = true;
-
-    const fetchCurrentInterview = async () => {
-      if (numericRoomId <= 0) return;
-      try {
-        const result = await getCurrentInterview(numericRoomId);
-        if (!isMounted || !result.ok || !result.json) return;
-
-        if ('data' in result.json) {
-          const data = result.json.data;
-          if (!data) return;
-
-          setInterviewSession({
-            interviewId: data.interviewId,
-            type: data.interviewType,
-            questionCount: data.currentQuestionCount ?? 0,
-          });
-          setInterviewUIState('active');
-        }
-      } catch {}
-    };
-
-    fetchCurrentInterview();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [numericRoomId]);
-
-  useEffect(() => {
     if (!isDeletedRoom || notifiedDeletedRef.current) return;
     notifiedDeletedRef.current = true;
     toast('삭제된 채팅방입니다.');
@@ -129,9 +89,9 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
 
   useEffect(() => {
     const isInterviewInProgress =
-      interviewUIState === 'starting' ||
-      interviewUIState === 'active' ||
-      interviewUIState === 'ending';
+      session.uiState === 'starting' ||
+      session.uiState === 'active' ||
+      session.uiState === 'ending';
     const shouldBlock = Boolean(streamingAiId) || isInterviewInProgress;
 
     if (shouldBlock) {
@@ -146,44 +106,19 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
 
     setBlocked(shouldBlock);
     return () => setBlocked(false);
-  }, [interviewUIState, setBlocked, setBlockMessage, streamingAiId]);
-
-  const handleEndInterview = useCallback(
-    async (options?: { userMessageId?: string; retry?: boolean; interviewId?: number }) => {
-      const isRetry = options?.retry === true;
-      const targetInterviewId = options?.interviewId ?? interviewSession?.interviewId ?? null;
-      if (!targetInterviewId) return;
-
-      if (!isRetry) {
-        setInterviewUIState('ending');
-      }
-
-      await streamEvaluation({
-        interviewId: targetInterviewId,
-        retry: isRetry,
-        userMessageId: options?.userMessageId,
-        onActive: () => setInterviewUIState('active'),
-        onIdle: () => setInterviewUIState('idle'),
-        onSessionClear: () => setInterviewSession(null),
-      });
-    },
-    [interviewSession, streamEvaluation],
-  );
+  }, [session.uiState, setBlocked, setBlockMessage, streamingAiId]);
 
   const handleSendMessage = useCallback(
     async (text: string) => {
       await sendMessage(text, {
         model,
-        interviewId: interviewSession?.interviewId ?? null,
-        onQuestionCountIncrement: interviewSession
-          ? () =>
-              setInterviewSession((prev) =>
-                prev ? { ...prev, questionCount: prev.questionCount + 1 } : null,
-              )
+        interviewId: session.session?.interviewId ?? null,
+        onQuestionCountIncrement: session.session
+          ? () => session.incrementQuestionCount()
           : undefined,
       });
     },
-    [interviewSession, model, sendMessage],
+    [model, sendMessage, session],
   );
 
   const handleRetry = useCallback(
@@ -191,51 +126,11 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
     [retryMessage, handleSendMessage],
   );
 
-  const handleStartInterview = useCallback(
-    (type: InterviewType) => {
-      setInterviewUIState('starting');
-
-      startInterviewMutation.mutate(
-        {
-          interviewType: type,
-          model,
-        },
-        {
-          onSuccess: async (response) => {
-            if (!response) return;
-
-            setInterviewSession({
-              interviewId: response.interviewId,
-              type: response.interviewType ?? type,
-              questionCount: response.currentQuestionCount ?? 0,
-            });
-            setInterviewUIState('active');
-
-            if (response.isResumed) {
-              return;
-            }
-
-            await streamInitialQuestion({
-              model,
-              interviewId: response.interviewId,
-              onQuestionCountSet: () =>
-                setInterviewSession((prev) => (prev ? { ...prev, questionCount: 1 } : null)),
-            });
-          },
-          onError: () => {
-            toast('면접 모드 시작에 실패했습니다.');
-            setInterviewUIState('idle');
-          },
-        },
-      );
-    },
-    [startInterviewMutation, model, streamInitialQuestion],
-  );
-
   const messages = useMemo<UIMessage[]>(
     () => [...serverMessages, ...localMessages],
     [serverMessages, localMessages],
   );
+
   const latestInterviewEvaluationMessage = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i -= 1) {
       if (messages[i].isInterviewEvaluation) {
@@ -251,14 +146,16 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
       toast('재시도할 면접 평가 정보를 찾을 수 없습니다.');
       return;
     }
-    void handleEndInterview({ retry: true, interviewId: targetInterviewId });
-  }, [handleEndInterview, latestInterviewEvaluationMessage]);
+    void session.endInterview({ retry: true, interviewId: targetInterviewId });
+  }, [session, latestInterviewEvaluationMessage]);
 
-  const handleFinishInterview = useCallback((messageId: string) => {
-    setFinishedEvaluationMessageId(messageId);
-    setInterviewSession(null);
-    setInterviewUIState('idle');
-  }, []);
+  const handleFinishInterview = useCallback(
+    (messageId: string) => {
+      setFinishedEvaluationMessageId(messageId);
+      session.finishSession();
+    },
+    [session],
+  );
 
   const isInterviewEvaluationActionsDisabled =
     (latestInterviewEvaluationMessage?.id !== null &&
@@ -269,8 +166,8 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
   const isComposerDisabled =
     isSending ||
     Boolean(streamingAiId) ||
-    interviewUIState === 'starting' ||
-    interviewUIState === 'ending';
+    session.uiState === 'starting' ||
+    session.uiState === 'ending';
 
   if (isLoading) {
     return (
@@ -322,7 +219,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
           onRetry={handleRetry}
           onDeleteFailed={deleteFailedMessage}
           retryEvaluationMessageId={
-            interviewUIState === 'idle' ? (latestInterviewEvaluationMessage?.id ?? null) : null
+            session.uiState === 'idle' ? (latestInterviewEvaluationMessage?.id ?? null) : null
           }
           onRetryEvaluation={() => handleRetryInterviewEvaluation()}
           onFinishInterview={handleFinishInterview}
@@ -331,38 +228,38 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
         />
 
         <div className="bg-white px-3 py-2">
-          {interviewUIState === 'idle' && (
+          {session.uiState === 'idle' && (
             <button
               type="button"
-              onClick={() => setInterviewUIState('select')}
+              onClick={session.enterSelect}
               className="w-full rounded-2xl border border-[#05C075] bg-white px-3 py-2.5 text-[12px] font-semibold text-[#05C075] shadow-sm hover:bg-[#05C075]/5"
             >
               면접 모드 시작
             </button>
           )}
 
-          {interviewUIState === 'select' && (
+          {session.uiState === 'select' && (
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-[#05C075]/30 bg-[#05C075]/10 px-3 py-1 text-[11px] font-semibold text-[#05C075]">
                 면접 모드
               </span>
               <button
                 type="button"
-                onClick={() => handleStartInterview('BEHAVIOR')}
+                onClick={() => session.startInterview('BEHAVIOR')}
                 className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-neutral-900 shadow-sm hover:border-[#05C075]/40 hover:bg-[#05C075]/5"
               >
                 인성 면접
               </button>
               <button
                 type="button"
-                onClick={() => handleStartInterview('TECH')}
+                onClick={() => session.startInterview('TECH')}
                 className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-neutral-900 shadow-sm hover:border-[#05C075]/40 hover:bg-[#05C075]/5"
               >
                 기술 면접
               </button>
               <button
                 type="button"
-                onClick={() => setInterviewUIState('idle')}
+                onClick={session.cancelSelect}
                 className="ml-auto text-[11px] text-neutral-500 hover:text-neutral-700"
               >
                 취소
@@ -370,23 +267,23 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
             </div>
           )}
 
-          {interviewUIState === 'starting' && (
+          {session.uiState === 'starting' && (
             <div className="flex items-center justify-center py-2">
               <span className="text-[12px] text-neutral-500">면접 모드 시작 중...</span>
             </div>
           )}
 
-          {interviewUIState === 'active' && interviewSession && (
+          {session.uiState === 'active' && session.session && (
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-[#05C075]/30 bg-[#05C075]/10 px-3 py-1 text-[11px] font-semibold text-[#05C075]">
                 면접 모드 진행중
               </span>
               <span className="rounded-full border border-neutral-200 bg-white px-3 py-1 text-[11px] font-semibold text-neutral-800 shadow-sm">
-                {interviewSession.type === 'BEHAVIOR' ? '인성 면접' : '기술 면접'}
+                {session.session.type === 'BEHAVIOR' ? '인성 면접' : '기술 면접'}
               </span>
               <button
                 type="button"
-                onClick={() => handleEndInterview()}
+                onClick={() => session.endInterview()}
                 className="ml-auto rounded-2xl border border-neutral-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-neutral-900 shadow-sm hover:bg-neutral-50"
               >
                 면접 종료
@@ -394,7 +291,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
             </div>
           )}
 
-          {interviewUIState === 'ending' && (
+          {session.uiState === 'ending' && (
             <div className="flex items-center justify-center py-2">
               <span className="text-[12px] text-neutral-500">면접 종료 중...</span>
             </div>
