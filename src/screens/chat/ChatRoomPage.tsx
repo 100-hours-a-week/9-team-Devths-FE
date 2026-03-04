@@ -57,6 +57,7 @@ import { usePatchLastReadMutation } from '@/lib/hooks/chat/usePatchLastReadMutat
 import { usePutRoomSettingsMutation } from '@/lib/hooks/chat/usePutRoomSettingsMutation';
 import { toast } from '@/lib/toast/store';
 import { uploadFile } from '@/lib/upload/uploadFile';
+import { formatDateKey, formatMessageTime, formatStickyDateLabel } from '@/lib/utils/chatDate';
 
 import type { ChatMessageResponse, SendChatMessagePayload } from '@/lib/api/chatMessages';
 import type { IMessage } from '@stomp/stompjs';
@@ -115,56 +116,6 @@ function resolveTitle(roomName: string | null, title: string | null) {
   }
 
   return '채팅방';
-}
-
-function parseKstDateTime(value: string): Date {
-  const normalized = value.includes(' ') ? value.replace(' ', 'T') : value;
-  const hasTimezone = /([zZ]|[+-]\d{2}:\d{2})$/.test(normalized);
-  if (hasTimezone) {
-    return new Date(normalized);
-  }
-
-  // Backend chat timestamps are currently serialized without timezone info but represent UTC.
-  return new Date(`${normalized}Z`);
-}
-
-function formatDateKey(value: string): string {
-  const date = parseKstDateTime(value);
-  if (Number.isNaN(date.getTime())) {
-    return value.slice(0, 10);
-  }
-
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function formatStickyDateLabel(value: string): string {
-  const date = parseKstDateTime(value);
-  if (Number.isNaN(date.getTime())) {
-    return value.slice(0, 10);
-  }
-
-  return date.toLocaleDateString('ko-KR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    weekday: 'short',
-  });
-}
-
-function formatMessageTime(value: string): string {
-  const date = parseKstDateTime(value);
-  if (Number.isNaN(date.getTime())) {
-    return '';
-  }
-
-  return date.toLocaleTimeString('ko-KR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
 }
 
 function resolveMessageContent(message: ChatMessageResponse): string {
