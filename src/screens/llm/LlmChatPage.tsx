@@ -124,16 +124,11 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
       session.uiState === 'ending';
     const shouldBlock = Boolean(streamingAiId) || isInterviewInProgress;
 
-    if (shouldBlock) {
-      setBlockMessage(
-        streamingAiId
-          ? '답변 생성 중에는 이동할 수 없습니다.'
-          : '면접 진행 중에는 이동할 수 없습니다.',
-      );
-    } else {
-      setBlockMessage('답변 생성 중에는 이동할 수 없습니다.');
-    }
-
+    setBlockMessage(
+      streamingAiId
+        ? '답변 생성 중에는 이동할 수 없습니다.'
+        : '면접 진행 중에는 이동할 수 없습니다.',
+    );
     setBlocked(shouldBlock);
     return () => setBlocked(false);
   }, [session.uiState, setBlocked, setBlockMessage, streamingAiId]);
@@ -206,7 +201,7 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
         <LlmMessageList
           messages={messages}
           streamingMessageId={streamingAiId}
-          onLoadMore={() => fetchNextPage()}
+          onLoadMore={fetchNextPage}
           hasMore={hasNextPage}
           isLoadingMore={isFetchingNextPage}
           onRetry={handleRetry}
