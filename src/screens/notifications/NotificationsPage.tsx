@@ -9,6 +9,7 @@ import FollowUserProfileModal, {
 } from '@/components/mypage/FollowUserProfileModal';
 import NotificationList from '@/components/notifications/NotificationList';
 import { fetchUserProfile } from '@/lib/api/users';
+import { ApiError } from '@/lib/errors/ApiError';
 import { notificationKeys } from '@/lib/hooks/notifications/queryKeys';
 import { useNotificationsInfiniteQuery } from '@/lib/hooks/notifications/useNotificationsInfiniteQuery';
 import { userKeys } from '@/lib/hooks/users/queryKeys';
@@ -176,7 +177,7 @@ export default function NotificationsPage() {
       }
       void refetchSelectedUserProfile();
     } catch (error) {
-      const err = error as Error & { serverMessage?: string };
+      const err = ApiError.fromUnknown(error);
       toast(
         err.serverMessage ??
           (wasFollowing ? '언팔로우 처리에 실패했습니다.' : '팔로우 처리에 실패했습니다.'),
@@ -199,7 +200,7 @@ export default function NotificationsPage() {
         notifications={displayNotifications}
         isLoading={!isHydrated || isLoading}
         isError={isError}
-        errorMessage={error instanceof Error ? error.message : '알림을 불러오지 못했습니다.'}
+        errorMessage={ApiError.fromUnknown(error).message}
         onClickNotification={handleNotificationClick}
       />
 

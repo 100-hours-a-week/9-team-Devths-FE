@@ -39,6 +39,7 @@ import { applyRealtimeRoomMessage } from '@/lib/chat/realtimeMessageCache';
 import { applyRealtimeRoomNotification } from '@/lib/chat/realtimeRoomCache';
 import { clearRejoinedRoomUiOverride } from '@/lib/chat/rejoinedRoomUiCache';
 import { chatStompManager } from '@/lib/chat/stompManager';
+import { ApiError } from '@/lib/errors/ApiError';
 import { chatKeys } from '@/lib/hooks/chat/queryKeys';
 import { useAttachmentHandler } from '@/lib/hooks/chat/useAttachmentHandler';
 import { useChatMessagesInfiniteQuery } from '@/lib/hooks/chat/useChatMessagesInfiniteQuery';
@@ -347,7 +348,7 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
       toast('메시지가 삭제되었습니다.');
       setDeleteTargetMessageId(null);
     } catch (error) {
-      const err = error as Error & { serverMessage?: string };
+      const err = ApiError.fromUnknown(error);
       toast(err.serverMessage ?? '메시지 삭제에 실패했습니다.');
     }
   }, [deleteMessageMutation, deleteTargetMessageId]);
@@ -373,7 +374,7 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
       const suffix = params.toString();
       router.push(`/chat/${roomId}${suffix ? `?${suffix}` : ''}`);
     } catch (error) {
-      const err = error as Error & { serverMessage?: string };
+      const err = ApiError.fromUnknown(error);
       toast(err.serverMessage ?? '채팅방 설정 저장에 실패했습니다.');
     }
   }, [
@@ -399,7 +400,7 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
       router.push('/chat');
     } catch (error) {
       setIsLeavingRoom(false);
-      const err = error as Error & { serverMessage?: string };
+      const err = ApiError.fromUnknown(error);
       toast(err.serverMessage ?? '채팅방 나가기에 실패했습니다.');
     }
   }, [leaveChatRoomMutation, roomId, router]);

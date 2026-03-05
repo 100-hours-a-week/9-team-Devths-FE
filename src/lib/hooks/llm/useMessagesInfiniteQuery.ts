@@ -1,6 +1,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 
 import { fetchMessages } from '@/lib/api/llmRooms';
+import { ApiError } from '@/lib/errors/ApiError';
 import { llmKeys } from '@/lib/hooks/llm/queryKeys';
 
 const PAGE_SIZE = 20;
@@ -14,29 +15,15 @@ export function useMessagesInfiniteQuery(roomId: number) {
         lastId: pageParam,
       });
 
-      if (!result.json) {
-        const error = new Error('Failed to fetch messages');
-        (error as Error & { status?: number }).status = result.status;
-        throw error;
-      }
-
-      if (!result.ok) {
-        const message =
-          'message' in result.json && typeof result.json.message === 'string'
-            ? result.json.message
-            : 'Failed to fetch messages';
-        const error = new Error(message);
-        (error as Error & { status?: number }).status = result.status;
-        throw error;
+      if (!result.json || !result.ok) {
+        throw ApiError.fromResponse(result);
       }
 
       if ('data' in result.json) {
         return result.json.data;
       }
 
-      const error = new Error('Invalid response format');
-      (error as Error & { status?: number }).status = result.status;
-      throw error;
+      throw new ApiError('Invalid response format', result.status);
     },
     initialPageParam: undefined as number | undefined,
     getNextPageParam: (lastPage) => {

@@ -18,6 +18,7 @@ import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import { deleteBoardPost, likeBoardPost, unlikeBoardPost } from '@/lib/api/boards';
 import { fetchUserProfile } from '@/lib/api/users';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
+import { ApiError } from '@/lib/errors/ApiError';
 import { boardsKeys } from '@/lib/hooks/boards/queryKeys';
 import { useBoardCommentsQuery } from '@/lib/hooks/boards/useBoardCommentsQuery';
 import { useBoardDetailQuery } from '@/lib/hooks/boards/useBoardDetailQuery';
@@ -214,7 +215,7 @@ export default function BoardDetailPage() {
 
       void refetchSelectedAuthorProfile();
     } catch (error) {
-      const err = error as Error & { serverMessage?: string };
+      const err = ApiError.fromUnknown(error);
       toast(err.serverMessage ?? '팔로우 처리에 실패했습니다.');
     }
   };
@@ -413,7 +414,7 @@ export default function BoardDetailPage() {
       listSnapshots.forEach(([queryKey, data]) => {
         queryClient.setQueryData(queryKey, data);
       });
-      toast(error instanceof Error ? error.message : '좋아요 처리에 실패했습니다.');
+      toast(ApiError.fromUnknown(error).message);
     } finally {
       setIsLikePending(false);
     }
@@ -459,7 +460,7 @@ export default function BoardDetailPage() {
         router.push('/board');
       });
     } catch (error) {
-      toast(error instanceof Error ? error.message : '게시글 삭제에 실패했습니다.');
+      toast(ApiError.fromUnknown(error).message);
     }
   };
 
@@ -535,7 +536,7 @@ export default function BoardDetailPage() {
       setIsCommentDeleteOpen(false);
       setPendingDeleteCommentId(null);
     } catch (error) {
-      toast(error instanceof Error ? error.message : '댓글 삭제에 실패했습니다.');
+      toast(ApiError.fromUnknown(error).message);
     }
   };
 
@@ -745,9 +746,7 @@ export default function BoardDetailPage() {
                           return true;
                         } catch (error) {
                           updateCommentContentCache(post.postId, commentId, previousContent);
-                          toast(
-                            error instanceof Error ? error.message : '댓글 수정에 실패했습니다.',
-                          );
+                          toast(ApiError.fromUnknown(error).message);
                           return false;
                         }
                       }}
@@ -781,9 +780,7 @@ export default function BoardDetailPage() {
                           setReplyTargetId(null);
                           return true;
                         } catch (error) {
-                          toast(
-                            error instanceof Error ? error.message : '답글 등록에 실패했습니다.',
-                          );
+                          toast(ApiError.fromUnknown(error).message);
                           return false;
                         }
                       }}
@@ -860,7 +857,7 @@ export default function BoardDetailPage() {
               await refetchComments();
               return true;
             } catch (error) {
-              toast(error instanceof Error ? error.message : '댓글 등록에 실패했습니다.');
+              toast(ApiError.fromUnknown(error).message);
               return false;
             }
           }}

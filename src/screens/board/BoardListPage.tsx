@@ -22,6 +22,7 @@ import {
 } from '@/constants/board';
 import { fetchMyFollowings, fetchUserProfile } from '@/lib/api/users';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
+import { ApiError } from '@/lib/errors/ApiError';
 import { useBoardListInfiniteQuery } from '@/lib/hooks/boards/useBoardListInfiniteQuery';
 import { useUnreadCountQuery } from '@/lib/hooks/notifications/useUnreadCountQuery';
 import { userKeys } from '@/lib/hooks/users/queryKeys';
@@ -203,7 +204,7 @@ export default function BoardListPage() {
       }
       void refetchSelectedAuthorProfile();
     } catch (error) {
-      const err = error as Error & { serverMessage?: string };
+      const err = ApiError.fromUnknown(error);
       toast(err.serverMessage ?? '팔로우 처리에 실패했습니다.');
     }
   };
