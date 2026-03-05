@@ -19,7 +19,7 @@ export function useChatMessagesInfiniteQuery({
     queryFn: async ({ pageParam }) => {
       const result = await fetchChatMessages(roomId, {
         size,
-        lastId: pageParam ?? null,
+        lastId: pageParam,
       });
 
       if (!result.json) {

@@ -21,7 +21,7 @@ export function useMyFollowingsInfiniteQuery({
     queryFn: async ({ pageParam }) => {
       const result = await fetchChatFollowings({
         size: PAGE_SIZE,
-        lastId: pageParam ?? null,
+        lastId: pageParam,
         nickname: submittedNickname ?? null,
       });
 
