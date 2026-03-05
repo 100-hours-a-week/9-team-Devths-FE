@@ -23,23 +23,13 @@ export function useLeaveChatRoomMutation(roomId: number) {
       // 방에서 나간 직후 현재 화면의 상세/메시지 쿼리를 재조회하면 403이 발생할 수 있으므로 제거합니다.
       queryClient.removeQueries({ queryKey: chatKeys.roomDetail(roomId) });
       queryClient.removeQueries({
-        predicate: (query) => {
-          const [scope, key, params] = query.queryKey as [
-            unknown,
-            unknown,
-            { roomId?: unknown } | undefined,
-          ];
-          return scope === 'chat' && key === 'messages' && params?.roomId === roomId;
-        },
+        predicate: (query) => chatKeys.isMessagesQuery(query.queryKey, roomId),
       });
 
       // 목록 화면은 캐시를 먼저 렌더링하므로, invalidate만 하면 삭제된 방이 잠시 남아 보일 수 있습니다.
       queryClient.setQueriesData<InfiniteData<ChatRoomListResponse>>(
         {
-          predicate: (query) =>
-            Array.isArray(query.queryKey) &&
-            query.queryKey[0] === 'chat' &&
-            query.queryKey[1] === 'rooms',
+          predicate: (query) => chatKeys.isRoomsQuery(query.queryKey),
         },
         (old) => {
           if (!old) {
