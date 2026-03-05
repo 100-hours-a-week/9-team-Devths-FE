@@ -23,6 +23,7 @@ import {
   BOARD_TITLE_MAX_LENGTH,
 } from '@/constants/boardCreate';
 import { createBoardPost } from '@/lib/api/boards';
+import { ApiError } from '@/lib/errors/ApiError';
 import { useBoardAttachments } from '@/lib/hooks/boards/useBoardAttachments';
 import { toast } from '@/lib/toast/store';
 import { uploadFile } from '@/lib/upload/uploadFile';
@@ -104,8 +105,7 @@ export default function BoardCreatePage() {
       queryClient.invalidateQueries({ queryKey: ['boards', 'list'], exact: false });
       router.push('/board');
     } catch (error) {
-      const message = error instanceof Error ? error.message : '게시글 등록에 실패했습니다.';
-      toast(message);
+      toast(ApiError.fromUnknown(error).message);
     } finally {
       setIsSubmitting(false);
     }

@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 
 import { getTaskStatus } from '@/lib/api/llmRooms';
+import { ApiError } from '@/lib/errors/ApiError';
 import { llmKeys } from '@/lib/hooks/llm/queryKeys';
 import { notificationKeys } from '@/lib/hooks/notifications/queryKeys';
 import { useAnalysisTaskStore } from '@/lib/llm/analysisTaskStore';
@@ -52,7 +53,7 @@ export default function LlmAnalysisTaskWatcher() {
         }
       } catch (error) {
         if (!isMounted) return;
-        toast(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.');
+        toast(ApiError.fromUnknown(error).message);
         clearActiveTask();
       }
     };

@@ -23,6 +23,7 @@ import {
   BOARD_TITLE_MAX_LENGTH,
 } from '@/constants/boardCreate';
 import { updateBoardPost } from '@/lib/api/boards';
+import { ApiError } from '@/lib/errors/ApiError';
 import { boardsKeys } from '@/lib/hooks/boards/queryKeys';
 import { useBoardAttachments } from '@/lib/hooks/boards/useBoardAttachments';
 import { useBoardDetailQuery } from '@/lib/hooks/boards/useBoardDetailQuery';
@@ -225,8 +226,7 @@ export default function BoardEditPage() {
       void queryClient.invalidateQueries({ queryKey: ['boards', 'list'], exact: false });
       router.push(`/board/${postId}?from=edit`);
     } catch (error) {
-      const message = error instanceof Error ? error.message : '게시글 수정에 실패했습니다.';
-      toast(message);
+      toast(ApiError.fromUnknown(error).message);
     } finally {
       setIsSubmitting(false);
     }
