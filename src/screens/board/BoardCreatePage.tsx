@@ -144,12 +144,10 @@ export default function BoardCreatePage() {
     setBlocked(isDirty);
     if (isDirty) {
       setBlockMessage('작성 중인 내용이 있습니다.');
-    } else {
-      setBlockMessage('답변 생성 중에는 이동할 수 없습니다.');
     }
     return () => {
       setBlocked(false);
-      setBlockMessage('답변 생성 중에는 이동할 수 없습니다.');
+      setBlockMessage('');
     };
   }, [isDirty, setBlocked, setBlockMessage]);
 

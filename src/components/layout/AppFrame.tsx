@@ -83,7 +83,7 @@ export default function AppFrame({
   const isBottomNavVisible = true;
   const [isAuthed, setIsAuthed] = useState<boolean | null>(null);
   const [isNavigationBlocked, setIsNavigationBlocked] = useState(false);
-  const [blockMessage, setBlockMessage] = useState('답변 생성 중에는 이동할 수 없습니다.');
+  const [blockMessage, setBlockMessage] = useState('');
   const [blockedNavigationHandler, setBlockedNavigationHandler] = useState<
     ((action: () => void) => void) | null
   >(null);
