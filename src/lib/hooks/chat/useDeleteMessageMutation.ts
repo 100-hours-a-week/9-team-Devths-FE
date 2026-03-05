@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { deleteChatMessage } from '@/lib/api/chatMessages';
+import { ApiError } from '@/lib/errors/ApiError';
 
 import type { ChatMessageListResponse } from '@/lib/api/chatMessages';
 import type { ChatRoomListResponse } from '@/lib/api/chatRooms';
@@ -30,17 +31,7 @@ export function useDeleteMessageMutation(roomId: number) {
       const result = await deleteChatMessage(roomId, messageId);
 
       if (!result.ok) {
-        const error = new Error('Failed to delete chat message') as Error & {
-          status?: number;
-          serverMessage?: string;
-        };
-        error.status = result.status;
-
-        if (result.json && 'message' in result.json) {
-          error.serverMessage = result.json.message;
-        }
-
-        throw error;
+        throw ApiError.fromResponse(result);
       }
 
       return result;

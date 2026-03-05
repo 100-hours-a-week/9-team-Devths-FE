@@ -1,6 +1,7 @@
 import { type InfiniteData, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { leaveChatRoom } from '@/lib/api/chatRooms';
+import { ApiError } from '@/lib/errors/ApiError';
 import { chatKeys } from '@/lib/hooks/chat/queryKeys';
 
 import type { ChatRoomListResponse } from '@/lib/api/chatRooms';
@@ -13,17 +14,7 @@ export function useLeaveChatRoomMutation(roomId: number) {
       const result = await leaveChatRoom(roomId);
 
       if (!result.ok) {
-        const error = new Error('Failed to leave chat room') as Error & {
-          status?: number;
-          serverMessage?: string;
-        };
-        error.status = result.status;
-
-        if (result.json && 'message' in result.json) {
-          error.serverMessage = result.json.message;
-        }
-
-        throw error;
+        throw ApiError.fromResponse(result);
       }
 
       return result;
