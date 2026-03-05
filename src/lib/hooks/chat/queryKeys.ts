@@ -1,4 +1,5 @@
 import type { ChatroomsCursor } from '@/types/chat';
+import type { QueryKey } from '@tanstack/react-query';
 
 type ChatRoomsKeyParams = Readonly<{
   size?: number | null;
@@ -54,4 +55,12 @@ export const chatKeys = {
   realtimeUnread: () => [...chatKeys.all, 'realtimeUnread'] as const,
   realtimeUnreadRooms: () => [...chatKeys.all, 'realtimeUnreadRooms'] as const,
   rejoinedRoomUiOverrides: () => [...chatKeys.all, 'rejoinedRoomUiOverrides'] as const,
+  isMessagesQuery: (queryKey: QueryKey, roomId: number): boolean => {
+    if (!Array.isArray(queryKey)) return false;
+    const params = queryKey[2] as { roomId?: unknown } | undefined;
+    return queryKey[0] === 'chat' && queryKey[1] === 'messages' && params?.roomId === roomId;
+  },
+  isRoomsQuery: (queryKey: QueryKey): boolean => {
+    return Array.isArray(queryKey) && queryKey[0] === 'chat' && queryKey[1] === 'rooms';
+  },
 };
