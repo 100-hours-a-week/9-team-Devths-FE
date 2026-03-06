@@ -17,11 +17,10 @@ import { useHeader } from '@/components/layout/HeaderContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import {
   BOARD_ATTACHMENT_CONSTRAINTS,
-  BOARD_CONTENT_MAX_LENGTH,
   BOARD_FILE_MIME_TYPES,
   BOARD_IMAGE_MIME_TYPES,
-  BOARD_TITLE_MAX_LENGTH,
-} from '@/constants/boardCreate';
+} from '@/constants/attachment';
+import { BOARD_CONTENT_MAX_LENGTH, BOARD_TITLE_MAX_LENGTH } from '@/constants/boardCreate';
 import { createBoardPost } from '@/lib/api/boards';
 import { ApiError } from '@/lib/errors/ApiError';
 import { useBoardAttachments } from '@/lib/hooks/boards/useBoardAttachments';
