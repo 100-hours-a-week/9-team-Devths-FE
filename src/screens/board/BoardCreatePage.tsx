@@ -24,21 +24,28 @@ import { BOARD_CONTENT_MAX_LENGTH, BOARD_TITLE_MAX_LENGTH } from '@/constants/bo
 import { createBoardPost } from '@/lib/api/boards';
 import { ApiError } from '@/lib/errors/ApiError';
 import { useBoardAttachments } from '@/lib/hooks/boards/useBoardAttachments';
+import { useBoardForm } from '@/lib/hooks/boards/useBoardForm';
 import { toast } from '@/lib/toast/store';
 import { uploadFile } from '@/lib/upload/uploadFile';
 import { validateFiles } from '@/lib/validators/attachment';
-import { validateBoardCreateContent, validateBoardCreateTitle } from '@/lib/validators/boardCreate';
 
-import type { BoardTag } from '@/types/board';
 import type { BoardAttachment } from '@/types/boardCreate';
 
 export default function BoardCreatePage() {
   const router = useRouter();
   const { setOptions, resetOptions } = useHeader();
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [isPreview, setIsPreview] = useState(false);
-  const [tags, setTags] = useState<BoardTag[]>([]);
+  const {
+    title,
+    setTitle,
+    content,
+    setContent,
+    isPreview,
+    setIsPreview,
+    tags,
+    setTags,
+    titleError,
+    isSubmitEnabled,
+  } = useBoardForm();
   const {
     attachments,
     addAttachments,
@@ -51,9 +58,6 @@ export default function BoardCreatePage() {
   const [maskAttachment, setMaskAttachment] = useState<BoardAttachment | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const titleError = useMemo(() => validateBoardCreateTitle(title), [title]);
-  const contentError = useMemo(() => validateBoardCreateContent(content), [content]);
-  const isSubmitEnabled = useMemo(() => !titleError && !contentError, [contentError, titleError]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fileTooLargeOpen, setFileTooLargeOpen] = useState(false);
   const [unsupportedFileOpen, setUnsupportedFileOpen] = useState(false);
@@ -176,7 +180,7 @@ export default function BoardCreatePage() {
     if (action) {
       action();
     }
-  }, [clearAttachments]);
+  }, [clearAttachments, setContent, setIsPreview, setTags, setTitle]);
 
   const handleExitCancel = useCallback(() => {
     pendingNavigationRef.current = null;

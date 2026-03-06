@@ -26,10 +26,10 @@ import { ApiError } from '@/lib/errors/ApiError';
 import { boardsKeys } from '@/lib/hooks/boards/queryKeys';
 import { useBoardAttachments } from '@/lib/hooks/boards/useBoardAttachments';
 import { useBoardDetailQuery } from '@/lib/hooks/boards/useBoardDetailQuery';
+import { useBoardForm } from '@/lib/hooks/boards/useBoardForm';
 import { toast } from '@/lib/toast/store';
 import { uploadFile } from '@/lib/upload/uploadFile';
 import { validateFiles } from '@/lib/validators/attachment';
-import { validateBoardCreateContent, validateBoardCreateTitle } from '@/lib/validators/boardCreate';
 
 import type { BoardTag } from '@/types/board';
 import type { BoardAttachment, BoardAttachmentType } from '@/types/boardCreate';
@@ -93,10 +93,18 @@ export default function BoardEditPage() {
   }, [postIdParam]);
   const { data: post, isLoading, isError, refetch } = useBoardDetailQuery(postId);
 
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [isPreview, setIsPreview] = useState(false);
-  const [tags, setTags] = useState<BoardTag[]>([]);
+  const {
+    title,
+    setTitle,
+    content,
+    setContent,
+    isPreview,
+    setIsPreview,
+    tags,
+    setTags,
+    titleError,
+    isSubmitEnabled,
+  } = useBoardForm();
   const {
     attachments,
     setAttachments,
@@ -120,10 +128,6 @@ export default function BoardEditPage() {
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
   const pendingNavigationRef = useRef<(() => void) | null>(null);
 
-  const titleError = useMemo(() => validateBoardCreateTitle(title), [title]);
-  const contentError = useMemo(() => validateBoardCreateContent(content), [content]);
-  const isSubmitEnabled = useMemo(() => !titleError && !contentError, [contentError, titleError]);
-
   useEffect(() => {
     didBindInitialRef.current = false;
     setTitle('');
@@ -131,7 +135,7 @@ export default function BoardEditPage() {
     setTags([]);
     setInitialSnapshot(null);
     clearAttachments();
-  }, [clearAttachments, postId]);
+  }, [clearAttachments, postId, setContent, setTags, setTitle]);
 
   useEffect(() => {
     if (!post) return;
@@ -156,7 +160,7 @@ export default function BoardEditPage() {
       ),
     });
     didBindInitialRef.current = true;
-  }, [post, setAttachments]);
+  }, [post, setAttachments, setContent, setTags, setTitle]);
 
   const readyFileIds = useMemo(
     () =>
