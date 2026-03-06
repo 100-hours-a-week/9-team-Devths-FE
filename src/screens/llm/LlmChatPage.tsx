@@ -7,6 +7,7 @@ import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import LlmComposer from '@/components/llm/chat/LlmComposer';
 import LlmMessageList from '@/components/llm/chat/LlmMessageList';
 import { BLOCK_MSG_INTERVIEW, BLOCK_MSG_STREAMING, DEFAULT_LLM_MODEL } from '@/constants/llm';
+import { ApiError } from '@/lib/errors/ApiError';
 import { useInterviewEvaluation } from '@/lib/hooks/llm/useInterviewEvaluation';
 import { useInterviewSession } from '@/lib/hooks/llm/useInterviewSession';
 import { useLlmStreaming } from '@/lib/hooks/llm/useLlmStreaming';
@@ -107,9 +108,8 @@ export default function LlmChatPage({ roomId: _roomId, numericRoomId, initialMod
   const notifiedDeletedRef = useRef(false);
   const { setBlocked, setBlockMessage } = useNavigationGuard();
 
-  const errorStatus = (error as Error & { status?: number })?.status;
-  const errorMessage = (error as Error | undefined)?.message ?? '';
-  const isDeletedRoom = isError && (errorStatus === 404 || errorMessage.includes('채팅방'));
+  const apiError = ApiError.fromUnknown(error);
+  const isDeletedRoom = isError && (apiError.status === 404 || apiError.message.includes('채팅방'));
 
   useEffect(() => {
     if (!isDeletedRoom || notifiedDeletedRef.current) return;

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { followUser } from '@/lib/api/users';
+import { ApiError } from '@/lib/errors/ApiError';
 import { userKeys } from '@/lib/hooks/users/queryKeys';
 
 export function useFollowUserMutation() {
@@ -11,17 +12,7 @@ export function useFollowUserMutation() {
       const result = await followUser(userId);
 
       if (!result.ok) {
-        const error = new Error('Failed to follow user') as Error & {
-          status?: number;
-          serverMessage?: string;
-        };
-        error.status = result.status;
-
-        if (result.json && 'message' in result.json) {
-          error.serverMessage = result.json.message;
-        }
-
-        throw error;
+        throw ApiError.fromResponse(result);
       }
 
       return result;

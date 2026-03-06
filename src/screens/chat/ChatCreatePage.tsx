@@ -10,6 +10,7 @@ import { useHeader } from '@/components/layout/HeaderContext';
 import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
 import { MAX_NICKNAME_LENGTH, MIN_NICKNAME_LENGTH } from '@/constants/chat';
 import { applyRejoinedRoomUiOverride } from '@/lib/chat/rejoinedRoomUiCache';
+import { ApiError } from '@/lib/errors/ApiError';
 import { useCreatePrivateRoomMutation } from '@/lib/hooks/chat/useCreatePrivateRoomMutation';
 import { useMyFollowingsInfiniteQuery } from '@/lib/hooks/chat/useMyFollowingsInfiniteQuery';
 import { toast } from '@/lib/toast/store';
@@ -211,7 +212,7 @@ export default function ChatCreatePage() {
         message: responseData.isNew ? '채팅방이 생성되었습니다.' : '기존 채팅방으로 이동합니다.',
       });
     } catch (error) {
-      const err = error as Error & { serverMessage?: string };
+      const err = ApiError.fromUnknown(error);
       toast(err.serverMessage ?? '채팅방 생성에 실패했습니다.');
     }
   };

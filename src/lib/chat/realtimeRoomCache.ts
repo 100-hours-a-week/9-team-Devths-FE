@@ -1,10 +1,8 @@
+import { chatKeys } from '@/lib/hooks/chat/queryKeys';
+
 import type { ChatRoomNotificationResponse } from '@/lib/api/chatMessages';
 import type { ChatRoomListResponse } from '@/lib/api/chatRooms';
-import type { InfiniteData, QueryClient, QueryKey } from '@tanstack/react-query';
-
-function isRoomsQuery(queryKey: QueryKey) {
-  return Array.isArray(queryKey) && queryKey[0] === 'chat' && queryKey[1] === 'rooms';
-}
+import type { InfiniteData, QueryClient } from '@tanstack/react-query';
 
 export function applyRealtimeRoomNotification(
   queryClient: QueryClient,
@@ -14,7 +12,7 @@ export function applyRealtimeRoomNotification(
 
   queryClient.setQueriesData<InfiniteData<ChatRoomListResponse>>(
     {
-      predicate: (query) => isRoomsQuery(query.queryKey),
+      predicate: (query) => chatKeys.isRoomsQuery(query.queryKey),
     },
     (old) => {
       if (!old) {

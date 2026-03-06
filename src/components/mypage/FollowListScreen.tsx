@@ -9,6 +9,7 @@ import FollowUserProfileModal, {
   type FollowUserProfileModalData,
 } from '@/components/mypage/FollowUserProfileModal';
 import { fetchUserProfile } from '@/lib/api/users';
+import { ApiError } from '@/lib/errors/ApiError';
 import { userKeys } from '@/lib/hooks/users/queryKeys';
 import { useFollowUserMutation } from '@/lib/hooks/users/useFollowUserMutation';
 import { useMyFollowersInfiniteQuery } from '@/lib/hooks/users/useMyFollowersInfiniteQuery';
@@ -103,7 +104,7 @@ export default function FollowListScreen() {
       }
       void refetchSelectedUserProfile();
     } catch (error) {
-      const err = error as Error & { serverMessage?: string };
+      const err = ApiError.fromUnknown(error);
       toast(
         err.serverMessage ??
           (wasFollowing ? '언팔로우 처리에 실패했습니다.' : '팔로우 처리에 실패했습니다.'),

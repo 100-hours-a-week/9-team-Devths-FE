@@ -20,7 +20,7 @@ export function useNavigationGuard(): NavigationGuardContextValue {
   return {
     isBlocked: false,
     setBlocked: () => {},
-    blockMessage: '답변 생성 중에는 이동할 수 없습니다.',
+    blockMessage: '',
     setBlockMessage: () => {},
     requestNavigation: (action: () => void) => action(),
     setBlockedNavigationHandler: () => {},

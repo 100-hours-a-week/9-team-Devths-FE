@@ -13,6 +13,7 @@ import {
   SEARCH_PAGE_SIZE,
   SEARCH_QUERY_PARAM_KEY,
 } from '@/constants/board';
+import { ApiError } from '@/lib/errors/ApiError';
 import { useBoardSearchInfiniteQuery } from '@/lib/hooks/boards/useBoardSearchInfiniteQuery';
 
 type KeywordValidationResult = {
@@ -333,7 +334,7 @@ export default function BoardSearchPage() {
               </div>
             ) : isError ? (
               <div className="rounded-xl border border-dashed border-neutral-200 px-3 py-6 text-center text-xs text-neutral-500">
-                <p>{error instanceof Error ? error.message : '검색 결과를 불러오지 못했습니다.'}</p>
+                <p>{ApiError.fromUnknown(error).message}</p>
                 <button
                   type="button"
                   onClick={() => void refetch()}

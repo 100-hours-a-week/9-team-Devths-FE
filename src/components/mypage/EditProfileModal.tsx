@@ -9,6 +9,7 @@ import ProfileImagePicker from '@/components/common/ProfileImagePicker';
 import FileTooLargeModal from '@/components/signup/FileTooLargeModal';
 import { INTEREST_OPTIONS, normalizeInterests } from '@/constants/interests';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
+import { ApiError } from '@/lib/errors/ApiError';
 import { useDeleteProfileImageMutation } from '@/lib/hooks/users/useDeleteProfileImageMutation';
 import { useUpdateMeMutation } from '@/lib/hooks/users/useUpdateMeMutation';
 import { useUploadProfileImageMutation } from '@/lib/hooks/users/useUpdateProfileImageMutation';
@@ -141,7 +142,7 @@ function EditForm({ initialData, onClose, onWithdraw }: EditFormProps) {
       toast('회원 정보가 성공적으로 변경되었습니다.');
       onClose();
     } catch (error) {
-      const err = error as Error & { status?: number; serverMessage?: string };
+      const err = ApiError.fromUnknown(error);
       if (err.status === 409) {
         setSubmitMessage({ type: 'error', text: '중복된 닉네임입니다.' });
       } else {
