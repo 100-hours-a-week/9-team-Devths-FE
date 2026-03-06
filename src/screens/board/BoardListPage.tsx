@@ -20,15 +20,12 @@ import {
   PULL_MAX,
   PULL_THRESHOLD,
 } from '@/constants/board';
-import { fetchMyFollowings, fetchUserProfile } from '@/lib/api/users';
+import { fetchMyFollowings } from '@/lib/api/users';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
-import { ApiError } from '@/lib/errors/ApiError';
 import { useBoardListInfiniteQuery } from '@/lib/hooks/boards/useBoardListInfiniteQuery';
+import { useBoardMiniProfile } from '@/lib/hooks/boards/useBoardMiniProfile';
 import { useUnreadCountQuery } from '@/lib/hooks/notifications/useUnreadCountQuery';
 import { userKeys } from '@/lib/hooks/users/queryKeys';
-import { useFollowUserMutation } from '@/lib/hooks/users/useFollowUserMutation';
-import { useUnfollowUserMutation } from '@/lib/hooks/users/useUnfollowUserMutation';
-import { toast } from '@/lib/toast/store';
 import { parseBoardDateTime } from '@/lib/utils/board';
 
 import type { BoardSort, BoardTag } from '@/types/board';
@@ -43,17 +40,12 @@ export default function BoardListPage() {
   const [sort, setSort] = useState<BoardSort>('LATEST');
   const [selectedTags, setSelectedTags] = useState<BoardTag[]>([]);
   const [isTagOpen, setIsTagOpen] = useState(false);
-  const [isMiniProfileOpen, setIsMiniProfileOpen] = useState(false);
-  const [selectedAuthorId, setSelectedAuthorId] = useState<number | null>(null);
-  const [followStateOverrides, setFollowStateOverrides] = useState<Record<number, boolean>>({});
   const [pullDistance, setPullDistance] = useState(0);
   const [isPulling, setIsPulling] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isReadyToRefresh, setIsReadyToRefresh] = useState(false);
   const isRefreshingRef = useRef(false);
   const isReadyToRefreshRef = useRef(false);
-  const followMutation = useFollowUserMutation();
-  const unfollowMutation = useUnfollowUserMutation();
 
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useBoardListInfiniteQuery({
@@ -63,6 +55,19 @@ export default function BoardListPage() {
     });
 
   const rawPosts = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data]);
+
+  const {
+    isMiniProfileOpen,
+    setIsMiniProfileOpen,
+    modalUser,
+    modalUserId,
+    isMine,
+    isFollowing,
+    isFollowPending,
+    handleAuthorClick,
+    handleToggleFollow,
+  } = useBoardMiniProfile({ rawPosts, currentUserId });
+
   const {
     data: followingAuthorIds,
     isLoading: isFollowingAuthorIdsLoading,
@@ -132,48 +137,6 @@ export default function BoardListPage() {
     return filtered;
   }, [rawPosts, selectedTags, sort, followingAuthorIds]);
 
-  const selectedAuthor = useMemo(
-    () => rawPosts.find((post) => post.author.userId === selectedAuthorId)?.author ?? null,
-    [rawPosts, selectedAuthorId],
-  );
-  const { data: selectedAuthorProfile, refetch: refetchSelectedAuthorProfile } = useQuery({
-    queryKey: userKeys.profile(selectedAuthorId ?? -1),
-    queryFn: async () => {
-      const result = await fetchUserProfile(selectedAuthorId!);
-
-      if (!result.ok || !result.json) {
-        throw new Error('Failed to fetch user profile');
-      }
-
-      if ('data' in result.json && result.json.data) {
-        return result.json.data;
-      }
-
-      throw new Error('Invalid response format');
-    },
-    enabled: selectedAuthorId !== null,
-  });
-
-  const modalUser = selectedAuthor
-    ? {
-        userId: selectedAuthor.userId,
-        nickname: selectedAuthorProfile?.user.nickname ?? selectedAuthor.nickname,
-        profileImageUrl:
-          selectedAuthorProfile?.profileImage?.url ?? selectedAuthor.profileImageUrl ?? null,
-        interests: selectedAuthorProfile?.interests ?? selectedAuthor.interests ?? [],
-      }
-    : null;
-  const modalUserId = modalUser?.userId ?? null;
-  const isMine = Boolean(
-    modalUserId !== null && currentUserId !== null && modalUserId === currentUserId,
-  );
-  const profileIsFollowing = selectedAuthorProfile?.isFollowing ?? false;
-  const isFollowing =
-    modalUserId !== null && followStateOverrides[modalUserId] !== undefined
-      ? followStateOverrides[modalUserId]
-      : profileIsFollowing;
-  const isFollowPending = followMutation.isPending || unfollowMutation.isPending;
-
   const handleCreatePost = useCallback(() => {
     requestNavigation(() => router.push('/board/create'));
   }, [requestNavigation, router]);
@@ -185,29 +148,6 @@ export default function BoardListPage() {
   const handleNotificationsClick = useCallback(() => {
     requestNavigation(() => router.push('/notifications'));
   }, [requestNavigation, router]);
-
-  const handleAuthorClick = (userId: number) => {
-    setSelectedAuthorId(userId);
-    setIsMiniProfileOpen(true);
-  };
-
-  const handleToggleFollow = async () => {
-    if (modalUserId === null || isMine || isFollowPending) return;
-
-    try {
-      if (isFollowing) {
-        await unfollowMutation.mutateAsync(modalUserId);
-        setFollowStateOverrides((prev) => ({ ...prev, [modalUserId]: false }));
-      } else {
-        await followMutation.mutateAsync(modalUserId);
-        setFollowStateOverrides((prev) => ({ ...prev, [modalUserId]: true }));
-      }
-      void refetchSelectedAuthorProfile();
-    } catch (error) {
-      const err = ApiError.fromUnknown(error);
-      toast(err.serverMessage ?? '팔로우 처리에 실패했습니다.');
-    }
-  };
 
   const handlePostClick = useCallback(
     (postId: number) => {
