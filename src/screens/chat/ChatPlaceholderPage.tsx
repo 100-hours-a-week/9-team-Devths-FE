@@ -13,26 +13,17 @@ import { ROOM_NAME_MAX_LENGTH, ROOM_PAGE_SIZE } from '@/constants/chat';
 import { fetchChatRooms } from '@/lib/api/chatRooms';
 import { chatKeys } from '@/lib/hooks/chat/queryKeys';
 import { useChatRoomsInfiniteQuery } from '@/lib/hooks/chat/useChatRoomsInfiniteQuery';
+import { parseServerDateTime } from '@/lib/utils/datetime';
 
 import type { ChatRoomListResponse } from '@/lib/api/chatRooms';
 import type { RejoinedRoomUiOverrideMap } from '@/lib/chat/rejoinedRoomUiCache';
-
-function parseKstDateTime(value: string): Date {
-  const normalized = value.includes(' ') ? value.replace(' ', 'T') : value;
-  const hasTimezone = /([zZ]|[+-]\d{2}:\d{2})$/.test(normalized);
-  if (hasTimezone) {
-    return new Date(normalized);
-  }
-  // Backend chat timestamps are currently serialized without timezone info but represent UTC.
-  return new Date(`${normalized}Z`);
-}
 
 function formatRoomTime(isoString: string | null): string {
   if (!isoString) {
     return '';
   }
 
-  const date = parseKstDateTime(isoString);
+  const date = parseServerDateTime(isoString);
   if (Number.isNaN(date.getTime())) {
     return '';
   }
@@ -85,7 +76,7 @@ function resolveTimestamp(value: string | null): number | null {
     return null;
   }
 
-  const parsed = parseKstDateTime(value);
+  const parsed = parseServerDateTime(value);
   if (Number.isNaN(parsed.getTime())) {
     return null;
   }

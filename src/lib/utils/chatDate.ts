@@ -1,16 +1,7 @@
-export function parseKstDateTime(value: string): Date {
-  const normalized = value.includes(' ') ? value.replace(' ', 'T') : value;
-  const hasTimezone = /([zZ]|[+-]\d{2}:\d{2})$/.test(normalized);
-  if (hasTimezone) {
-    return new Date(normalized);
-  }
-
-  // Backend chat timestamps are currently serialized without timezone info but represent UTC.
-  return new Date(`${normalized}Z`);
-}
+import { parseServerDateTime } from '@/lib/utils/datetime';
 
 export function formatDateKey(value: string): string {
-  const date = parseKstDateTime(value);
+  const date = parseServerDateTime(value);
   if (Number.isNaN(date.getTime())) {
     return value.slice(0, 10);
   }
@@ -22,7 +13,7 @@ export function formatDateKey(value: string): string {
 }
 
 export function formatStickyDateLabel(value: string): string {
-  const date = parseKstDateTime(value);
+  const date = parseServerDateTime(value);
   if (Number.isNaN(date.getTime())) {
     return value.slice(0, 10);
   }
@@ -36,7 +27,7 @@ export function formatStickyDateLabel(value: string): string {
 }
 
 export function formatMessageTime(value: string): string {
-  const date = parseKstDateTime(value);
+  const date = parseServerDateTime(value);
   if (Number.isNaN(date.getTime())) {
     return '';
   }
