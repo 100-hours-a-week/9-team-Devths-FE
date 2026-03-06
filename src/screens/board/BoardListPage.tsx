@@ -16,7 +16,6 @@ import {
   BOARD_PAGE_SIZE,
   BOARD_TAG_MAX,
   FOLLOWINGS_FETCH_SIZE,
-  POPULAR_MIN_LIKES,
   PULL_MAX,
   PULL_THRESHOLD,
 } from '@/constants/board';
@@ -24,9 +23,9 @@ import { fetchMyFollowings } from '@/lib/api/users';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { useBoardListInfiniteQuery } from '@/lib/hooks/boards/useBoardListInfiniteQuery';
 import { useBoardMiniProfile } from '@/lib/hooks/boards/useBoardMiniProfile';
+import { useFilteredPosts } from '@/lib/hooks/boards/useFilteredPosts';
 import { useUnreadCountQuery } from '@/lib/hooks/notifications/useUnreadCountQuery';
 import { userKeys } from '@/lib/hooks/users/queryKeys';
-import { parseBoardDateTime } from '@/lib/utils/board';
 
 import type { BoardSort, BoardTag } from '@/types/board';
 
@@ -109,33 +108,7 @@ export default function BoardListPage() {
     enabled: sort === 'FOLLOWING',
   });
 
-  const filteredPosts = useMemo(() => {
-    let filtered = rawPosts;
-
-    if (selectedTags.length > 0) {
-      filtered = filtered.filter((post) => selectedTags.some((tag) => post.tags.includes(tag)));
-    }
-
-    if (sort === 'POPULAR') {
-      filtered = filtered
-        .filter((post) => post.stats.likeCount >= POPULAR_MIN_LIKES)
-        .sort((a, b) => {
-          if (b.stats.likeCount !== a.stats.likeCount) {
-            return b.stats.likeCount - a.stats.likeCount;
-          }
-          return (
-            parseBoardDateTime(b.createdAt).getTime() - parseBoardDateTime(a.createdAt).getTime()
-          );
-        });
-    }
-
-    if (sort === 'FOLLOWING') {
-      const followingAuthorIdSet = new Set(followingAuthorIds ?? []);
-      filtered = filtered.filter((post) => followingAuthorIdSet.has(post.author.userId));
-    }
-
-    return filtered;
-  }, [rawPosts, selectedTags, sort, followingAuthorIds]);
+  const filteredPosts = useFilteredPosts(rawPosts, { sort, selectedTags, followingAuthorIds });
 
   const handleCreatePost = useCallback(() => {
     requestNavigation(() => router.push('/board/create'));
