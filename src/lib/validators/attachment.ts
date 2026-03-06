@@ -17,11 +17,7 @@ export type ValidateFilesResult = {
   errors: AttachmentError[];
 };
 
-function isImageMime(mimeType: string, allowedMimes: readonly string[]): boolean {
-  return allowedMimes.includes(mimeType);
-}
-
-function isFileMime(mimeType: string, allowedMimes: readonly string[]): boolean {
+function isMimeTypeAllowed(mimeType: string, allowedMimes: readonly string[]): boolean {
   return allowedMimes.includes(mimeType);
 }
 
@@ -40,8 +36,8 @@ export function validateFiles(
   let fileCount = existingFiles;
 
   for (const file of files) {
-    const isImage = isImageMime(file.type, constraints.imageMimeTypes);
-    const isFile = isFileMime(file.type, constraints.fileMimeTypes);
+    const isImage = isMimeTypeAllowed(file.type, constraints.imageMimeTypes);
+    const isFile = isMimeTypeAllowed(file.type, constraints.fileMimeTypes);
 
     if (!isImage && !isFile) {
       errors.push({
