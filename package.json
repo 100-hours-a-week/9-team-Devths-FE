@@ -41,6 +41,7 @@
     "zustand": "^5.0.10"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^16.1.6",
     "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4",
     "@tanstack/react-query-devtools": "^5.91.2",
@@ -69,6 +70,9 @@
     "vite-tsconfig-paths": "^6.0.4",
     "vitest": "^4.0.17"
   },
+  "browserslist": [
+    "defaults and fully supports es6-module"
+  ],
   "pnpm": {
     "onlyBuiltDependencies": [
       "@sentry/cli",
