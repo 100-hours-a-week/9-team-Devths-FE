@@ -17,7 +17,6 @@ import { createRoom, startAnalysis } from '@/lib/api/llmRooms';
 import { useAnalysisTaskStore } from '@/lib/llm/analysisTaskStore';
 import { toast } from '@/lib/toast/store';
 import { uploadFile } from '@/lib/upload/uploadFile';
-import { getPdfPageCount } from '@/lib/utils/pdf';
 import { getAnalysisDisabledReason } from '@/lib/validators/analysisForm';
 import { validateFiles } from '@/lib/validators/attachment';
 
@@ -162,6 +161,7 @@ export default function LlmAnalysisPage({ roomId, numericRoomId: propNumericRoom
         if (okFiles.length > 0) {
           const file = okFiles[0];
           try {
+            const { getPdfPageCount } = await import('@/lib/utils/pdf');
             const pageCount = await getPdfPageCount(file);
             if (pageCount > LLM_PDF_MAX_PAGES) {
               toast(`PDF는 최대 ${LLM_PDF_MAX_PAGES}장까지 첨부할 수 있습니다.`);
