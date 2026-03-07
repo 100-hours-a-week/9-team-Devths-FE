@@ -70,6 +70,9 @@
     "vite-tsconfig-paths": "^6.0.4",
     "vitest": "^4.0.17"
   },
+  "browserslist": [
+    "defaults and fully supports es6-module"
+  ],
   "pnpm": {
     "onlyBuiltDependencies": [
       "@sentry/cli",
