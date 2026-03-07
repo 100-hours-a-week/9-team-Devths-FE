@@ -40,6 +40,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://devths-storage-prod.s3.ap-northeast-2.amazonaws.com" />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {GA_MEASUREMENT_ID ? (
           <>
