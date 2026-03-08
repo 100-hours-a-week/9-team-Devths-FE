@@ -220,7 +220,7 @@ export default function SignupPage() {
             <h1 className="flex items-center">
               <span className="sr-only">Devths</span>
               <Image
-                src="/icons/Devths.png"
+                src="/icons/Devths.svg"
                 alt="Devths"
                 width={520}
                 height={132}

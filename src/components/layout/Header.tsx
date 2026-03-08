@@ -63,7 +63,7 @@ export default function Header({
               aria-label="Devths 홈 이동"
             >
               <Image
-                src="/icons/Devths.png"
+                src="/icons/Devths.svg"
                 alt="Devths"
                 width={156}
                 height={48}

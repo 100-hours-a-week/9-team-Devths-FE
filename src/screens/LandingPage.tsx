@@ -51,7 +51,7 @@ export default function LandingPage() {
             <h1 className="flex items-center">
               <span className="sr-only">Devths</span>
               <Image
-                src="/icons/Devths.png"
+                src="/icons/Devths.svg"
                 alt="Devths"
                 width={420}
                 height={108}
