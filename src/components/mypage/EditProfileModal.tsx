@@ -14,6 +14,7 @@ import { useDeleteProfileImageMutation } from '@/lib/hooks/users/useDeleteProfil
 import { useUpdateMeMutation } from '@/lib/hooks/users/useUpdateMeMutation';
 import { useUploadProfileImageMutation } from '@/lib/hooks/users/useUpdateProfileImageMutation';
 import { toast } from '@/lib/toast/store';
+import { resizeProfileImage } from '@/lib/utils/resizeProfileImage';
 import { validateNickname } from '@/lib/utils/validateNickname';
 
 import type { MeData } from '@/lib/api/users';
@@ -68,10 +69,16 @@ function EditForm({ initialData, onClose, onWithdraw }: EditFormProps) {
     setSubmitMessage(null);
   };
 
-  const handleSelectImage = (file: File) => {
-    const url = URL.createObjectURL(file);
+  const handleSelectImage = async (file: File) => {
+    let fileToUse = file;
+    try {
+      fileToUse = await resizeProfileImage(file);
+    } catch {
+      // 리사이즈 실패 시 원본 파일 사용
+    }
+    const url = URL.createObjectURL(fileToUse);
     setPreviewUrl(url);
-    setSelectedFile(file);
+    setSelectedFile(fileToUse);
     setIsProfileImageDeleted(false);
     setSubmitMessage(null);
   };
