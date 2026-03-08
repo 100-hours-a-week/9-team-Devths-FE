@@ -23,6 +23,7 @@ import {
 } from '@/lib/auth/token';
 import { toast } from '@/lib/toast/store';
 import { uploadToPresignedUrl } from '@/lib/upload/s3Presigned';
+import { resizeProfileImage } from '@/lib/utils/resizeProfileImage';
 import { getNicknameErrorMessage } from '@/lib/validators/nickname';
 
 export default function SignupPage() {
@@ -138,9 +139,16 @@ export default function SignupPage() {
 
   const handleSelectProfile = async (file: File) => {
     if (profilePreviewUrl) URL.revokeObjectURL(profilePreviewUrl);
-    setProfilePreviewUrl(URL.createObjectURL(file));
 
-    await uploadProfileImage(file);
+    let fileToUpload = file;
+    try {
+      fileToUpload = await resizeProfileImage(file);
+    } catch {
+      // 리사이즈 실패 시 원본 파일 사용
+    }
+
+    setProfilePreviewUrl(URL.createObjectURL(fileToUpload));
+    await uploadProfileImage(fileToUpload);
   };
 
   const handleSubmit = async () => {
