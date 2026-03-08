@@ -135,7 +135,7 @@
     z-index: -1;
     pointer-events: none;
     background-color: var(--background);
-    background-image: url('/images/background.png');
+    background-image: url('/images/background.webp');
     background-position: center;
     background-repeat: no-repeat;
     background-size: cover;
