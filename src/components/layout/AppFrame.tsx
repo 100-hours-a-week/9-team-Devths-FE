@@ -191,19 +191,11 @@ export default function AppFrame({
       toast(blockMessage);
     };
 
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (!isNavigationBlocked) return;
-      event.preventDefault();
-      event.returnValue = '';
-    };
-
     window.history.pushState(null, '', window.location.href);
     window.addEventListener('popstate', handlePopState);
-    window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
       window.removeEventListener('popstate', handlePopState);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [blockMessage, isNavigationBlocked]);
 
