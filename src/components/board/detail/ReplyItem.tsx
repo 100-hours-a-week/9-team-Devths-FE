@@ -134,7 +134,12 @@ export default function ReplyItem({
           ) : null}
         </div>
         {isEditing ? null : (
-          <p className={cn('mt-2 text-xs', isDeleted ? 'text-neutral-400' : 'text-neutral-600')}>
+          <p
+            className={cn(
+              'mt-2 text-xs break-all',
+              isDeleted ? 'text-neutral-400' : 'text-neutral-600',
+            )}
+          >
             {isDeleted ? '삭제된 댓글입니다.' : content}
           </p>
         )}

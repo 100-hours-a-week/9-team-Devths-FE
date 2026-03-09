@@ -33,7 +33,7 @@ export default function PostContent({
 
   return (
     <div className="mt-3">
-      <h1 className="text-xl font-semibold text-neutral-900">{title}</h1>
+      <h1 className="text-xl font-semibold break-all text-neutral-900">{title}</h1>
       {trimmed.length > 0 ? (
         <div className="markdown-preview mt-2 text-sm" dangerouslySetInnerHTML={{ __html: html }} />
       ) : (
