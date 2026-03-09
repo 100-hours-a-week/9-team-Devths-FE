@@ -351,12 +351,13 @@ export default function BoardListPage() {
               </p>
             ) : (
               <>
-                {filteredPosts.map((post) => (
+                {filteredPosts.map((post, index) => (
                   <BoardPostCard
                     key={post.postId}
                     post={post}
                     onClick={handlePostClick}
                     onAuthorClick={handleAuthorClick}
+                    priority={index === 0}
                   />
                 ))}
                 <div className="px-4 pt-2">
