@@ -158,7 +158,7 @@
   }
 
   .markdown-preview p {
-    @apply break-all text-sm text-neutral-700;
+    @apply text-sm break-all text-neutral-700;
   }
 
   .markdown-preview ul {
