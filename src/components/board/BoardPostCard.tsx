@@ -11,9 +11,15 @@ type BoardPostCardProps = {
   post: BoardPostSummary;
   onClick?: (postId: number) => void;
   onAuthorClick?: (userId: number) => void;
+  priority?: boolean;
 };
 
-export default function BoardPostCard({ post, onClick, onAuthorClick }: BoardPostCardProps) {
+export default function BoardPostCard({
+  post,
+  onClick,
+  onAuthorClick,
+  priority = false,
+}: BoardPostCardProps) {
   const handleCardClick = () => {
     onClick?.(post.postId);
   };
@@ -49,6 +55,7 @@ export default function BoardPostCard({ post, onClick, onAuthorClick }: BoardPos
               fill
               sizes="40px"
               className="rounded-full object-cover"
+              priority={priority}
             />
           ) : (
             <span>{post.author.nickname.slice(0, 1)}</span>
