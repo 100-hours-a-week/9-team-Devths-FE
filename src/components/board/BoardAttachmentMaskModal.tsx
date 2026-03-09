@@ -61,6 +61,7 @@ export default function BoardAttachmentMaskModal({
 
     let tempUrl: string | null = null;
     const image = new Image();
+    image.crossOrigin = 'anonymous';
     if (attachment.previewUrl) {
       image.src = attachment.previewUrl;
     } else {
