@@ -70,7 +70,7 @@ export function usePushNotificationToggle() {
       if (isActive) {
         const deviceId = getStoredDeviceId();
         if (!deviceId) return;
-        await patchFcmToken(deviceId, { active: false });
+        await patchFcmToken(deviceId, { isActive: false });
         setIsActive(false);
         localStorage.setItem(PUSH_ACTIVE_KEY, 'false');
       } else {
@@ -86,7 +86,7 @@ export function usePushNotificationToggle() {
         if (token) {
           await postFcmToken(deviceId, { token, deviceType: 'WEB' });
         }
-        await patchFcmToken(deviceId, { active: true });
+        await patchFcmToken(deviceId, { isActive: true });
         setIsActive(true);
         localStorage.setItem(PUSH_ACTIVE_KEY, 'true');
       }
