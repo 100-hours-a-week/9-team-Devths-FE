@@ -12,7 +12,10 @@ import EditProfileModal from '@/components/mypage/EditProfileModal';
 import WithdrawModal from '@/components/mypage/WithdrawModal';
 import { postLogout } from '@/lib/api/auth';
 import { clearAccessToken } from '@/lib/auth/token';
-import { unregisterFcmToken } from '@/lib/hooks/notifications/useFcmToken';
+import {
+  unregisterFcmToken,
+  usePushNotificationToggle,
+} from '@/lib/hooks/notifications/useFcmToken';
 import { useMeQuery } from '@/lib/hooks/users/useMeQuery';
 import { useMyCommentsInfiniteQuery } from '@/lib/hooks/users/useMyCommentsInfiniteQuery';
 import { useMyPostsInfiniteQuery } from '@/lib/hooks/users/useMyPostsInfiniteQuery';
@@ -47,6 +50,12 @@ export default function MyPageScreen() {
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const {
+    isActive: isPushActive,
+    isPending: isPushPending,
+    toggle: togglePush,
+    isSupported: isPushSupported,
+  } = usePushNotificationToggle();
 
   const handleWithdraw = () => {
     setIsEditOpen(false);
@@ -274,6 +283,27 @@ export default function MyPageScreen() {
                 </p>
               </button>
             </div>
+
+            {isPushSupported && (
+              <div className="flex items-center justify-between rounded-xl border border-neutral-200 bg-white px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-neutral-900">푸시 알림</p>
+                  <p className="text-xs text-neutral-500">새 알림을 푸시로 받습니다</p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isPushActive}
+                  onClick={() => void togglePush()}
+                  disabled={isPushPending}
+                  className={`relative h-6 w-11 rounded-full transition-colors disabled:opacity-50 ${isPushActive ? 'bg-[#05C075]' : 'bg-neutral-300'}`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${isPushActive ? 'translate-x-5' : 'translate-x-0'}`}
+                  />
+                </button>
+              </div>
+            )}
           </div>
         )}
       </section>

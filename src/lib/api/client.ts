@@ -242,6 +242,9 @@ export const api = {
   put<T>(path: string, body?: unknown, opts?: Omit<RequestOptions, 'method' | 'path' | 'body'>) {
     return apiRequest<T>({ method: 'PUT', path, body, ...opts });
   },
+  patch<T>(path: string, body?: unknown, opts?: Omit<RequestOptions, 'method' | 'path' | 'body'>) {
+    return apiRequest<T>({ method: 'PATCH', path, body, ...opts });
+  },
   delete<T>(path: string, opts?: Omit<RequestOptions, 'method' | 'path'>) {
     return apiRequest<T>({ method: 'DELETE', path, ...opts });
   },

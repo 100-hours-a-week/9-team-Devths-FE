@@ -1,9 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
-import { deleteFcmToken, postFcmToken } from '@/lib/api/notifications';
+import { deleteFcmToken, patchFcmToken, postFcmToken } from '@/lib/api/notifications';
 import { requestFcmToken } from '@/lib/firebase/messaging';
+import { toast } from '@/lib/toast/store';
 
 const DEVICE_ID_KEY = 'fcm_device_id';
+const PUSH_ACTIVE_KEY = 'fcm_notifications_active';
 
 function getOrCreateDeviceId(): string {
   let id = localStorage.getItem(DEVICE_ID_KEY);
@@ -45,4 +47,52 @@ export function useFcmToken() {
 
     void register();
   }, []);
+}
+
+export function usePushNotificationToggle() {
+  const [isActive, setIsActive] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    if (!('Notification' in window) || Notification.permission !== 'granted') return false;
+    const stored = localStorage.getItem(PUSH_ACTIVE_KEY);
+    return stored === null ? true : stored === 'true';
+  });
+  const [isPending, setIsPending] = useState(false);
+
+  const isSupported =
+    typeof window !== 'undefined' && 'Notification' in window && 'serviceWorker' in navigator;
+
+  const toggle = async () => {
+    if (isPending) return;
+
+    setIsPending(true);
+    try {
+      if (isActive) {
+        const deviceId = getStoredDeviceId();
+        if (!deviceId) return;
+        await patchFcmToken(deviceId, { active: false });
+        setIsActive(false);
+        localStorage.setItem(PUSH_ACTIVE_KEY, 'false');
+      } else {
+        if (Notification.permission !== 'granted') {
+          toast('브라우저 설정에서 알림 권한을 허용해 주세요.');
+          if (Notification.permission === 'denied') return;
+          const permission = await Notification.requestPermission();
+          if (permission !== 'granted') return;
+        }
+
+        const deviceId = getOrCreateDeviceId();
+        const token = await requestFcmToken();
+        if (token) {
+          await postFcmToken(deviceId, { token, deviceType: 'WEB' });
+        }
+        await patchFcmToken(deviceId, { active: true });
+        setIsActive(true);
+        localStorage.setItem(PUSH_ACTIVE_KEY, 'true');
+      }
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return { isActive, isPending, toggle, isSupported };
 }
