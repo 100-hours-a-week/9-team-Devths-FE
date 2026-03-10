@@ -21,10 +21,16 @@ export function getStoredDeviceId(): string | null {
   return localStorage.getItem(DEVICE_ID_KEY);
 }
 
-export async function unregisterFcmToken(): Promise<void> {
+export async function unregisterFcmToken(): Promise<boolean> {
   const deviceId = getStoredDeviceId();
-  if (!deviceId) return;
-  await deleteFcmToken(deviceId);
+  if (!deviceId) return true;
+
+  try {
+    const result = await deleteFcmToken(deviceId);
+    return result.ok || result.status === 404;
+  } catch {
+    return false;
+  }
 }
 
 export function useFcmToken() {
@@ -40,15 +46,23 @@ export function useFcmToken() {
       if (permission !== 'granted') return;
 
       const token = await requestFcmToken();
-      if (!token) return;
+      if (!token) {
+        toast('푸시 알림 등록에 실패했어요. 잠시 후 다시 시도해 주세요.');
+        return;
+      }
 
       const deviceId = getOrCreateDeviceId();
       const postResult = await postFcmToken(deviceId, { token, deviceType: 'WEB' });
-      if (!postResult.ok) return;
+      if (!postResult.ok) {
+        toast('푸시 알림 등록에 실패했어요. 잠시 후 다시 시도해 주세요.');
+        return;
+      }
       localStorage.setItem(PUSH_ACTIVE_KEY, 'true');
     };
 
-    void register();
+    void register().catch(() => {
+      toast('푸시 알림 등록에 실패했어요. 잠시 후 다시 시도해 주세요.');
+    });
   }, []);
 }
 
@@ -73,7 +87,7 @@ export function usePushNotificationToggle() {
         const deviceId = getStoredDeviceId();
         if (!deviceId) return;
         const patchResult = await patchFcmToken(deviceId, { isActive: false });
-        if (!patchResult.ok) {
+        if (!patchResult.ok && patchResult.status !== 404) {
           toast('알림 설정을 변경하지 못했어요. 잠시 후 다시 시도해 주세요.');
           return;
         }
@@ -95,11 +109,6 @@ export function usePushNotificationToggle() {
         }
         const postResult = await postFcmToken(deviceId, { token, deviceType: 'WEB' });
         if (!postResult.ok) {
-          toast('알림을 켜지 못했어요. 잠시 후 다시 시도해 주세요.');
-          return;
-        }
-        const patchResult = await patchFcmToken(deviceId, { isActive: true });
-        if (!patchResult.ok) {
           toast('알림을 켜지 못했어요. 잠시 후 다시 시도해 주세요.');
           return;
         }
