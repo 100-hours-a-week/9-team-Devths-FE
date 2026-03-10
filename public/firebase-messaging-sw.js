@@ -49,6 +49,6 @@ self.addEventListener('notificationclick', (event) => {
       });
       if (existing) return existing.focus();
       return clients.openWindow(url);
-    })
+    }),
   );
 });
