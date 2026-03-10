@@ -12,6 +12,7 @@ import EditProfileModal from '@/components/mypage/EditProfileModal';
 import WithdrawModal from '@/components/mypage/WithdrawModal';
 import { postLogout } from '@/lib/api/auth';
 import { clearAccessToken } from '@/lib/auth/token';
+import { unregisterFcmToken } from '@/lib/hooks/notifications/useFcmToken';
 import { useMeQuery } from '@/lib/hooks/users/useMeQuery';
 import { useMyCommentsInfiniteQuery } from '@/lib/hooks/users/useMyCommentsInfiniteQuery';
 import { useMyPostsInfiniteQuery } from '@/lib/hooks/users/useMyPostsInfiniteQuery';
@@ -67,6 +68,7 @@ export default function MyPageScreen() {
 
     setIsLoggingOut(true);
     try {
+      await unregisterFcmToken();
       const result = await postLogout();
       if (!result.ok) {
         throw new Error('로그아웃에 실패했습니다.');
