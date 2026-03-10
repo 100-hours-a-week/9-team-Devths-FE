@@ -43,7 +43,8 @@ export function useFcmToken() {
       if (!token) return;
 
       const deviceId = getOrCreateDeviceId();
-      await postFcmToken(deviceId, { token, deviceType: 'WEB' });
+      const postResult = await postFcmToken(deviceId, { token, deviceType: 'WEB' });
+      if (!postResult.ok) return;
       localStorage.setItem(PUSH_ACTIVE_KEY, 'true');
     };
 
@@ -71,7 +72,11 @@ export function usePushNotificationToggle() {
       if (isActive) {
         const deviceId = getStoredDeviceId();
         if (!deviceId) return;
-        await patchFcmToken(deviceId, { isActive: false });
+        const patchResult = await patchFcmToken(deviceId, { isActive: false });
+        if (!patchResult.ok) {
+          toast('알림 설정을 변경하지 못했어요. 잠시 후 다시 시도해 주세요.');
+          return;
+        }
         setIsActive(false);
         localStorage.setItem(PUSH_ACTIVE_KEY, 'false');
       } else {
@@ -84,10 +89,20 @@ export function usePushNotificationToggle() {
 
         const deviceId = getOrCreateDeviceId();
         const token = await requestFcmToken();
-        if (token) {
-          await postFcmToken(deviceId, { token, deviceType: 'WEB' });
+        if (!token) {
+          toast('푸시 토큰을 가져오지 못했어요. 잠시 후 다시 시도해 주세요.');
+          return;
         }
-        await patchFcmToken(deviceId, { isActive: true });
+        const postResult = await postFcmToken(deviceId, { token, deviceType: 'WEB' });
+        if (!postResult.ok) {
+          toast('알림을 켜지 못했어요. 잠시 후 다시 시도해 주세요.');
+          return;
+        }
+        const patchResult = await patchFcmToken(deviceId, { isActive: true });
+        if (!patchResult.ok) {
+          toast('알림을 켜지 못했어요. 잠시 후 다시 시도해 주세요.');
+          return;
+        }
         setIsActive(true);
         localStorage.setItem(PUSH_ACTIVE_KEY, 'true');
       }
