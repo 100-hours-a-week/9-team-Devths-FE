@@ -71,7 +71,7 @@ export function usePushNotificationToggle() {
     if (typeof window === 'undefined') return false;
     if (!('Notification' in window) || Notification.permission !== 'granted') return false;
     const stored = localStorage.getItem(PUSH_ACTIVE_KEY);
-    return stored === null ? true : stored === 'true';
+    return stored === null ? false : stored === 'true';
   });
   const [isPending, setIsPending] = useState(false);
 
@@ -85,7 +85,10 @@ export function usePushNotificationToggle() {
     try {
       if (isActive) {
         const deviceId = getStoredDeviceId();
-        if (!deviceId) return;
+        if (!deviceId) {
+          toast('알림 설정을 변경하지 못했어요. 잠시 후 다시 시도해 주세요.');
+          return;
+        }
         const patchResult = await patchFcmToken(deviceId, { isActive: false });
         if (!patchResult.ok && patchResult.status !== 404) {
           toast('알림 설정을 변경하지 못했어요. 잠시 후 다시 시도해 주세요.');
@@ -94,26 +97,34 @@ export function usePushNotificationToggle() {
         setIsActive(false);
         localStorage.setItem(PUSH_ACTIVE_KEY, 'false');
       } else {
-        if (Notification.permission !== 'granted') {
-          toast('브라우저 설정에서 알림 권한을 허용해 주세요.');
-          if (Notification.permission === 'denied') return;
-          const permission = await Notification.requestPermission();
-          if (permission !== 'granted') return;
-        }
-
-        const deviceId = getOrCreateDeviceId();
-        const token = await requestFcmToken();
-        if (!token) {
-          toast('푸시 토큰을 가져오지 못했어요. 잠시 후 다시 시도해 주세요.');
-          return;
-        }
-        const postResult = await postFcmToken(deviceId, { token, deviceType: 'WEB' });
-        if (!postResult.ok) {
+        const deviceId = getStoredDeviceId();
+        if (!deviceId) {
           toast('알림을 켜지 못했어요. 잠시 후 다시 시도해 주세요.');
           return;
         }
-        setIsActive(true);
-        localStorage.setItem(PUSH_ACTIVE_KEY, 'true');
+        const patchResult = await patchFcmToken(deviceId, { isActive: true });
+        if (patchResult.ok) {
+          setIsActive(true);
+          localStorage.setItem(PUSH_ACTIVE_KEY, 'true');
+          return;
+        }
+        // 토큰 레코드가 삭제된 경우(404) 재등록 시도
+        if (patchResult.status === 404) {
+          const token = await requestFcmToken();
+          if (!token) {
+            toast('알림을 켜지 못했어요. 잠시 후 다시 시도해 주세요.');
+            return;
+          }
+          const postResult = await postFcmToken(deviceId, { token, deviceType: 'WEB' });
+          if (!postResult.ok) {
+            toast('알림을 켜지 못했어요. 잠시 후 다시 시도해 주세요.');
+            return;
+          }
+          setIsActive(true);
+          localStorage.setItem(PUSH_ACTIVE_KEY, 'true');
+          return;
+        }
+        toast('알림을 켜지 못했어요. 잠시 후 다시 시도해 주세요.');
       }
     } finally {
       setIsPending(false);
