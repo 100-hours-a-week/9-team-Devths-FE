@@ -33,6 +33,7 @@ export function useFcmToken() {
     if (!('Notification' in window)) return;
     if (!('serviceWorker' in navigator)) return;
     if (Notification.permission === 'denied') return;
+    if (localStorage.getItem(PUSH_ACTIVE_KEY) === 'false') return;
 
     const register = async () => {
       const permission = await Notification.requestPermission();
