@@ -43,6 +43,7 @@ export function useFcmToken() {
 
       const deviceId = getOrCreateDeviceId();
       await postFcmToken(deviceId, { token, deviceType: 'WEB' });
+      localStorage.setItem(PUSH_ACTIVE_KEY, 'true');
     };
 
     void register();
