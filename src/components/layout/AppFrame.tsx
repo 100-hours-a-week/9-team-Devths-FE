@@ -14,9 +14,11 @@ import { ensureAccessToken } from '@/lib/api/client';
 import { clearAccessToken, getUserIdFromAccessToken, setAuthRedirect } from '@/lib/auth/token';
 import { applyRealtimeRoomNotification } from '@/lib/chat/realtimeRoomCache';
 import { clearRejoinedRoomUiOverride } from '@/lib/chat/rejoinedRoomUiCache';
+import { onForegroundMessage } from '@/lib/firebase/messaging';
 import { chatKeys } from '@/lib/hooks/chat/queryKeys';
 import { useChatRealtimeConnection } from '@/lib/hooks/chat/useChatRealtimeConnection';
 import { useChatSubscriptions } from '@/lib/hooks/chat/useChatSubscriptions';
+import { useFcmToken } from '@/lib/hooks/notifications/useFcmToken';
 import { toast } from '@/lib/toast/store';
 
 import type { ChatRoomNotificationResponse } from '@/lib/api/chatMessages';
@@ -89,6 +91,17 @@ export default function AppFrame({
   >(null);
 
   useChatRealtimeConnection({ enabled: isAuthed === true && currentUserId !== null });
+  useFcmToken();
+
+  useEffect(() => {
+    if (isAuthed !== true) return;
+    const unsubscribe = onForegroundMessage((payload) => {
+      const p = payload as { notification?: { title?: string; body?: string } };
+      const body = p.notification?.body ?? p.notification?.title ?? '새 알림이 도착했습니다.';
+      toast(body);
+    });
+    return () => unsubscribe();
+  }, [isAuthed]);
 
   const handleChatUserNotification = useCallback(
     (frame: IMessage) => {

@@ -31,3 +31,14 @@ export async function getNotifications(
 export async function getUnreadCount(): Promise<ApiClientResult<UnreadCountResponse>> {
   return api.get<UnreadCountResponse>('/api/notifications/unread');
 }
+
+export async function postFcmToken(
+  deviceId: string,
+  body: { token: string; deviceType: 'WEB' | 'ANDROID' | 'IOS' },
+): Promise<ApiClientResult<unknown>> {
+  return api.post(`/api/notifications/tokens/${encodeURIComponent(deviceId)}`, body);
+}
+
+export async function deleteFcmToken(deviceId: string): Promise<ApiClientResult<unknown>> {
+  return api.delete(`/api/notifications/tokens/${encodeURIComponent(deviceId)}`);
+}
