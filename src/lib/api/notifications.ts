@@ -42,3 +42,10 @@ export async function postFcmToken(
 export async function deleteFcmToken(deviceId: string): Promise<ApiClientResult<unknown>> {
   return api.delete(`/api/notifications/tokens/${encodeURIComponent(deviceId)}`);
 }
+
+export async function patchFcmToken(
+  deviceId: string,
+  body: { isActive: boolean },
+): Promise<ApiClientResult<unknown>> {
+  return api.patch(`/api/notifications/tokens/${encodeURIComponent(deviceId)}`, body);
+}
