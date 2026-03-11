@@ -98,10 +98,30 @@ export function usePushNotificationToggle() {
         localStorage.setItem(PUSH_ACTIVE_KEY, 'false');
       } else {
         const deviceId = getStoredDeviceId();
+
+        // deviceId 없음 = 최초 등록 시도 (iOS PWA 등 앱 로드 시 권한 요청 실패 케이스)
         if (!deviceId) {
-          toast('알림을 켜지 못했어요. 잠시 후 다시 시도해 주세요.');
+          const permission = await Notification.requestPermission();
+          if (permission !== 'granted') {
+            toast('알림 권한을 허용해 주세요.');
+            return;
+          }
+          const token = await requestFcmToken();
+          if (!token) {
+            toast('알림을 켜지 못했어요. 잠시 후 다시 시도해 주세요.');
+            return;
+          }
+          const newDeviceId = getOrCreateDeviceId();
+          const postResult = await postFcmToken(newDeviceId, { token, deviceType: 'WEB' });
+          if (!postResult.ok) {
+            toast('알림을 켜지 못했어요. 잠시 후 다시 시도해 주세요.');
+            return;
+          }
+          setIsActive(true);
+          localStorage.setItem(PUSH_ACTIVE_KEY, 'true');
           return;
         }
+
         const patchResult = await patchFcmToken(deviceId, { isActive: true });
         if (patchResult.ok) {
           setIsActive(true);
