@@ -85,7 +85,7 @@ export default function TodoEditModal({ open, onClose, todo, onSubmit }: TodoEdi
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="할 일을 입력하세요"
-            className="h-12 w-full rounded-xl border border-neutral-300 px-4 text-sm focus:border-neutral-900 focus:outline-none"
+            className="h-12 w-full rounded-xl border border-neutral-300 px-4 text-base focus:border-neutral-900 focus:outline-none"
           />
         </div>
 
@@ -95,7 +95,7 @@ export default function TodoEditModal({ open, onClose, todo, onSubmit }: TodoEdi
             type="date"
             value={dueDate}
             onChange={(event) => setDueDate(event.target.value as LocalDateString)}
-            className="h-12 w-full rounded-xl border border-neutral-300 px-4 text-sm focus:border-neutral-900 focus:outline-none"
+            className="h-12 w-full rounded-xl border border-neutral-300 px-4 text-base focus:border-neutral-900 focus:outline-none"
           />
         </div>
 

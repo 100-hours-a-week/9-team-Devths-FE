@@ -105,7 +105,7 @@ export default function WithdrawModal({ open, onClose, nickname }: WithdrawModal
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           placeholder="위 문구를 입력하세요"
-          className="h-12 w-full rounded-xl border border-neutral-300 px-4 text-sm focus:border-neutral-900 focus:outline-none"
+          className="h-12 w-full rounded-xl border border-neutral-300 px-4 text-base focus:border-neutral-900 focus:outline-none"
         />
 
         {error && <p className="text-center text-xs text-red-500">{error}</p>}

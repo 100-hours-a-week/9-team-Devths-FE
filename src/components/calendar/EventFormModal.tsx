@@ -204,14 +204,14 @@ export default function EventFormModal({
   const labelClass = 'text-[11px] font-semibold text-black/60';
   const requiredMark = <span className="ml-1 text-[#05C075]">*</span>;
   const fieldClass =
-    'h-10 w-full rounded-2xl border border-black/10 bg-white px-3 text-sm text-black placeholder:text-black/30 focus:border-[#05C075] focus:outline-none focus:ring-2 focus:ring-[#05C075]/20';
+    'h-10 w-full rounded-2xl border border-black/10 bg-white px-3 text-base text-black placeholder:text-black/30 focus:border-[#05C075] focus:outline-none focus:ring-2 focus:ring-[#05C075]/20';
   const compactFieldClass =
-    'h-10 rounded-2xl border border-black/10 bg-white px-3 text-sm text-black focus:border-[#05C075] focus:outline-none focus:ring-2 focus:ring-[#05C075]/20';
+    'h-10 rounded-2xl border border-black/10 bg-white px-3 text-base text-black focus:border-[#05C075] focus:outline-none focus:ring-2 focus:ring-[#05C075]/20';
   const dateFieldClass = fieldClass;
   const tagFieldClass =
-    'h-10 w-full rounded-2xl border border-black/10 bg-white px-3 text-sm text-black placeholder:text-black/30 focus:border-[#05C075] focus:outline-none focus:ring-2 focus:ring-[#05C075]/20';
+    'h-10 w-full rounded-2xl border border-black/10 bg-white px-3 text-base text-black placeholder:text-black/30 focus:border-[#05C075] focus:outline-none focus:ring-2 focus:ring-[#05C075]/20';
   const textAreaClass =
-    'min-h-[80px] w-full rounded-2xl border border-black/10 bg-white px-3 py-2 text-sm text-black placeholder:text-black/30 focus:border-[#05C075] focus:outline-none focus:ring-2 focus:ring-[#05C075]/20';
+    'min-h-[80px] w-full rounded-2xl border border-black/10 bg-white px-3 py-2 text-base text-black placeholder:text-black/30 focus:border-[#05C075] focus:outline-none focus:ring-2 focus:ring-[#05C075]/20';
 
   return (
     <BaseModal

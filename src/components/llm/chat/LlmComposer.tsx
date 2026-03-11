@@ -119,7 +119,7 @@ export default function LlmComposer(props: Props) {
         <div className="flex-1" onMouseDown={handleDisabledInputClick}>
           <textarea
             className={[
-              'h-11 w-full resize-none rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-900 transition outline-none placeholder:text-neutral-400 focus:border-[#05C075] focus:ring-2 focus:ring-[#05C075]/20',
+              'h-11 w-full resize-none rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-base font-medium text-neutral-900 transition outline-none placeholder:text-neutral-400 focus:border-[#05C075] focus:ring-2 focus:ring-[#05C075]/20',
               disabled ? 'bg-neutral-100 text-neutral-400' : '',
             ].join(' ')}
             placeholder="메시지를 입력하세요"

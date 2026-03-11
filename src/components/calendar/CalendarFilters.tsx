@@ -90,7 +90,7 @@ export default function CalendarFilters({
           <div>
             <label className="mb-2 block text-xs font-medium text-[#8A8A8A]">태그</label>
             <input
-              className="w-full rounded-lg border border-[#E8E8E8] bg-white px-3 py-2 text-sm text-[#151515] placeholder:text-[#CCCCCC] focus:border-[#05C075] focus:outline-none"
+              className="w-full rounded-lg border border-[#E8E8E8] bg-white px-3 py-2 text-base text-[#151515] placeholder:text-[#CCCCCC] focus:border-[#05C075] focus:outline-none"
               type="text"
               placeholder="태그 입력..."
               value={tag}
