@@ -28,6 +28,15 @@ const verification: Metadata['verification'] = {
 export const metadata: Metadata = {
   title: 'Devths',
   description: 'Devths 서비스 공식 홈페이지',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Devths',
+  },
+  icons: {
+    apple: '/icons/apple-touch-icon.png',
+  },
   ...(Object.keys(verification).length > 0 ? { verification } : {}),
 };
 
@@ -42,6 +51,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link rel="preconnect" href="https://devths-storage-prod.s3.ap-northeast-2.amazonaws.com" />
+        <meta name="theme-color" content="#3AB569" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {GA_MEASUREMENT_ID ? (
