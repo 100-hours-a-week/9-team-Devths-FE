@@ -922,7 +922,7 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
               value={messageInput}
               onChange={(event) => setMessageInput(event.target.value.slice(0, 2000))}
               placeholder="메시지를 입력하세요"
-              className="h-11 w-full resize-none rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-900 transition outline-none placeholder:text-neutral-400 focus:border-[#05C075] focus:ring-2 focus:ring-[#05C075]/20"
+              className="h-11 w-full resize-none rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-base font-medium text-neutral-900 transition outline-none placeholder:text-neutral-400 focus:border-[#05C075] focus:ring-2 focus:ring-[#05C075]/20"
               maxLength={2000}
               rows={1}
               onCompositionStart={() => {
@@ -1105,7 +1105,7 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
                             ? '1:1 채팅방은 이름 수정이 불가합니다.'
                             : '채팅방 이름을 입력하세요'
                         }
-                        className="h-10 w-full rounded-lg border border-neutral-200 px-3 text-sm text-neutral-900 placeholder:text-neutral-400 disabled:bg-neutral-100 disabled:text-neutral-400"
+                        className="h-10 w-full rounded-lg border border-neutral-200 px-3 text-base text-neutral-900 placeholder:text-neutral-400 disabled:bg-neutral-100 disabled:text-neutral-400"
                       />
                     </div>
                   </section>

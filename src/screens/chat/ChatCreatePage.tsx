@@ -229,7 +229,7 @@ export default function ChatCreatePage() {
               value={inputValue}
               onChange={(event) => setInputValue(event.target.value)}
               placeholder="이름을 입력하세요"
-              className="h-6 w-full border-0 bg-transparent text-sm text-[#191F28] outline-none placeholder:text-[#8B95A1]"
+              className="h-6 w-full border-0 bg-transparent text-base text-[#191F28] outline-none placeholder:text-[#8B95A1]"
               maxLength={MAX_NICKNAME_LENGTH}
             />
             <button

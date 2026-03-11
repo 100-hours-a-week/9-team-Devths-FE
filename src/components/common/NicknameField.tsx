@@ -27,7 +27,7 @@ export default function NicknameField({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           className={cn(
-            'h-12 w-full rounded-xl border px-4 text-sm outline-none',
+            'h-12 w-full rounded-xl border px-4 text-base outline-none',
             'bg-background placeholder:text-muted-foreground',
             'focus:ring-2',
             hasError

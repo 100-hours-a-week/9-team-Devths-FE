@@ -279,7 +279,7 @@ export default function BoardSearchPage() {
                 onFocus={() => setIsSearchInputActive(true)}
                 onClick={() => setIsSearchInputActive(true)}
                 onChange={(event) => handleKeywordChange(event.target.value)}
-                className="h-10 w-full rounded-xl border border-neutral-200 bg-white pr-3 pl-9 text-sm text-neutral-900 transition outline-none focus:border-emerald-500"
+                className="h-10 w-full rounded-xl border border-neutral-200 bg-white pr-3 pl-9 text-base text-neutral-900 transition outline-none focus:border-emerald-500"
               />
             </div>
             <button
