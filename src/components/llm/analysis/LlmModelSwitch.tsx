@@ -1,6 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
+import { Check } from 'lucide-react';
 
 import { toast } from '@/lib/toast/store';
 
@@ -21,12 +22,14 @@ export default function LlmModelSwitch({ value, onChange }: Props) {
           type="button"
           onClick={() => onChange('GEMINI')}
           className={clsx(
-            'rounded-xl px-4 py-3 text-[15px] font-semibold transition-colors',
+            'inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-3 text-[15px] font-semibold transition-colors',
             value === 'GEMINI'
               ? 'bg-[#05C075] text-white'
               : 'bg-neutral-100 text-[#8B95A1] active:bg-neutral-200',
           )}
+          aria-pressed={value === 'GEMINI'}
         >
+          {value === 'GEMINI' ? <Check className="h-4 w-4" aria-hidden="true" /> : null}
           Gemini
         </button>
 

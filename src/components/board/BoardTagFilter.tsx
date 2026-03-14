@@ -1,7 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 
 import { BOARD_TAGS } from '@/constants/board';
 
@@ -65,6 +65,7 @@ export default function BoardTagFilter({
                   )}
                   aria-pressed={isActive}
                 >
+                  {isActive ? <Check className="mr-1 inline h-3 w-3" aria-hidden="true" /> : null}
                   {tag}
                 </button>
               );
