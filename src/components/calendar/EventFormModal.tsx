@@ -262,11 +262,12 @@ export default function EventFormModal({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className={labelClass}>
+            <label htmlFor="event-title" className={labelClass}>
               제목
               {requiredMark}
             </label>
             <input
+              id="event-title"
               className={fieldClass}
               value={formState.title}
               onChange={(event) =>
@@ -283,11 +284,12 @@ export default function EventFormModal({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className={labelClass}>
+            <label htmlFor="event-company" className={labelClass}>
               회사
               {requiredMark}
             </label>
             <input
+              id="event-company"
               className={fieldClass}
               value={formState.company}
               onChange={(event) =>
@@ -307,11 +309,12 @@ export default function EventFormModal({
 
           <div className="grid gap-2 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
-              <label className={labelClass}>
+              <label htmlFor="event-start-time" className={labelClass}>
                 시작 시간
                 {requiredMark}
               </label>
               <input
+                id="event-start-time"
                 type="datetime-local"
                 className={dateFieldClass}
                 value={formState.startTime}
@@ -321,11 +324,12 @@ export default function EventFormModal({
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className={labelClass}>
+              <label htmlFor="event-end-time" className={labelClass}>
                 종료 시간
                 {requiredMark}
               </label>
               <input
+                id="event-end-time"
                 type="datetime-local"
                 className={dateFieldClass}
                 value={formState.endTime}
@@ -336,8 +340,9 @@ export default function EventFormModal({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className={labelClass}>설명</label>
+            <label htmlFor="event-description" className={labelClass}>설명</label>
             <textarea
+              id="event-description"
               className={textAreaClass}
               value={formState.description}
               onChange={(event) =>
@@ -355,8 +360,9 @@ export default function EventFormModal({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className={labelClass}>태그</label>
+            <label htmlFor="event-tags" className={labelClass}>태그</label>
             <input
+              id="event-tags"
               className={tagFieldClass}
               value={formState.tags}
               onChange={(event) =>
@@ -373,17 +379,20 @@ export default function EventFormModal({
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className={labelClass}>
+            <p id="event-notification-label" className={labelClass}>
               알림 설정
               {requiredMark}
-            </label>
+            </p>
             <div className="rounded-2xl bg-white p-2">
               <div className="flex items-center gap-2">
                 <input
+                  id="event-notification-time"
                   type="text"
                   inputMode="numeric"
                   pattern="[0-9]*"
                   min={1}
+                  aria-label="알림 시간"
+                  aria-describedby="event-notification-label"
                   className={`${compactFieldClass} w-20 text-center`}
                   value={formState.notificationTime}
                   maxLength={2}
@@ -393,6 +402,8 @@ export default function EventFormModal({
                   }}
                 />
                 <select
+                  id="event-notification-unit"
+                  aria-label="알림 단위"
                   className={`${compactFieldClass} w-24 pr-8`}
                   value={formState.notificationUnit}
                   onChange={handleChange('notificationUnit')}

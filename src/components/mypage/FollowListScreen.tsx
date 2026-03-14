@@ -200,10 +200,10 @@ export default function FollowListScreen() {
             ) : followers.length === 0 ? (
               <p className="py-8 text-center text-sm text-neutral-500">팔로워가 없습니다.</p>
             ) : (
-              <>
+              <ul className="space-y-2">
                 {followers.map((follower) => (
+                  <li key={follower.id}>
                   <button
-                    key={follower.id}
                     type="button"
                     onClick={() =>
                       handleOpenProfileModal({
@@ -213,6 +213,7 @@ export default function FollowListScreen() {
                         isFollowing: follower.isFollowing,
                       })
                     }
+                    aria-label={`${follower.nickname} 프로필 보기`}
                     className="flex w-full items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left hover:border-[#05C075]"
                   >
                     {follower.profileImage ? (
@@ -235,6 +236,7 @@ export default function FollowListScreen() {
                       </p>
                     </div>
                   </button>
+                  </li>
                 ))}
                 {hasFollowersNextPage ? (
                   <div ref={infiniteScrollTriggerRef} className="h-1" />
@@ -244,7 +246,7 @@ export default function FollowListScreen() {
                     팔로워를 불러오는 중...
                   </p>
                 ) : null}
-              </>
+              </ul>
             )}
           </div>
         ) : (
@@ -266,10 +268,10 @@ export default function FollowListScreen() {
             ) : followings.length === 0 ? (
               <p className="py-8 text-center text-sm text-neutral-500">팔로잉이 없습니다.</p>
             ) : (
-              <>
+              <ul className="space-y-2">
                 {followings.map((following) => (
+                  <li key={following.id}>
                   <button
-                    key={following.id}
                     type="button"
                     onClick={() =>
                       handleOpenProfileModal({
@@ -279,6 +281,7 @@ export default function FollowListScreen() {
                         isFollowing: following.isFollowing,
                       })
                     }
+                    aria-label={`${following.nickname} 프로필 보기`}
                     className="flex w-full items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left hover:border-[#05C075]"
                   >
                     {following.profileImage ? (
@@ -301,6 +304,7 @@ export default function FollowListScreen() {
                       </p>
                     </div>
                   </button>
+                  </li>
                 ))}
                 {hasFollowingsNextPage ? (
                   <div ref={infiniteScrollTriggerRef} className="h-1" />
@@ -310,7 +314,7 @@ export default function FollowListScreen() {
                     팔로잉을 불러오는 중...
                   </p>
                 ) : null}
-              </>
+              </ul>
             )}
           </div>
         )}

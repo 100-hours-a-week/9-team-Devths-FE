@@ -33,6 +33,8 @@ export default function CalendarFilters({
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
+        aria-expanded={isOpen}
+        aria-controls="calendar-filters-panel"
         className="flex w-full items-center justify-between px-4 py-3"
       >
         <div className="flex items-center gap-2">
@@ -54,7 +56,7 @@ export default function CalendarFilters({
       </button>
 
       {isOpen ? (
-        <div className="border-t border-[#E8E8E8] px-4 pb-4">
+        <div id="calendar-filters-panel" className="border-t border-[#E8E8E8] px-4 pb-4">
           <div className="flex items-center justify-end pt-4">
             <button
               type="button"
@@ -66,8 +68,8 @@ export default function CalendarFilters({
           </div>
 
           <div className="mb-4">
-            <label className="mb-2 block text-xs font-medium text-[#8A8A8A]">단계</label>
-            <div className="flex flex-wrap gap-2">
+            <p id="calendar-filter-stage-label" className="mb-2 block text-xs font-medium text-[#8A8A8A]">단계</p>
+            <div className="flex flex-wrap gap-2" role="group" aria-labelledby="calendar-filter-stage-label">
               {stages.map((stageOption) => (
                 <button
                   key={stageOption.value}
@@ -88,8 +90,9 @@ export default function CalendarFilters({
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-medium text-[#8A8A8A]">태그</label>
+            <label htmlFor="calendar-filter-tag" className="mb-2 block text-xs font-medium text-[#8A8A8A]">태그</label>
             <input
+              id="calendar-filter-tag"
               className="w-full rounded-lg border border-[#E8E8E8] bg-white px-3 py-2 text-base text-[#151515] placeholder:text-[#CCCCCC] focus:border-[#05C075] focus:outline-none"
               type="text"
               placeholder="태그 입력..."

@@ -65,14 +65,15 @@ export default function NotificationList({
   }
 
   return (
-    <div className="space-y-3">
+    <ul className="space-y-3">
       {notifications.map((notification) => (
-        <NotificationItem
-          key={notification.notificationId}
-          notification={notification}
-          onClickNotification={onClickNotification}
-        />
+        <li key={notification.notificationId}>
+          <NotificationItem
+            notification={notification}
+            onClickNotification={onClickNotification}
+          />
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }

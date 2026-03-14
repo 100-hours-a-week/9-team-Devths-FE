@@ -333,6 +333,7 @@ export default function BoardCreatePage() {
           </div>
           <input
             type="text"
+            aria-label="게시글 제목"
             value={title}
             maxLength={BOARD_TITLE_MAX_LENGTH}
             onChange={(event) => setTitle(event.target.value)}
@@ -388,6 +389,7 @@ export default function BoardCreatePage() {
             </div>
           ) : (
             <textarea
+              aria-label="게시글 내용"
               value={content}
               onChange={(event) => setContent(event.target.value)}
               maxLength={BOARD_CONTENT_MAX_LENGTH}
