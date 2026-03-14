@@ -46,7 +46,7 @@ export default function BoardAttachmentPreviewModal({ attachment, onClose }: Pro
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={previewUrl}
-              alt={attachment.name}
+              alt={`첨부 이미지: ${attachment.name}`}
               style={{ transform: `scale(${zoom / 100})` }}
               className="max-h-[320px] max-w-full rounded-lg object-contain transition-transform"
             />

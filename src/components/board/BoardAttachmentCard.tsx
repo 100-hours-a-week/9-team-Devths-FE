@@ -66,7 +66,7 @@ export default function BoardAttachmentCard({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={attachment.previewUrl}
-                alt={attachment.name}
+                alt={`첨부 이미지: ${attachment.name}`}
                 className="h-full w-full object-cover"
               />
             </>
