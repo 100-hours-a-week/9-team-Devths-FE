@@ -61,20 +61,20 @@ export default function BoardAttachmentPreviewModal({ attachment, onClose }: Pro
           type="button"
           onClick={handleZoomOut}
           disabled={zoom <= MIN_ZOOM}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 text-neutral-600 disabled:opacity-40"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 text-neutral-600 disabled:opacity-40"
           aria-label="축소"
         >
-          <Minus className="h-3.5 w-3.5" />
+          <Minus className="h-4 w-4" />
         </button>
         <span>{zoom}%</span>
         <button
           type="button"
           onClick={handleZoomIn}
           disabled={zoom >= MAX_ZOOM}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 text-neutral-600 disabled:opacity-40"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 text-neutral-600 disabled:opacity-40"
           aria-label="확대"
         >
-          <Plus className="h-3.5 w-3.5" />
+          <Plus className="h-4 w-4" />
         </button>
       </div>
     </BaseModal>

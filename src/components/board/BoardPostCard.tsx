@@ -73,14 +73,6 @@ export default function BoardPostCard({
             </button>
             <span className="text-xs text-neutral-400">{formatRelativeTime(post.createdAt)}</span>
           </div>
-
-          {post.author.interests && post.author.interests.length > 0 ? (
-            <div className="mt-1 flex flex-wrap gap-1 text-[11px] text-neutral-400">
-              {post.author.interests.map((interest) => (
-                <span key={interest}>#{interest}</span>
-              ))}
-            </div>
-          ) : null}
         </div>
       </div>
 
@@ -98,6 +90,14 @@ export default function BoardPostCard({
             >
               {tag}
             </span>
+          ))}
+        </div>
+      ) : null}
+
+      {post.author.interests && post.author.interests.length > 0 ? (
+        <div className="mt-2 flex flex-wrap gap-1 text-[11px] text-neutral-400">
+          {post.author.interests.map((interest) => (
+            <span key={interest}>#{interest}</span>
           ))}
         </div>
       ) : null}

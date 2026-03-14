@@ -79,7 +79,7 @@ export default function Header({
             <button
               type="button"
               onClick={handleBackClick}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-neutral-100"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-md hover:bg-neutral-100"
               aria-label="뒤로가기"
             >
               <ChevronLeft className="h-5 w-5" />
@@ -115,7 +115,7 @@ export default function Header({
                     type="button"
                     onClick={handleAccessibilityButtonClick}
                     aria-pressed={accessibilityActive}
-                    className={`inline-flex h-9 w-9 items-center justify-center rounded-md transition ${
+                    className={`inline-flex h-11 w-11 items-center justify-center rounded-md transition ${
                       accessibilityActive
                         ? 'bg-[#05C075]/10 text-[#05C075]'
                         : 'hover:bg-neutral-100'
@@ -141,7 +141,7 @@ export default function Header({
               <button
                 type="button"
                 onClick={handleNotificationsClick}
-                className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-neutral-100"
+                className="relative inline-flex h-11 w-11 items-center justify-center rounded-md hover:bg-neutral-100"
                 aria-label="알림"
               >
                 <Bell className="h-5 w-5" />

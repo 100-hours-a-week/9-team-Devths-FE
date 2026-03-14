@@ -36,7 +36,7 @@ export default function LlmAttachmentSheet({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-neutral-100"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full hover:bg-neutral-100"
               aria-label="닫기"
             >
               <X className="h-5 w-5" />

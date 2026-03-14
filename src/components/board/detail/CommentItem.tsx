@@ -101,7 +101,7 @@ export default function CommentItem({
               type="button"
               ref={optionsButtonRef}
               onClick={() => setIsOptionsOpen((prev) => !prev)}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-neutral-100"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-md hover:bg-neutral-100"
               aria-label="댓글 옵션"
             >
               <MoreVertical className="h-4 w-4 text-neutral-500" />

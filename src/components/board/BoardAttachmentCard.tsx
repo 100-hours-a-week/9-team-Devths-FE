@@ -36,7 +36,7 @@ export default function BoardAttachmentCard({
       <button
         type="button"
         onClick={() => onRemove(attachment.id)}
-        className="absolute top-3 right-3 inline-flex h-6 w-6 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 hover:bg-neutral-200"
+        className="absolute top-2 right-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 hover:bg-neutral-200"
         aria-label="첨부 삭제"
       >
         <X className="h-3.5 w-3.5" />
