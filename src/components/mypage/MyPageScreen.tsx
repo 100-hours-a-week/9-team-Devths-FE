@@ -13,6 +13,7 @@ import EditProfileModal from '@/components/mypage/EditProfileModal';
 import WithdrawModal from '@/components/mypage/WithdrawModal';
 import { postLogout } from '@/lib/api/auth';
 import { clearAccessToken } from '@/lib/auth/token';
+import { useAccessibilityMode } from '@/lib/hooks/accessibility/useAccessibilityMode';
 import {
   unregisterFcmToken,
   usePushNotificationToggle,
@@ -29,6 +30,7 @@ export default function MyPageScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { setOptions, resetOptions } = useHeader();
+  const { isOn: isAccessibilityOn, toggle: toggleAccessibility } = useAccessibilityMode();
   const { data, isLoading, isError } = useMeQuery();
   const {
     data: myPostsData,
@@ -59,16 +61,15 @@ export default function MyPageScreen() {
     isSupported: isPushSupported,
   } = usePushNotificationToggle();
 
-  const [isAccessibilityOpen, setIsAccessibilityOpen] = useState(false);
-
   useEffect(() => {
     setOptions({
       showAccessibilityButton: true,
-      onAccessibilityClick: () => setIsAccessibilityOpen(true),
+      accessibilityActive: isAccessibilityOn,
+      onAccessibilityClick: toggleAccessibility,
     });
 
     return () => resetOptions();
-  }, [resetOptions, setOptions]);
+  }, [isAccessibilityOn, resetOptions, setOptions, toggleAccessibility]);
 
   const handleWithdraw = () => {
     setIsEditOpen(false);
