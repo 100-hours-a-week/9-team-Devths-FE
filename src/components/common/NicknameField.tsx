@@ -19,10 +19,13 @@ export default function NicknameField({
 
   return (
     <div className="w-full">
-      <label className="text-sm font-semibold">닉네임</label>
+      <label htmlFor="nickname-field" className="text-sm font-semibold">닉네임</label>
 
       <div className="mt-3">
         <input
+          id="nickname-field"
+          aria-describedby="nickname-field-message"
+          aria-invalid={hasError}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
@@ -38,6 +41,8 @@ export default function NicknameField({
       </div>
 
       <p
+        id="nickname-field-message"
+        role={hasError ? 'alert' : undefined}
         className={cn(
           'mt-2 min-h-[16px] text-[11px] leading-4',
           hasError ? 'text-destructive' : 'text-muted-foreground',

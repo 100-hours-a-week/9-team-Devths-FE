@@ -83,6 +83,8 @@ export default function TodoEditModal({ open, onClose, todo, onSubmit }: TodoEdi
           <input
             id="todo-edit-title"
             type="text"
+            aria-describedby={errorMessage ? 'todo-edit-error' : undefined}
+            aria-invalid={!!errorMessage}
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="할 일을 입력하세요"
@@ -119,7 +121,7 @@ export default function TodoEditModal({ open, onClose, todo, onSubmit }: TodoEdi
           </button>
         </div>
 
-        {errorMessage ? <p className="text-center text-xs text-red-500">{errorMessage}</p> : null}
+        {errorMessage ? <p id="todo-edit-error" role="alert" className="text-center text-xs text-red-500">{errorMessage}</p> : null}
       </div>
     </BaseModal>
   );

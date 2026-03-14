@@ -92,6 +92,8 @@ export default function TodoCreateModal({
           <input
             id="todo-create-title"
             type="text"
+            aria-describedby={errorMessage ? 'todo-create-error' : undefined}
+            aria-invalid={!!errorMessage}
             value={title}
             onChange={(event) => setTitle(event.target.value.slice(0, TODO_TITLE_MAX_LENGTH))}
             maxLength={TODO_TITLE_MAX_LENGTH}
@@ -132,7 +134,7 @@ export default function TodoCreateModal({
           </button>
         </div>
 
-        {errorMessage ? <p className="text-center text-xs text-red-500">{errorMessage}</p> : null}
+        {errorMessage ? <p id="todo-create-error" role="alert" className="text-center text-xs text-red-500">{errorMessage}</p> : null}
       </div>
     </BaseModal>
   );

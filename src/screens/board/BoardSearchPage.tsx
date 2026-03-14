@@ -274,6 +274,9 @@ export default function BoardSearchPage() {
               <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-neutral-400" />
               <input
                 type="text"
+                aria-label="게시글 검색어"
+                aria-describedby={helperText !== null ? 'board-search-error' : undefined}
+                aria-invalid={helperText !== null}
                 placeholder="Search"
                 value={keywordInput}
                 onFocus={() => setIsSearchInputActive(true)}
@@ -290,7 +293,7 @@ export default function BoardSearchPage() {
               검색
             </button>
           </form>
-          {helperText !== null ? <p className="mt-2 text-xs text-red-500">{helperText}</p> : null}
+          {helperText !== null ? <p id="board-search-error" role="alert" className="mt-2 text-xs text-red-500">{helperText}</p> : null}
 
           {isSearchInputActive && recentKeywords.length > 0 ? (
             <div className="mt-3 rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-3">
