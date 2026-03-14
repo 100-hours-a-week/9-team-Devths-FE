@@ -99,11 +99,11 @@ export default function TodoEditModal({ open, onClose, todo, onSubmit }: TodoEdi
           />
         </div>
 
-        <div className="flex gap-2 pt-2">
+        <div className="flex gap-3 pt-2">
           <button
             type="button"
             onClick={onClose}
-            className="h-12 flex-1 rounded-xl border border-neutral-300 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
+            className="h-12 flex-1 rounded-2xl border border-neutral-300 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
           >
             취소
           </button>
@@ -111,7 +111,7 @@ export default function TodoEditModal({ open, onClose, todo, onSubmit }: TodoEdi
             type="button"
             onClick={handleSubmit}
             disabled={!title.trim() || isSubmitting}
-            className="h-12 flex-1 rounded-xl bg-neutral-900 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-12 flex-1 rounded-2xl bg-[#05C075] text-sm font-semibold text-white hover:bg-[#04A865] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? '수정 중...' : '수정'}
           </button>

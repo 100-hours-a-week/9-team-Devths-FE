@@ -47,14 +47,14 @@ export default function ConfirmModal({
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 rounded-full border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-900 hover:bg-neutral-50"
+            className="flex-1 rounded-2xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-900 hover:bg-neutral-50"
           >
             {cancelText}
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="flex-1 rounded-full bg-red-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-600"
+            className="flex-1 rounded-2xl bg-red-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-600"
           >
             {confirmText}
           </button>
