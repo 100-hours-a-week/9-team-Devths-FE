@@ -1,7 +1,6 @@
 'use client';
 
-import clsx from 'clsx';
-import { Bell, ChevronLeft } from 'lucide-react';
+import { Bell, ChevronLeft, PersonStanding } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
@@ -15,6 +14,8 @@ type HeaderProps = {
   showBackButton?: boolean;
   onBackClick?: () => void;
   rightSlot?: ReactNode;
+  showAccessibilityButton?: boolean;
+  onAccessibilityClick?: () => void;
 };
 
 export default function Header({
@@ -22,6 +23,8 @@ export default function Header({
   showBackButton = false,
   onBackClick,
   rightSlot,
+  showAccessibilityButton = false,
+  onAccessibilityClick,
 }: HeaderProps) {
   const router = useRouter();
   const { data: unreadCount } = useUnreadCountQuery();
@@ -76,24 +79,31 @@ export default function Header({
           ) : null}
         </div>
 
-        <div
-          className={clsx(
-            'ml-auto flex items-center justify-end',
-            rightSlot ? 'w-auto gap-1' : 'w-10',
-          )}
-        >
+        <div className="ml-auto flex items-center justify-end gap-1">
           {rightSlot ?? (
-            <button
-              type="button"
-              onClick={handleNotificationsClick}
-              className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-neutral-100"
-              aria-label="알림"
-            >
-              <Bell className="h-5 w-5" />
-              {showBadge ? (
-                <span className="absolute top-[0.5px] right-[0.5px] h-2.5 w-2.5 rounded-full bg-red-500" />
+            <>
+              {showAccessibilityButton ? (
+                <button
+                  type="button"
+                  onClick={onAccessibilityClick}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-neutral-100"
+                  aria-label="접근성 설정"
+                >
+                  <PersonStanding className="h-5 w-5" />
+                </button>
               ) : null}
-            </button>
+              <button
+                type="button"
+                onClick={handleNotificationsClick}
+                className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-neutral-100"
+                aria-label="알림"
+              >
+                <Bell className="h-5 w-5" />
+                {showBadge ? (
+                  <span className="absolute top-[0.5px] right-[0.5px] h-2.5 w-2.5 rounded-full bg-red-500" />
+                ) : null}
+              </button>
+            </>
           )}
         </div>
       </div>

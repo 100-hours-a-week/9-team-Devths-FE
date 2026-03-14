@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import BoardPostCard from '@/components/board/BoardPostCard';
 import ConfirmModal from '@/components/common/ConfirmModal';
+import { useHeader } from '@/components/layout/HeaderContext';
 import EditProfileModal from '@/components/mypage/EditProfileModal';
 import WithdrawModal from '@/components/mypage/WithdrawModal';
 import { postLogout } from '@/lib/api/auth';
@@ -27,6 +28,7 @@ import type { BoardPostSummary } from '@/types/board';
 export default function MyPageScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { setOptions, resetOptions } = useHeader();
   const { data, isLoading, isError } = useMeQuery();
   const {
     data: myPostsData,
@@ -56,6 +58,17 @@ export default function MyPageScreen() {
     toggle: togglePush,
     isSupported: isPushSupported,
   } = usePushNotificationToggle();
+
+  const [isAccessibilityOpen, setIsAccessibilityOpen] = useState(false);
+
+  useEffect(() => {
+    setOptions({
+      showAccessibilityButton: true,
+      onAccessibilityClick: () => setIsAccessibilityOpen(true),
+    });
+
+    return () => resetOptions();
+  }, [resetOptions, setOptions]);
 
   const handleWithdraw = () => {
     setIsEditOpen(false);

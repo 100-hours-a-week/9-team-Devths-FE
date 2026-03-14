@@ -251,6 +251,8 @@ export default function AppFrame({
                 showBackButton={options.showBackButton}
                 onBackClick={options.onBackClick}
                 rightSlot={options.rightSlot}
+                showAccessibilityButton={options.showAccessibilityButton}
+                onAccessibilityClick={options.onAccessibilityClick}
               />
               <div className="px-4 pb-[var(--bottom-nav-h)] sm:px-6">{children}</div>
             </div>
