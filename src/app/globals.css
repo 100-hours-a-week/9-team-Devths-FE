@@ -402,6 +402,11 @@
   }
 }
 
+/* ── Accessibility mode: 글자 크기 확대 ─────────────────── */
+html.accessibility-mode {
+  font-size: 118.75%; /* 16px → 19px, rem 단위 전체 비례 확대 */
+}
+
 /* ── Accessibility mode: 고대비 ──────────────────────────── */
 @layer utilities {
   /* 연한 중립 텍스트 → 진하게 */
