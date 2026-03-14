@@ -202,7 +202,14 @@ export default function EventFormModal({
   const title = mode === 'edit' ? '일정 수정' : '일정 추가';
 
   const labelClass = 'text-[11px] font-semibold text-black/60';
-  const requiredMark = <span className="ml-1 text-[#05C075]">*</span>;
+  const requiredMark = (
+    <>
+      <span className="ml-1 text-[#05C075]" aria-hidden="true">
+        *
+      </span>
+      <span className="sr-only">(필수)</span>
+    </>
+  );
   const fieldClass =
     'h-10 w-full rounded-2xl border border-black/10 bg-white px-3 text-base text-black placeholder:text-black/30 focus:border-[#05C075] focus:outline-none focus:ring-2 focus:ring-[#05C075]/20';
   const compactFieldClass =

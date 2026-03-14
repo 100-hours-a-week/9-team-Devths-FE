@@ -513,7 +513,10 @@ export default function BoardEditPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-neutral-900">내용</span>
-              <span className="text-xs text-rose-500">*</span>
+              <span className="text-xs text-rose-500" aria-hidden="true">
+                *
+              </span>
+              <span className="sr-only">(필수)</span>
             </div>
             <div className="flex items-center gap-2">
               <button

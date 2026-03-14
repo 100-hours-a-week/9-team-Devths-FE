@@ -356,6 +356,52 @@
   }
 }
 
+/* ── Accessibility mode: 가변 레이아웃 (글자 크기 대응) ────── */
+@layer utilities {
+  /*
+   * 고정 높이 버튼/입력창을 min-height로 전환
+   * 아이콘 전용 버튼(정사각형 h-*=w-*)은 제외
+   */
+  html.accessibility-mode button[class*='h-8']:not([class*='w-8']),
+  html.accessibility-mode button[class*='h-9']:not([class*='w-9']),
+  html.accessibility-mode button[class*='h-10']:not([class*='w-10']),
+  html.accessibility-mode button[class*='h-12']:not([class*='w-12']),
+  html.accessibility-mode button[class*='h-14']:not([class*='w-14']) {
+    height: auto;
+    min-height: 2.5rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  /* 입력창 고정 높이 → min-height */
+  html.accessibility-mode input[class*='h-10'],
+  html.accessibility-mode input[class*='h-12'] {
+    height: auto;
+    min-height: 2.5rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  /* 한 줄 가정 텍스트 자름 해제 (p, span, h* 텍스트 요소만) */
+  html.accessibility-mode p.truncate,
+  html.accessibility-mode span.truncate,
+  html.accessibility-mode h1.truncate,
+  html.accessibility-mode h2.truncate,
+  html.accessibility-mode h3.truncate {
+    overflow: visible;
+    text-overflow: unset;
+    white-space: normal;
+  }
+
+  /* 한 줄 line-clamp 제거 (텍스트 요소만) */
+  html.accessibility-mode p.line-clamp-1,
+  html.accessibility-mode span.line-clamp-1 {
+    -webkit-line-clamp: unset;
+    overflow: visible;
+    display: block;
+  }
+}
+
 /* ── Accessibility mode: 고대비 ──────────────────────────── */
 @layer utilities {
   /* 연한 중립 텍스트 → 진하게 */
