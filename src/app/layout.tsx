@@ -10,11 +10,13 @@ import './globals.css';
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
+  display: 'swap',
 });
 
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
+  display: 'swap',
 });
 
 const GOOGLE_SITE_VERIFICATION = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
@@ -51,6 +53,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link rel="preload" href="/icons/Devths.png" as="image" type="image/png" />
+        <link rel="preload" href="/images/background.webp" as="image" type="image/webp" />
         <link rel="preconnect" href="https://devths-storage-prod.s3.ap-northeast-2.amazonaws.com" />
         <meta name="theme-color" content="#3AB569" />
       </head>
