@@ -216,7 +216,7 @@ export default function AppFrame({
     [blockMessage, blockedNavigationHandler, isNavigationBlocked],
   );
 
-  return isAuthed ? (
+  return (
     <AppFrameContext.Provider
       value={{
         options: frameOptions,
@@ -255,7 +255,13 @@ export default function AppFrame({
                 accessibilityActive={options.accessibilityActive}
                 onAccessibilityClick={options.onAccessibilityClick}
               />
-              <div className="px-4 pb-[var(--bottom-nav-h)] sm:px-6">{children}</div>
+              {isAuthed === true ? (
+                <div className="px-4 pb-[var(--bottom-nav-h)] sm:px-6">{children}</div>
+              ) : isAuthed === null ? (
+                <div className="px-4 pb-[var(--bottom-nav-h)] sm:px-6">
+                  <div className="h-screen" />
+                </div>
+              ) : null}
             </div>
 
             {frameOptions.showBottomNav ? <BottomNav hidden={!isBottomNavVisible} /> : null}
@@ -263,5 +269,5 @@ export default function AppFrame({
         </HeaderContext.Provider>
       </NavigationGuardContext.Provider>
     </AppFrameContext.Provider>
-  ) : null;
+  );
 }

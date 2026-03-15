@@ -50,6 +50,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <link rel="preload" href="/icons/Devths.svg" as="image" type="image/svg+xml" />
         <link rel="preconnect" href="https://devths-storage-prod.s3.ap-northeast-2.amazonaws.com" />
         <meta name="theme-color" content="#3AB569" />
       </head>
