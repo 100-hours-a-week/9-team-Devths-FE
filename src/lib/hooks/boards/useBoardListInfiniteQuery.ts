@@ -28,5 +28,6 @@ export function useBoardListInfiniteQuery(params: UseBoardListInfiniteQueryParam
     },
     initialPageParam: undefined as number | undefined,
     getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.lastId : undefined),
+    staleTime: 30 * 1000,
   });
 }
