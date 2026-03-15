@@ -1,5 +1,3 @@
-import '@/styles/fullcalendar.css';
-
 import type { ReactNode } from 'react';
 
 export default function CalendarLayout({ children }: { children: ReactNode }) {

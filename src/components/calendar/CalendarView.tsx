@@ -1,5 +1,7 @@
 'use client';
 
+import '@/styles/fullcalendar.css';
+
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import FullCalendar from '@fullcalendar/react';
