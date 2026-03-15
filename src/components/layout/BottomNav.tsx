@@ -32,7 +32,7 @@ type BottomNavProps = {
 export default function BottomNav({ hidden = false }: BottomNavProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { isBlocked, requestNavigation } = useNavigationGuard();
+  const { requestNavigation } = useNavigationGuard();
   const { data: chatRealtimeUnread = 0 } = useQuery({
     queryKey: chatKeys.realtimeUnread(),
     queryFn: async () => 0,
@@ -42,7 +42,6 @@ export default function BottomNav({ hidden = false }: BottomNavProps) {
 
   const handleNavigate =
     (href: string) => (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
-      if (!isBlocked) return;
       event.preventDefault();
       requestNavigation(() => router.push(href));
     };
@@ -53,6 +52,7 @@ export default function BottomNav({ hidden = false }: BottomNavProps) {
         'fixed bottom-0 left-1/2 z-50 w-full -translate-x-1/2 bg-white transition-transform duration-200 sm:max-w-[430px]',
         hidden ? 'pointer-events-none translate-y-full' : 'translate-y-0',
       )}
+      style={{ viewTransitionName: 'bottom-nav' }}
     >
       <div className="border-t">
         <div className="grid h-16 grid-cols-5 px-2">

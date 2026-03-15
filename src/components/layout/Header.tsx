@@ -71,7 +71,10 @@ export default function Header({
   }, [isPopoverOpen]);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-white">
+    <header
+      className="sticky top-0 z-50 w-full border-b bg-white"
+      style={{ viewTransitionName: 'site-header' }}
+    >
       <div className="flex h-14 items-center px-4 sm:px-6">
         <div className="flex items-center gap-2">
           {showBackButton ? (
@@ -93,11 +96,11 @@ export default function Header({
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/icons/Devths.svg"
+                src="/icons/Devths2.png"
                 alt="Devths"
-                width={156}
-                height={48}
-                className="h-12 w-auto"
+                width={196}
+                height={96}
+                className="h-9 w-auto"
                 fetchPriority="high"
               />
             </button>

@@ -273,12 +273,27 @@ export default function BoardListPage() {
     <>
       <main className="px-3 pt-4 pb-3">
         <div className="flex flex-col gap-3">
-          <BoardSortTabs value={sort} onChange={setSort} />
+          <BoardSortTabs
+            value={sort}
+            onChange={(next) => {
+              if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+                document.startViewTransition(() => setSort(next));
+              } else {
+                setSort(next);
+              }
+            }}
+          />
           <BoardTagFilter
             open={isTagOpen}
             onToggleOpen={() => setIsTagOpen((prev) => !prev)}
             selected={selectedTags}
-            onChangeSelected={setSelectedTags}
+            onChangeSelected={(next) => {
+              if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+                document.startViewTransition(() => setSelectedTags(next));
+              } else {
+                setSelectedTags(next);
+              }
+            }}
             max={BOARD_TAG_MAX}
           />
         </div>
@@ -310,8 +325,35 @@ export default function BoardListPage() {
             }}
           >
             {isLoading ? (
-              <div className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-neutral-500 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
-                게시글을 불러오는 중...
+              <div className="space-y-3" aria-busy="true" aria-label="게시글 불러오는 중">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="animate-pulse rounded-2xl bg-white px-4 py-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]"
+                  >
+                    <div className="flex gap-3">
+                      <div className="h-10 w-10 flex-shrink-0 rounded-full bg-neutral-200" />
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="h-3.5 w-20 rounded bg-neutral-200" />
+                          <div className="h-3 w-12 rounded bg-neutral-100" />
+                        </div>
+                        <div className="h-3 w-24 rounded bg-neutral-100" />
+                        <div className="mt-2 h-4 w-3/4 rounded bg-neutral-200" />
+                        <div className="h-3.5 w-full rounded bg-neutral-100" />
+                        <div className="h-3.5 w-2/3 rounded bg-neutral-100" />
+                        <div className="mt-1 flex gap-1.5">
+                          <div className="h-5 w-14 rounded-full bg-neutral-100" />
+                          <div className="h-5 w-16 rounded-full bg-neutral-100" />
+                        </div>
+                        <div className="mt-1 flex gap-3">
+                          <div className="h-3 w-10 rounded bg-neutral-100" />
+                          <div className="h-3 w-10 rounded bg-neutral-100" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : isError ? (
               <div className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-neutral-500 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
@@ -325,8 +367,35 @@ export default function BoardListPage() {
                 </button>
               </div>
             ) : sort === 'FOLLOWING' && isFollowingAuthorIdsLoading ? (
-              <div className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-neutral-500 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
-                팔로잉 목록을 불러오는 중...
+              <div className="space-y-3" aria-busy="true" aria-label="팔로잉 목록 불러오는 중">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="animate-pulse rounded-2xl bg-white px-4 py-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]"
+                  >
+                    <div className="flex gap-3">
+                      <div className="h-10 w-10 flex-shrink-0 rounded-full bg-neutral-200" />
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="h-3.5 w-20 rounded bg-neutral-200" />
+                          <div className="h-3 w-12 rounded bg-neutral-100" />
+                        </div>
+                        <div className="h-3 w-24 rounded bg-neutral-100" />
+                        <div className="mt-2 h-4 w-3/4 rounded bg-neutral-200" />
+                        <div className="h-3.5 w-full rounded bg-neutral-100" />
+                        <div className="h-3.5 w-2/3 rounded bg-neutral-100" />
+                        <div className="mt-1 flex gap-1.5">
+                          <div className="h-5 w-14 rounded-full bg-neutral-100" />
+                          <div className="h-5 w-16 rounded-full bg-neutral-100" />
+                        </div>
+                        <div className="mt-1 flex gap-3">
+                          <div className="h-3 w-10 rounded bg-neutral-100" />
+                          <div className="h-3 w-10 rounded bg-neutral-100" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : sort === 'FOLLOWING' && isFollowingAuthorIdsError ? (
               <div className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-neutral-500 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">

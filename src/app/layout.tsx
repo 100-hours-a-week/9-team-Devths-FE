@@ -10,11 +10,13 @@ import './globals.css';
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
+  display: 'swap',
 });
 
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
+  display: 'swap',
 });
 
 const GOOGLE_SITE_VERIFICATION = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
@@ -42,6 +44,15 @@ export const metadata: Metadata = {
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
+const API_ORIGIN = (() => {
+  try {
+    const url = process.env.NEXT_PUBLIC_API_BASE_URL;
+    return url ? new URL(url).origin : null;
+  } catch {
+    return null;
+  }
+})();
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -50,7 +61,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <link rel="preload" href="/icons/Devths2.png" as="image" type="image/png" />
+        <link rel="preload" href="/images/background.webp" as="image" type="image/webp" />
         <link rel="preconnect" href="https://devths-storage-prod.s3.ap-northeast-2.amazonaws.com" />
+        {API_ORIGIN ? <link rel="preconnect" href={API_ORIGIN} /> : null}
         <meta name="theme-color" content="#3AB569" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
