@@ -93,7 +93,7 @@ export default function Header({
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/icons/Devths.svg"
+                src="/icons/Devths.png"
                 alt="Devths"
                 width={156}
                 height={48}
