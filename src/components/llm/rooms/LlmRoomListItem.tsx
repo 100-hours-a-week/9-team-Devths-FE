@@ -63,7 +63,7 @@ export default function LlmRoomListItem({
           className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 bg-white text-red-500 hover:bg-red-50"
           aria-label="대화 삭제"
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 aria-hidden="true" className="h-4 w-4" />
         </button>
       </div>
     </div>

@@ -101,7 +101,7 @@ export default function ReplyItem({
                 className="inline-flex h-11 w-11 items-center justify-center rounded-md hover:bg-neutral-100"
                 aria-label="댓글 옵션"
               >
-                <MoreVertical className="h-4 w-4 text-neutral-500" />
+                <MoreVertical aria-hidden="true" className="h-4 w-4 text-neutral-500" />
               </button>
               {isOptionsOpen ? (
                 <div

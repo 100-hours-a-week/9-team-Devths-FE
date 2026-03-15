@@ -49,7 +49,7 @@ export default function LlmLoadingModal({
           </div>
 
           <div className="mt-5 flex items-center justify-center gap-2">
-            <Loader2 className="h-5 w-5 animate-spin text-[#05C075]" />
+            <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin text-[#05C075]" />
             <span className="text-xs font-semibold text-neutral-700">분석 중</span>
           </div>
           <div className="mt-3 flex items-center justify-center gap-2 text-[11px] font-semibold text-neutral-500">

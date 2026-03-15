@@ -82,7 +82,7 @@ export default function Header({
               className="inline-flex h-11 w-11 items-center justify-center rounded-md hover:bg-neutral-100"
               aria-label="뒤로가기"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft aria-hidden="true" className="h-5 w-5" />
             </button>
           ) : null}
           {title === 'Devths' ? (
@@ -122,7 +122,7 @@ export default function Header({
                     }`}
                     aria-label="접근성 설정"
                   >
-                    <PersonStanding className="h-5 w-5" />
+                    <PersonStanding aria-hidden="true" className="h-5 w-5" />
                   </button>
 
                   {isPopoverOpen ? (
@@ -144,7 +144,7 @@ export default function Header({
                 className="relative inline-flex h-11 w-11 items-center justify-center rounded-md hover:bg-neutral-100"
                 aria-label="알림"
               >
-                <Bell className="h-5 w-5" />
+                <Bell aria-hidden="true" className="h-5 w-5" />
                 {showBadge ? (
                   <span className="absolute top-[0.5px] right-[0.5px] h-2.5 w-2.5 rounded-full bg-red-500" />
                 ) : null}

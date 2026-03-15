@@ -356,6 +356,20 @@
   }
 }
 
+/* ── 키보드 포커스 스타일 ────────────────────────────────── */
+@layer base {
+  :focus-visible {
+    outline: 3px solid #05C075;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  html.accessibility-mode :focus-visible {
+    outline: 3px solid #006B3F;
+    outline-offset: 3px;
+  }
+}
+
 /* ── Accessibility mode: 가변 레이아웃 (글자 크기 대응) ────── */
 @layer utilities {
   /*

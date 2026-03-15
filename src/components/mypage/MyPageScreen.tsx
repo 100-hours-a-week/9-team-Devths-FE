@@ -265,7 +265,7 @@ export default function MyPageScreen() {
                   onClick={() => setIsEditOpen(true)}
                   className="flex items-center gap-1 rounded-full bg-[#05C075] px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-[#04A865]"
                 >
-                  <Pencil className="h-4 w-4" />
+                  <Pencil aria-hidden="true" className="h-4 w-4" />
                   수정
                 </button>
                 <button
