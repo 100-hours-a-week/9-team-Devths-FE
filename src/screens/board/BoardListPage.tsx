@@ -273,12 +273,27 @@ export default function BoardListPage() {
     <>
       <main className="px-3 pt-4 pb-3">
         <div className="flex flex-col gap-3">
-          <BoardSortTabs value={sort} onChange={setSort} />
+          <BoardSortTabs
+            value={sort}
+            onChange={(next) => {
+              if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+                document.startViewTransition(() => setSort(next));
+              } else {
+                setSort(next);
+              }
+            }}
+          />
           <BoardTagFilter
             open={isTagOpen}
             onToggleOpen={() => setIsTagOpen((prev) => !prev)}
             selected={selectedTags}
-            onChangeSelected={setSelectedTags}
+            onChangeSelected={(next) => {
+              if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+                document.startViewTransition(() => setSelectedTags(next));
+              } else {
+                setSelectedTags(next);
+              }
+            }}
             max={BOARD_TAG_MAX}
           />
         </div>
