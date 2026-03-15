@@ -93,10 +93,10 @@ export default function Header({
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/icons/Devths.png"
+                src="/icons/Devths2.png"
                 alt="Devths"
-                width={156}
-                height={48}
+                width={196}
+                height={96}
                 className="h-12 w-auto"
                 fetchPriority="high"
               />
