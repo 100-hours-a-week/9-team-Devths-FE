@@ -1,7 +1,6 @@
 'use client';
 
 import { Bell, ChevronLeft, PersonStanding } from 'lucide-react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
@@ -92,13 +91,14 @@ export default function Header({
               className="inline-flex items-center rounded-md transition hover:opacity-80"
               aria-label="Devths 홈 이동"
             >
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src="/icons/Devths.svg"
                 alt="Devths"
                 width={156}
                 height={48}
                 className="h-12 w-auto"
-                priority
+                fetchPriority="high"
               />
             </button>
           ) : title ? (
