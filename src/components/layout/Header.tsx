@@ -97,7 +97,7 @@ export default function Header({
                 alt="Devths"
                 width={196}
                 height={96}
-                className="h-12 w-auto"
+                className="h-9 w-auto"
                 fetchPriority="high"
               />
             </button>
