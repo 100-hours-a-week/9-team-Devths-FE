@@ -93,7 +93,12 @@ export default function BaseModal({
       : 'fixed top-1/2 left-1/2 z-[51] w-[calc(100%-40px)] sm:w-[calc(100%-80px)] max-w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-5 shadow-lg';
 
   return createPortal(
-    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby={title ? 'base-modal-title' : undefined}>
+    <div
+      className="fixed inset-0 z-50"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={title ? 'base-modal-title' : undefined}
+    >
       <button
         type="button"
         className="fixed inset-0 z-50 bg-black/50"
@@ -119,7 +124,11 @@ export default function BaseModal({
           ✕
         </button>
 
-        {title ? <h2 id="base-modal-title" className="text-base font-bold">{title}</h2> : null}
+        {title ? (
+          <h2 id="base-modal-title" className="text-base font-bold">
+            {title}
+          </h2>
+        ) : null}
         <div className={title ? 'mt-2' : ''}>{children}</div>
       </div>
     </div>,

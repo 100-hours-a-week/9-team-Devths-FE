@@ -68,8 +68,17 @@ export default function CalendarFilters({
           </div>
 
           <div className="mb-4">
-            <p id="calendar-filter-stage-label" className="mb-2 block text-xs font-medium text-[#8A8A8A]">단계</p>
-            <div className="flex flex-wrap gap-2" role="group" aria-labelledby="calendar-filter-stage-label">
+            <p
+              id="calendar-filter-stage-label"
+              className="mb-2 block text-xs font-medium text-[#8A8A8A]"
+            >
+              단계
+            </p>
+            <div
+              className="flex flex-wrap gap-2"
+              role="group"
+              aria-labelledby="calendar-filter-stage-label"
+            >
               {stages.map((stageOption) => (
                 <button
                   key={stageOption.value}
@@ -90,7 +99,12 @@ export default function CalendarFilters({
           </div>
 
           <div>
-            <label htmlFor="calendar-filter-tag" className="mb-2 block text-xs font-medium text-[#8A8A8A]">태그</label>
+            <label
+              htmlFor="calendar-filter-tag"
+              className="mb-2 block text-xs font-medium text-[#8A8A8A]"
+            >
+              태그
+            </label>
             <input
               id="calendar-filter-tag"
               className="w-full rounded-lg border border-[#E8E8E8] bg-white px-3 py-2 text-base text-[#151515] placeholder:text-[#CCCCCC] focus:border-[#05C075] focus:outline-none"

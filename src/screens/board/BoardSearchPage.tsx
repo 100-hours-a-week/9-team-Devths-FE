@@ -293,7 +293,11 @@ export default function BoardSearchPage() {
               검색
             </button>
           </form>
-          {helperText !== null ? <p id="board-search-error" role="alert" className="mt-2 text-xs text-red-500">{helperText}</p> : null}
+          {helperText !== null ? (
+            <p id="board-search-error" role="alert" className="mt-2 text-xs text-red-500">
+              {helperText}
+            </p>
+          ) : null}
 
           {isSearchInputActive && recentKeywords.length > 0 ? (
             <div className="mt-3 rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-3">

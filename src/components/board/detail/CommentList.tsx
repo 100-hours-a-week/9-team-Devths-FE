@@ -94,37 +94,41 @@ export default function CommentList({
               ? renderReplyEditor?.(thread.comment.commentId)
               : null}
             {thread.replies.length > 0 ? (
-            <ul>
-            {thread.replies.map((reply) => {
-              const replyIsLast =
-                totalItems > 0 && lastItem?.type === 'reply' && lastItem.id === reply.commentId;
-              return (
-                <li key={reply.commentId}>
-                  <ReplyItem
-                    author={reply.author}
-                    createdAt={reply.createdAt}
-                    content={reply.content}
-                    isDeleted={reply.isDeleted}
-                    onAuthorClick={onAuthorClick}
-                    showOptions={
-                      !disableActions &&
-                      currentUserId !== null &&
-                      currentUserId === reply.author.userId
-                    }
-                    onDeleteClick={onDeleteClick ? () => onDeleteClick(reply.commentId) : undefined}
-                    onEditClick={
-                      onEditClick ? () => onEditClick(reply.commentId, reply.content) : undefined
-                    }
-                    isEditing={isEditingCommentId === reply.commentId}
-                    isLast={replyIsLast}
-                  />
-                  {isEditingCommentId === reply.commentId
-                    ? renderEditor?.(reply.commentId, reply.content, 2)
-                    : null}
-                </li>
-              );
-            })}
-            </ul>
+              <ul>
+                {thread.replies.map((reply) => {
+                  const replyIsLast =
+                    totalItems > 0 && lastItem?.type === 'reply' && lastItem.id === reply.commentId;
+                  return (
+                    <li key={reply.commentId}>
+                      <ReplyItem
+                        author={reply.author}
+                        createdAt={reply.createdAt}
+                        content={reply.content}
+                        isDeleted={reply.isDeleted}
+                        onAuthorClick={onAuthorClick}
+                        showOptions={
+                          !disableActions &&
+                          currentUserId !== null &&
+                          currentUserId === reply.author.userId
+                        }
+                        onDeleteClick={
+                          onDeleteClick ? () => onDeleteClick(reply.commentId) : undefined
+                        }
+                        onEditClick={
+                          onEditClick
+                            ? () => onEditClick(reply.commentId, reply.content)
+                            : undefined
+                        }
+                        isEditing={isEditingCommentId === reply.commentId}
+                        isLast={replyIsLast}
+                      />
+                      {isEditingCommentId === reply.commentId
+                        ? renderEditor?.(reply.commentId, reply.content, 2)
+                        : null}
+                    </li>
+                  );
+                })}
+              </ul>
             ) : null}
           </li>
         );

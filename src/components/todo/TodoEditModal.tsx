@@ -79,7 +79,12 @@ export default function TodoEditModal({ open, onClose, todo, onSubmit }: TodoEdi
     <BaseModal open={open} onClose={onClose} title="할 일 수정">
       <div className="mt-4 space-y-4">
         <div>
-          <label htmlFor="todo-edit-title" className="mb-2 block text-xs font-medium text-neutral-500">할 일 제목</label>
+          <label
+            htmlFor="todo-edit-title"
+            className="mb-2 block text-xs font-medium text-neutral-500"
+          >
+            할 일 제목
+          </label>
           <input
             id="todo-edit-title"
             type="text"
@@ -93,7 +98,12 @@ export default function TodoEditModal({ open, onClose, todo, onSubmit }: TodoEdi
         </div>
 
         <div>
-          <label htmlFor="todo-edit-due-date" className="mb-2 block text-xs font-medium text-neutral-500">마감일</label>
+          <label
+            htmlFor="todo-edit-due-date"
+            className="mb-2 block text-xs font-medium text-neutral-500"
+          >
+            마감일
+          </label>
           <input
             id="todo-edit-due-date"
             type="date"
@@ -121,7 +131,11 @@ export default function TodoEditModal({ open, onClose, todo, onSubmit }: TodoEdi
           </button>
         </div>
 
-        {errorMessage ? <p id="todo-edit-error" role="alert" className="text-center text-xs text-red-500">{errorMessage}</p> : null}
+        {errorMessage ? (
+          <p id="todo-edit-error" role="alert" className="text-center text-xs text-red-500">
+            {errorMessage}
+          </p>
+        ) : null}
       </div>
     </BaseModal>
   );

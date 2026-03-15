@@ -68,10 +68,7 @@ export default function NotificationList({
     <ul className="space-y-3">
       {notifications.map((notification) => (
         <li key={notification.notificationId}>
-          <NotificationItem
-            notification={notification}
-            onClickNotification={onClickNotification}
-          />
+          <NotificationItem notification={notification} onClickNotification={onClickNotification} />
         </li>
       ))}
     </ul>

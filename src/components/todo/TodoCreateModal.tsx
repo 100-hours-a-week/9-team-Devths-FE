@@ -88,7 +88,12 @@ export default function TodoCreateModal({
         </div>
 
         <div>
-          <label htmlFor="todo-create-title" className="mb-2 block text-xs font-semibold text-black/60">할 일 제목</label>
+          <label
+            htmlFor="todo-create-title"
+            className="mb-2 block text-xs font-semibold text-black/60"
+          >
+            할 일 제목
+          </label>
           <input
             id="todo-create-title"
             type="text"
@@ -106,7 +111,12 @@ export default function TodoCreateModal({
         </div>
 
         <div>
-          <label htmlFor="todo-create-due-date" className="mb-2 block text-xs font-semibold text-black/60">마감일</label>
+          <label
+            htmlFor="todo-create-due-date"
+            className="mb-2 block text-xs font-semibold text-black/60"
+          >
+            마감일
+          </label>
           <input
             id="todo-create-due-date"
             type="date"
@@ -134,7 +144,11 @@ export default function TodoCreateModal({
           </button>
         </div>
 
-        {errorMessage ? <p id="todo-create-error" role="alert" className="text-center text-xs text-red-500">{errorMessage}</p> : null}
+        {errorMessage ? (
+          <p id="todo-create-error" role="alert" className="text-center text-xs text-red-500">
+            {errorMessage}
+          </p>
+        ) : null}
       </div>
     </BaseModal>
   );

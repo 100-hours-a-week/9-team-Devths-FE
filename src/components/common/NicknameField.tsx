@@ -19,7 +19,9 @@ export default function NicknameField({
 
   return (
     <div className="w-full">
-      <label htmlFor="nickname-field" className="text-sm font-semibold">닉네임</label>
+      <label htmlFor="nickname-field" className="text-sm font-semibold">
+        닉네임
+      </label>
 
       <div className="mt-3">
         <input

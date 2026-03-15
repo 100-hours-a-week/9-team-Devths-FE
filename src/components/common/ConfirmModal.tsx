@@ -36,11 +36,24 @@ export default function ConfirmModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
-      <button type="button" className="absolute inset-0 bg-black/50" onClick={onCancel} aria-label="취소" tabIndex={-1} />
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-modal-title"
+    >
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/50"
+        onClick={onCancel}
+        aria-label="취소"
+        tabIndex={-1}
+      />
 
       <div className="relative z-10 mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-        <h2 id="confirm-modal-title" className="text-lg font-semibold text-neutral-900">{title}</h2>
+        <h2 id="confirm-modal-title" className="text-lg font-semibold text-neutral-900">
+          {title}
+        </h2>
         <p className="mt-2 text-sm leading-6 text-neutral-600">{message}</p>
 
         <div className="mt-6 flex gap-3">
