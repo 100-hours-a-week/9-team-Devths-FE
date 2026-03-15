@@ -35,7 +35,7 @@ export default function TodoItemRow({
         role="checkbox"
         aria-checked={isCompleted}
         className={cn(
-          'flex h-5 w-5 items-center justify-center rounded-full border transition-colors',
+          'flex h-8 w-8 items-center justify-center rounded-full border transition-colors',
           isCompleted
             ? 'border-[#05C075] bg-[#05C075] text-white'
             : 'border-black/20 bg-white text-transparent',
@@ -65,7 +65,7 @@ export default function TodoItemRow({
           onClick={() => setIsMenuOpen((prev) => !prev)}
           aria-label="메뉴"
           aria-expanded={isMenuOpen}
-          className="flex h-7 w-7 items-center justify-center rounded-full text-black/40 hover:bg-black/5 hover:text-black/60"
+          className="flex h-11 w-11 items-center justify-center rounded-full text-black/40 hover:bg-black/5 hover:text-black/60"
         >
           ⋯
         </button>

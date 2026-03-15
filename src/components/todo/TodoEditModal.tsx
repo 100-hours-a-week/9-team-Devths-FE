@@ -79,9 +79,17 @@ export default function TodoEditModal({ open, onClose, todo, onSubmit }: TodoEdi
     <BaseModal open={open} onClose={onClose} title="할 일 수정">
       <div className="mt-4 space-y-4">
         <div>
-          <label className="mb-2 block text-xs font-medium text-neutral-500">할 일 제목</label>
+          <label
+            htmlFor="todo-edit-title"
+            className="mb-2 block text-xs font-medium text-neutral-500"
+          >
+            할 일 제목
+          </label>
           <input
+            id="todo-edit-title"
             type="text"
+            aria-describedby={errorMessage ? 'todo-edit-error' : undefined}
+            aria-invalid={!!errorMessage}
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="할 일을 입력하세요"
@@ -90,8 +98,14 @@ export default function TodoEditModal({ open, onClose, todo, onSubmit }: TodoEdi
         </div>
 
         <div>
-          <label className="mb-2 block text-xs font-medium text-neutral-500">마감일</label>
+          <label
+            htmlFor="todo-edit-due-date"
+            className="mb-2 block text-xs font-medium text-neutral-500"
+          >
+            마감일
+          </label>
           <input
+            id="todo-edit-due-date"
             type="date"
             value={dueDate}
             onChange={(event) => setDueDate(event.target.value as LocalDateString)}
@@ -99,11 +113,11 @@ export default function TodoEditModal({ open, onClose, todo, onSubmit }: TodoEdi
           />
         </div>
 
-        <div className="flex gap-2 pt-2">
+        <div className="flex gap-3 pt-2">
           <button
             type="button"
             onClick={onClose}
-            className="h-12 flex-1 rounded-xl border border-neutral-300 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
+            className="h-12 flex-1 rounded-2xl border border-neutral-300 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
           >
             취소
           </button>
@@ -111,13 +125,17 @@ export default function TodoEditModal({ open, onClose, todo, onSubmit }: TodoEdi
             type="button"
             onClick={handleSubmit}
             disabled={!title.trim() || isSubmitting}
-            className="h-12 flex-1 rounded-xl bg-neutral-900 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-12 flex-1 rounded-2xl bg-[#05C075] text-sm font-semibold text-white hover:bg-[#04A865] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? '수정 중...' : '수정'}
           </button>
         </div>
 
-        {errorMessage ? <p className="text-center text-xs text-red-500">{errorMessage}</p> : null}
+        {errorMessage ? (
+          <p id="todo-edit-error" role="alert" className="text-center text-xs text-red-500">
+            {errorMessage}
+          </p>
+        ) : null}
       </div>
     </BaseModal>
   );

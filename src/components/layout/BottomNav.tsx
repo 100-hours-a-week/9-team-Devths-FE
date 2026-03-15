@@ -69,7 +69,7 @@ export default function BottomNav({ hidden = false }: BottomNavProps) {
                   className="flex flex-col items-center justify-center"
                 >
                   <div className="-mt-6 flex h-14 w-14 items-center justify-center rounded-full bg-[#05C075] shadow-lg">
-                    <Icon className="h-6 w-6 text-white" />
+                    <Icon aria-hidden="true" className="h-6 w-6 text-white" />
                   </div>
                   <span
                     className={clsx(
@@ -95,7 +95,7 @@ export default function BottomNav({ hidden = false }: BottomNavProps) {
             if (tab.disabled) {
               return (
                 <div key={tab.label} className={clsx(baseClass, activeClass)} aria-disabled="true">
-                  <Icon className="h-5 w-5" />
+                  <Icon aria-hidden="true" className="h-5 w-5" />
                   <span>{tab.label}</span>
                 </div>
               );
@@ -109,9 +109,14 @@ export default function BottomNav({ hidden = false }: BottomNavProps) {
                 className={clsx(baseClass, activeClass)}
               >
                 <span className="relative inline-flex">
-                  <Icon className="h-5 w-5" />
+                  <Icon aria-hidden="true" className="h-5 w-5" />
                   {tab.href === '/chat' && !isActive && chatRealtimeUnread > 0 ? (
-                    <span className="absolute -top-1.5 -right-1.5 h-2.5 w-2.5 rounded-full bg-red-500" />
+                    <span
+                      className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-0.5 text-[9px] font-bold text-white"
+                      aria-label={`읽지 않은 메시지 ${chatRealtimeUnread}개`}
+                    >
+                      {chatRealtimeUnread > 99 ? '99+' : chatRealtimeUnread}
+                    </span>
                   ) : null}
                 </span>
                 <span>{tab.label}</span>

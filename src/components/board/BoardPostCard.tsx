@@ -73,14 +73,6 @@ export default function BoardPostCard({
             </button>
             <span className="text-xs text-neutral-400">{formatRelativeTime(post.createdAt)}</span>
           </div>
-
-          {post.author.interests && post.author.interests.length > 0 ? (
-            <div className="mt-1 flex flex-wrap gap-1 text-[11px] text-neutral-400">
-              {post.author.interests.map((interest) => (
-                <span key={interest}>#{interest}</span>
-              ))}
-            </div>
-          ) : null}
         </div>
       </div>
 
@@ -102,13 +94,21 @@ export default function BoardPostCard({
         </div>
       ) : null}
 
+      {post.author.interests && post.author.interests.length > 0 ? (
+        <div className="mt-2 flex flex-wrap gap-1 text-[11px] text-neutral-400">
+          {post.author.interests.map((interest) => (
+            <span key={interest}>#{interest}</span>
+          ))}
+        </div>
+      ) : null}
+
       <div className="mt-3 flex items-center gap-5 text-[11px] text-neutral-500">
         <div className="flex items-center gap-1">
-          <Heart className="h-3.5 w-3.5" />
+          <Heart aria-hidden="true" className="h-3.5 w-3.5" />
           <span>{formatCountCompact(post.stats.likeCount)}</span>
         </div>
         <div className="flex items-center gap-1">
-          <MessageCircle className="h-3.5 w-3.5" />
+          <MessageCircle aria-hidden="true" className="h-3.5 w-3.5" />
           <span>{formatCountCompact(post.stats.commentCount)}</span>
         </div>
       </div>

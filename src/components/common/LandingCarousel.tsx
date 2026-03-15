@@ -88,22 +88,22 @@ export default function LandingCarousel() {
       >
         {slide.id === 'slide-1' ? (
           <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-[#05C075]/10 text-[#05C075]">
-            <Briefcase className="h-4 w-4" />
+            <Briefcase aria-hidden="true" className="h-4 w-4" />
           </div>
         ) : null}
         {slide.id === 'slide-2' ? (
           <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-[#05C075]/10 text-[#05C075]">
-            <Bot className="h-4 w-4" />
+            <Bot aria-hidden="true" className="h-4 w-4" />
           </div>
         ) : null}
         {slide.id === 'slide-3' ? (
           <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-[#05C075]/10 text-[#05C075]">
-            <MessageSquare className="h-4 w-4" />
+            <MessageSquare aria-hidden="true" className="h-4 w-4" />
           </div>
         ) : null}
         {slide.id === 'slide-4' ? (
           <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-[#05C075]/10 text-[#05C075]">
-            <CalendarDays className="h-4 w-4" />
+            <CalendarDays aria-hidden="true" className="h-4 w-4" />
           </div>
         ) : null}
         <h2 className="mt-2 text-lg font-semibold text-black">{slide.title}</h2>

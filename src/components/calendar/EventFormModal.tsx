@@ -202,7 +202,14 @@ export default function EventFormModal({
   const title = mode === 'edit' ? '일정 수정' : '일정 추가';
 
   const labelClass = 'text-[11px] font-semibold text-black/60';
-  const requiredMark = <span className="ml-1 text-[#05C075]">*</span>;
+  const requiredMark = (
+    <>
+      <span className="ml-1 text-[#05C075]" aria-hidden="true">
+        *
+      </span>
+      <span className="sr-only">(필수)</span>
+    </>
+  );
   const fieldClass =
     'h-10 w-full rounded-2xl border border-black/10 bg-white px-3 text-base text-black placeholder:text-black/30 focus:border-[#05C075] focus:outline-none focus:ring-2 focus:ring-[#05C075]/20';
   const compactFieldClass =
@@ -230,7 +237,12 @@ export default function EventFormModal({
               전형 단계
               {requiredMark}
             </label>
-            <div className="flex gap-2" role="radiogroup" aria-label="전형 단계">
+            <div
+              className="flex gap-2"
+              role="radiogroup"
+              aria-label="전형 단계"
+              aria-describedby={errors.stage ? 'event-stage-error' : undefined}
+            >
               {stageOptions.map((option) => {
                 const isSelected = formState.stage === option.value;
                 return (
@@ -251,15 +263,22 @@ export default function EventFormModal({
                 );
               })}
             </div>
-            {errors.stage && <p className="text-xs text-red-600">{errors.stage}</p>}
+            {errors.stage && (
+              <p id="event-stage-error" role="alert" className="text-xs text-red-600">
+                {errors.stage}
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className={labelClass}>
+            <label htmlFor="event-title" className={labelClass}>
               제목
               {requiredMark}
             </label>
             <input
+              id="event-title"
+              aria-describedby={errors.title ? 'event-title-error' : undefined}
+              aria-invalid={!!errors.title}
               className={fieldClass}
               value={formState.title}
               onChange={(event) =>
@@ -272,15 +291,22 @@ export default function EventFormModal({
               placeholder="예: 1차 면접"
             />
             <div className="text-right text-[11px] text-black/40">{formState.title.length}/100</div>
-            {errors.title && <p className="text-xs text-red-600">{errors.title}</p>}
+            {errors.title && (
+              <p id="event-title-error" role="alert" className="text-xs text-red-600">
+                {errors.title}
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className={labelClass}>
+            <label htmlFor="event-company" className={labelClass}>
               회사
               {requiredMark}
             </label>
             <input
+              id="event-company"
+              aria-describedby={errors.company ? 'event-company-error' : undefined}
+              aria-invalid={!!errors.company}
               className={fieldClass}
               value={formState.company}
               onChange={(event) =>
@@ -295,42 +321,63 @@ export default function EventFormModal({
             <div className="text-right text-[11px] text-black/40">
               {formState.company.length}/50
             </div>
-            {errors.company && <p className="text-xs text-red-600">{errors.company}</p>}
+            {errors.company && (
+              <p id="event-company-error" role="alert" className="text-xs text-red-600">
+                {errors.company}
+              </p>
+            )}
           </div>
 
           <div className="grid gap-2 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
-              <label className={labelClass}>
+              <label htmlFor="event-start-time" className={labelClass}>
                 시작 시간
                 {requiredMark}
               </label>
               <input
+                id="event-start-time"
                 type="datetime-local"
+                aria-describedby={errors.startTime ? 'event-start-time-error' : undefined}
+                aria-invalid={!!errors.startTime}
                 className={dateFieldClass}
                 value={formState.startTime}
                 onChange={handleChange('startTime')}
               />
-              {errors.startTime && <p className="text-xs text-red-600">{errors.startTime}</p>}
+              {errors.startTime && (
+                <p id="event-start-time-error" role="alert" className="text-xs text-red-600">
+                  {errors.startTime}
+                </p>
+              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className={labelClass}>
+              <label htmlFor="event-end-time" className={labelClass}>
                 종료 시간
                 {requiredMark}
               </label>
               <input
+                id="event-end-time"
                 type="datetime-local"
+                aria-describedby={errors.endTime ? 'event-end-time-error' : undefined}
+                aria-invalid={!!errors.endTime}
                 className={dateFieldClass}
                 value={formState.endTime}
                 onChange={handleChange('endTime')}
               />
-              {errors.endTime && <p className="text-xs text-red-600">{errors.endTime}</p>}
+              {errors.endTime && (
+                <p id="event-end-time-error" role="alert" className="text-xs text-red-600">
+                  {errors.endTime}
+                </p>
+              )}
             </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className={labelClass}>설명</label>
+            <label htmlFor="event-description" className={labelClass}>
+              설명
+            </label>
             <textarea
+              id="event-description"
               className={textAreaClass}
               value={formState.description}
               onChange={(event) =>
@@ -348,8 +395,11 @@ export default function EventFormModal({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className={labelClass}>태그</label>
+            <label htmlFor="event-tags" className={labelClass}>
+              태그
+            </label>
             <input
+              id="event-tags"
               className={tagFieldClass}
               value={formState.tags}
               onChange={(event) =>
@@ -366,17 +416,25 @@ export default function EventFormModal({
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className={labelClass}>
+            <p id="event-notification-label" className={labelClass}>
               알림 설정
               {requiredMark}
-            </label>
+            </p>
             <div className="rounded-2xl bg-white p-2">
               <div className="flex items-center gap-2">
                 <input
+                  id="event-notification-time"
                   type="text"
                   inputMode="numeric"
                   pattern="[0-9]*"
                   min={1}
+                  aria-label="알림 시간"
+                  aria-describedby={
+                    errors.notificationTime
+                      ? 'event-notification-error'
+                      : 'event-notification-label'
+                  }
+                  aria-invalid={!!errors.notificationTime}
                   className={`${compactFieldClass} w-20 text-center`}
                   value={formState.notificationTime}
                   maxLength={2}
@@ -386,6 +444,12 @@ export default function EventFormModal({
                   }}
                 />
                 <select
+                  id="event-notification-unit"
+                  aria-label="알림 단위"
+                  aria-describedby={
+                    errors.notificationUnit ? 'event-notification-error' : undefined
+                  }
+                  aria-invalid={!!errors.notificationUnit}
                   className={`${compactFieldClass} w-24 pr-8`}
                   value={formState.notificationUnit}
                   onChange={handleChange('notificationUnit')}
@@ -401,7 +465,7 @@ export default function EventFormModal({
               </div>
             </div>
             {(errors.notificationTime || errors.notificationUnit) && (
-              <p className="text-xs text-red-600">
+              <p id="event-notification-error" role="alert" className="text-xs text-red-600">
                 {errors.notificationTime || errors.notificationUnit}
               </p>
             )}

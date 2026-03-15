@@ -54,7 +54,7 @@ export default function CommentList({
   }
 
   return (
-    <div className="space-y-2">
+    <ul className="space-y-2">
       {threads.map((thread) => {
         const commentIsLast =
           totalItems > 0 &&
@@ -62,7 +62,7 @@ export default function CommentList({
           lastItem.id === thread.comment.commentId;
 
         return (
-          <div key={thread.comment.commentId} className="space-y-2">
+          <li key={thread.comment.commentId} className="space-y-2">
             <CommentItem
               author={thread.comment.author}
               createdAt={thread.comment.createdAt}
@@ -93,38 +93,46 @@ export default function CommentList({
             {replyTargetId === thread.comment.commentId
               ? renderReplyEditor?.(thread.comment.commentId)
               : null}
-            {thread.replies.map((reply) => {
-              const replyIsLast =
-                totalItems > 0 && lastItem?.type === 'reply' && lastItem.id === reply.commentId;
-              return (
-                <div key={reply.commentId}>
-                  <ReplyItem
-                    author={reply.author}
-                    createdAt={reply.createdAt}
-                    content={reply.content}
-                    isDeleted={reply.isDeleted}
-                    onAuthorClick={onAuthorClick}
-                    showOptions={
-                      !disableActions &&
-                      currentUserId !== null &&
-                      currentUserId === reply.author.userId
-                    }
-                    onDeleteClick={onDeleteClick ? () => onDeleteClick(reply.commentId) : undefined}
-                    onEditClick={
-                      onEditClick ? () => onEditClick(reply.commentId, reply.content) : undefined
-                    }
-                    isEditing={isEditingCommentId === reply.commentId}
-                    isLast={replyIsLast}
-                  />
-                  {isEditingCommentId === reply.commentId
-                    ? renderEditor?.(reply.commentId, reply.content, 2)
-                    : null}
-                </div>
-              );
-            })}
-          </div>
+            {thread.replies.length > 0 ? (
+              <ul>
+                {thread.replies.map((reply) => {
+                  const replyIsLast =
+                    totalItems > 0 && lastItem?.type === 'reply' && lastItem.id === reply.commentId;
+                  return (
+                    <li key={reply.commentId}>
+                      <ReplyItem
+                        author={reply.author}
+                        createdAt={reply.createdAt}
+                        content={reply.content}
+                        isDeleted={reply.isDeleted}
+                        onAuthorClick={onAuthorClick}
+                        showOptions={
+                          !disableActions &&
+                          currentUserId !== null &&
+                          currentUserId === reply.author.userId
+                        }
+                        onDeleteClick={
+                          onDeleteClick ? () => onDeleteClick(reply.commentId) : undefined
+                        }
+                        onEditClick={
+                          onEditClick
+                            ? () => onEditClick(reply.commentId, reply.content)
+                            : undefined
+                        }
+                        isEditing={isEditingCommentId === reply.commentId}
+                        isLast={replyIsLast}
+                      />
+                      {isEditingCommentId === reply.commentId
+                        ? renderEditor?.(reply.commentId, reply.content, 2)
+                        : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+          </li>
         );
       })}
-    </div>
+    </ul>
   );
 }

@@ -74,7 +74,7 @@ export default function LlmTextAreaCard({
               key={`img-${idx}`}
               className="flex items-center gap-2 rounded-xl bg-[#00C473]/10 px-3 py-2"
             >
-              <ImageIcon className="h-4 w-4 text-[#00C473]" />
+              <ImageIcon aria-hidden="true" className="h-4 w-4 text-[#00C473]" />
               <span className="max-w-[120px] truncate text-[13px] font-medium text-[#191F28]">
                 {file.name}
               </span>
@@ -91,7 +91,7 @@ export default function LlmTextAreaCard({
           ))}
           {attachments.pdf && (
             <div className="flex items-center gap-2 rounded-xl bg-[#00C473]/10 px-3 py-2">
-              <FileText className="h-4 w-4 text-[#00C473]" />
+              <FileText aria-hidden="true" className="h-4 w-4 text-[#00C473]" />
               <span className="max-w-[120px] truncate text-[13px] font-medium text-[#191F28]">
                 {attachments.pdf.name}
               </span>

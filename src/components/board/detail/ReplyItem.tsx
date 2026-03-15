@@ -74,13 +74,13 @@ export default function ReplyItem({
             className="flex items-center gap-2 text-left"
             aria-label={`${author.nickname} 프로필 보기`}
           >
-            <div className="relative flex h-6 w-6 items-center justify-center rounded-full border border-neutral-200 bg-neutral-200 text-[10px] font-semibold text-neutral-600">
+            <div className="relative flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 bg-neutral-200 text-[11px] font-semibold text-neutral-600">
               {author.profileImageUrl ? (
                 <Image
                   src={author.profileImageUrl}
                   alt={`${author.nickname} 프로필 이미지`}
                   fill
-                  sizes="24px"
+                  sizes="28px"
                   className="rounded-full object-cover"
                 />
               ) : (
@@ -88,8 +88,8 @@ export default function ReplyItem({
               )}
             </div>
             <div>
-              <div className="text-[11px] font-semibold text-neutral-800">{author.nickname}</div>
-              <div className="text-[10px] text-neutral-400">{formatRelativeTime(createdAt)}</div>
+              <div className="text-xs font-semibold text-neutral-800">{author.nickname}</div>
+              <div className="text-[11px] text-neutral-400">{formatRelativeTime(createdAt)}</div>
             </div>
           </button>
           {canShowOptions ? (
@@ -98,10 +98,10 @@ export default function ReplyItem({
                 type="button"
                 ref={optionsButtonRef}
                 onClick={() => setIsOptionsOpen((prev) => !prev)}
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md hover:bg-neutral-100"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-md hover:bg-neutral-100"
                 aria-label="댓글 옵션"
               >
-                <MoreVertical className="h-3.5 w-3.5 text-neutral-500" />
+                <MoreVertical aria-hidden="true" className="h-4 w-4 text-neutral-500" />
               </button>
               {isOptionsOpen ? (
                 <div

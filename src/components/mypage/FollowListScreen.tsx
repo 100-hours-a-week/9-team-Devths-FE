@@ -200,41 +200,43 @@ export default function FollowListScreen() {
             ) : followers.length === 0 ? (
               <p className="py-8 text-center text-sm text-neutral-500">팔로워가 없습니다.</p>
             ) : (
-              <>
+              <ul className="space-y-2">
                 {followers.map((follower) => (
-                  <button
-                    key={follower.id}
-                    type="button"
-                    onClick={() =>
-                      handleOpenProfileModal({
-                        userId: follower.userId,
-                        nickname: follower.nickname,
-                        profileImage: follower.profileImage,
-                        isFollowing: follower.isFollowing,
-                      })
-                    }
-                    className="flex w-full items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left hover:border-[#05C075]"
-                  >
-                    {follower.profileImage ? (
-                      <Image
-                        src={follower.profileImage}
-                        alt={`${follower.nickname} 프로필`}
-                        width={40}
-                        height={40}
-                        className="h-10 w-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-200 text-sm font-semibold text-neutral-600">
-                        {follower.nickname.slice(0, 1)}
-                      </div>
-                    )}
+                  <li key={follower.id}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleOpenProfileModal({
+                          userId: follower.userId,
+                          nickname: follower.nickname,
+                          profileImage: follower.profileImage,
+                          isFollowing: follower.isFollowing,
+                        })
+                      }
+                      aria-label={`${follower.nickname} 프로필 보기`}
+                      className="flex w-full items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left hover:border-[#05C075]"
+                    >
+                      {follower.profileImage ? (
+                        <Image
+                          src={follower.profileImage}
+                          alt={`${follower.nickname} 프로필`}
+                          width={40}
+                          height={40}
+                          className="h-10 w-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-200 text-sm font-semibold text-neutral-600">
+                          {follower.nickname.slice(0, 1)}
+                        </div>
+                      )}
 
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-neutral-900">
-                        {follower.nickname}
-                      </p>
-                    </div>
-                  </button>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-neutral-900">
+                          {follower.nickname}
+                        </p>
+                      </div>
+                    </button>
+                  </li>
                 ))}
                 {hasFollowersNextPage ? (
                   <div ref={infiniteScrollTriggerRef} className="h-1" />
@@ -244,7 +246,7 @@ export default function FollowListScreen() {
                     팔로워를 불러오는 중...
                   </p>
                 ) : null}
-              </>
+              </ul>
             )}
           </div>
         ) : (
@@ -266,41 +268,43 @@ export default function FollowListScreen() {
             ) : followings.length === 0 ? (
               <p className="py-8 text-center text-sm text-neutral-500">팔로잉이 없습니다.</p>
             ) : (
-              <>
+              <ul className="space-y-2">
                 {followings.map((following) => (
-                  <button
-                    key={following.id}
-                    type="button"
-                    onClick={() =>
-                      handleOpenProfileModal({
-                        userId: following.userId,
-                        nickname: following.nickname,
-                        profileImage: following.profileImage,
-                        isFollowing: following.isFollowing,
-                      })
-                    }
-                    className="flex w-full items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left hover:border-[#05C075]"
-                  >
-                    {following.profileImage ? (
-                      <Image
-                        src={following.profileImage}
-                        alt={`${following.nickname} 프로필`}
-                        width={40}
-                        height={40}
-                        className="h-10 w-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-200 text-sm font-semibold text-neutral-600">
-                        {following.nickname.slice(0, 1)}
-                      </div>
-                    )}
+                  <li key={following.id}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleOpenProfileModal({
+                          userId: following.userId,
+                          nickname: following.nickname,
+                          profileImage: following.profileImage,
+                          isFollowing: following.isFollowing,
+                        })
+                      }
+                      aria-label={`${following.nickname} 프로필 보기`}
+                      className="flex w-full items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left hover:border-[#05C075]"
+                    >
+                      {following.profileImage ? (
+                        <Image
+                          src={following.profileImage}
+                          alt={`${following.nickname} 프로필`}
+                          width={40}
+                          height={40}
+                          className="h-10 w-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-200 text-sm font-semibold text-neutral-600">
+                          {following.nickname.slice(0, 1)}
+                        </div>
+                      )}
 
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-neutral-900">
-                        {following.nickname}
-                      </p>
-                    </div>
-                  </button>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-neutral-900">
+                          {following.nickname}
+                        </p>
+                      </div>
+                    </button>
+                  </li>
                 ))}
                 {hasFollowingsNextPage ? (
                   <div ref={infiniteScrollTriggerRef} className="h-1" />
@@ -310,7 +314,7 @@ export default function FollowListScreen() {
                     팔로잉을 불러오는 중...
                   </p>
                 ) : null}
-              </>
+              </ul>
             )}
           </div>
         )}

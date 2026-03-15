@@ -52,7 +52,7 @@ export default function PostContent({
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={attachment.fileUrl}
-                    alt={attachment.fileName}
+                    alt={`게시글 첨부 이미지: ${attachment.fileName}`}
                     className="w-full object-cover"
                   />
                 </div>

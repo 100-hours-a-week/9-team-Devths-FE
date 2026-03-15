@@ -245,7 +245,11 @@ export default function ChatCreatePage() {
 
       <section className="mt-6">
         <p className="px-1 text-sm font-semibold text-[#191F28]">
-          팔로잉 유저 목록 <span className="text-red-500">*</span>
+          팔로잉 유저 목록{' '}
+          <span className="text-red-500" aria-hidden="true">
+            *
+          </span>
+          <span className="sr-only">(필수)</span>
         </p>
 
         {isLoading ? (

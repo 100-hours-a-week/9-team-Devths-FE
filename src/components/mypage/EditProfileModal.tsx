@@ -223,7 +223,7 @@ function EditForm({ initialData, onClose, onWithdraw }: EditFormProps) {
               className="inline-flex items-center gap-1 rounded-full border border-[#05C075] bg-white px-2.5 py-1 text-xs font-semibold text-[#05C075] shadow-sm"
             >
               {option.label}
-              <X className="h-3.5 w-3.5" />
+              <X aria-hidden="true" className="h-3.5 w-3.5" />
             </button>
           ))}
           {INTEREST_OPTIONS.filter((o) => !interests.includes(o.value)).map((option) => (

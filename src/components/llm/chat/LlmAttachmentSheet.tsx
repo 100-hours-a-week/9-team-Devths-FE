@@ -36,10 +36,10 @@ export default function LlmAttachmentSheet({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-neutral-100"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full hover:bg-neutral-100"
               aria-label="닫기"
             >
-              <X className="h-5 w-5" />
+              <X aria-hidden="true" className="h-5 w-5" />
             </button>
           </div>
 
@@ -56,7 +56,7 @@ export default function LlmAttachmentSheet({
               )}
             >
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-100">
-                <ImageIcon className="h-5 w-5" />
+                <ImageIcon aria-hidden="true" className="h-5 w-5" />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-neutral-900">이미지 첨부</p>
@@ -76,7 +76,7 @@ export default function LlmAttachmentSheet({
               )}
             >
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-100">
-                <FileText className="h-5 w-5" />
+                <FileText aria-hidden="true" className="h-5 w-5" />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-neutral-900">파일 첨부</p>

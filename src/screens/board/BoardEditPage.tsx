@@ -495,6 +495,7 @@ export default function BoardEditPage() {
           </div>
           <input
             type="text"
+            aria-label="게시글 제목"
             value={title}
             maxLength={BOARD_TITLE_MAX_LENGTH}
             onChange={(event) => setTitle(event.target.value)}
@@ -513,7 +514,10 @@ export default function BoardEditPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-neutral-900">내용</span>
-              <span className="text-xs text-rose-500">*</span>
+              <span className="text-xs text-rose-500" aria-hidden="true">
+                *
+              </span>
+              <span className="sr-only">(필수)</span>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -547,6 +551,7 @@ export default function BoardEditPage() {
             </div>
           ) : (
             <textarea
+              aria-label="게시글 내용"
               value={content}
               onChange={(event) => setContent(event.target.value)}
               maxLength={BOARD_CONTENT_MAX_LENGTH}

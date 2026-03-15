@@ -82,13 +82,13 @@ export default function LlmComposer(props: Props) {
                 className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-neutral-900 text-white opacity-0 transition group-hover:opacity-100"
                 aria-label="이미지 삭제"
               >
-                <X className="h-3 w-3" />
+                <X aria-hidden="true" className="h-3 w-3" />
               </button>
             </div>
           ))}
           {attachedPdf && (
             <div className="group relative flex h-16 items-center gap-2 rounded-lg border border-[#05C075]/30 bg-[#05C075]/10 px-3">
-              <FileText className="h-5 w-5 text-[#05C075]" />
+              <FileText aria-hidden="true" className="h-5 w-5 text-[#05C075]" />
               <span className="max-w-[100px] truncate text-xs text-neutral-800">
                 {attachedPdf.name}
               </span>
@@ -98,7 +98,7 @@ export default function LlmComposer(props: Props) {
                 className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-neutral-900 text-white opacity-0 transition group-hover:opacity-100"
                 aria-label="PDF 삭제"
               >
-                <X className="h-3 w-3" />
+                <X aria-hidden="true" className="h-3 w-3" />
               </button>
             </div>
           )}
@@ -158,7 +158,7 @@ export default function LlmComposer(props: Props) {
           ].join(' ')}
           aria-label="전송"
         >
-          <SendHorizonal className="h-5 w-5" />
+          <SendHorizonal aria-hidden="true" className="h-5 w-5" />
         </button>
       </div>
       <div className="mt-1 text-right text-[11px] text-neutral-400">

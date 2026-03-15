@@ -9,6 +9,9 @@ type HeaderOptions = {
   showBackButton?: boolean;
   onBackClick?: () => void;
   rightSlot?: ReactNode;
+  showAccessibilityButton?: boolean;
+  accessibilityActive?: boolean;
+  onAccessibilityClick?: () => void;
 };
 
 type HeaderContextValue = {

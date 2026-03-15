@@ -1,5 +1,7 @@
 'use client';
 
+import { Check } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
 
 export type InterestOption<T extends string = string> = {
@@ -29,12 +31,14 @@ export default function InterestChips<T extends string>({
             type="button"
             onClick={() => onToggle?.(value)}
             className={cn(
-              'inline-flex h-9 w-full items-center justify-center rounded-full border text-sm leading-none font-medium transition',
+              'inline-flex h-11 w-full items-center justify-center gap-1 rounded-full border text-sm leading-none font-medium transition',
               isActive
                 ? 'border-[#05C075] bg-white text-[#05C075]'
                 : 'border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50',
             )}
+            aria-pressed={isActive}
           >
+            {isActive ? <Check className="h-3 w-3 shrink-0" aria-hidden="true" /> : null}
             {label}
           </button>
         );

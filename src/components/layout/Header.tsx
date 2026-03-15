@@ -1,9 +1,9 @@
 'use client';
 
-import clsx from 'clsx';
-import { Bell, ChevronLeft } from 'lucide-react';
+import { Bell, ChevronLeft, PersonStanding } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import { useUnreadCountQuery } from '@/lib/hooks/notifications/useUnreadCountQuery';
@@ -15,6 +15,9 @@ type HeaderProps = {
   showBackButton?: boolean;
   onBackClick?: () => void;
   rightSlot?: ReactNode;
+  showAccessibilityButton?: boolean;
+  accessibilityActive?: boolean;
+  onAccessibilityClick?: () => void;
 };
 
 export default function Header({
@@ -22,11 +25,16 @@ export default function Header({
   showBackButton = false,
   onBackClick,
   rightSlot,
+  showAccessibilityButton = false,
+  accessibilityActive = false,
+  onAccessibilityClick,
 }: HeaderProps) {
   const router = useRouter();
   const { data: unreadCount } = useUnreadCountQuery();
   const { requestNavigation } = useNavigationGuard();
   const showBadge = typeof unreadCount === 'number' && unreadCount > 0;
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
 
   const handleBackClick = () => {
     if (!onBackClick) return;
@@ -41,6 +49,28 @@ export default function Header({
     requestNavigation(() => router.push('/notifications'));
   };
 
+  const handleAccessibilityButtonClick = () => {
+    setIsPopoverOpen((prev) => !prev);
+  };
+
+  const handleAccessibilityAction = () => {
+    onAccessibilityClick?.();
+    setIsPopoverOpen(false);
+  };
+
+  useEffect(() => {
+    if (!isPopoverOpen) return;
+
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
+        setIsPopoverOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [isPopoverOpen]);
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white">
       <div className="flex h-14 items-center px-4 sm:px-6">
@@ -49,10 +79,10 @@ export default function Header({
             <button
               type="button"
               onClick={handleBackClick}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-neutral-100"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-md hover:bg-neutral-100"
               aria-label="뒤로가기"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft aria-hidden="true" className="h-5 w-5" />
             </button>
           ) : null}
           {title === 'Devths' ? (
@@ -76,24 +106,50 @@ export default function Header({
           ) : null}
         </div>
 
-        <div
-          className={clsx(
-            'ml-auto flex items-center justify-end',
-            rightSlot ? 'w-auto gap-1' : 'w-10',
-          )}
-        >
+        <div className="ml-auto flex items-center justify-end gap-1">
           {rightSlot ?? (
-            <button
-              type="button"
-              onClick={handleNotificationsClick}
-              className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-neutral-100"
-              aria-label="알림"
-            >
-              <Bell className="h-5 w-5" />
-              {showBadge ? (
-                <span className="absolute top-[0.5px] right-[0.5px] h-2.5 w-2.5 rounded-full bg-red-500" />
+            <>
+              {showAccessibilityButton ? (
+                <div ref={popoverRef} className="relative">
+                  <button
+                    type="button"
+                    onClick={handleAccessibilityButtonClick}
+                    aria-pressed={accessibilityActive}
+                    className={`inline-flex h-11 w-11 items-center justify-center rounded-md transition ${
+                      accessibilityActive
+                        ? 'bg-[#05C075]/10 text-[#05C075]'
+                        : 'hover:bg-neutral-100'
+                    }`}
+                    aria-label="접근성 설정"
+                  >
+                    <PersonStanding aria-hidden="true" className="h-5 w-5" />
+                  </button>
+
+                  {isPopoverOpen ? (
+                    <div className="absolute top-full right-0 mt-1 rounded-lg border border-neutral-200 bg-white py-1 shadow-md">
+                      <button
+                        type="button"
+                        onClick={handleAccessibilityAction}
+                        className="w-full px-4 py-2 text-sm font-medium whitespace-nowrap text-neutral-900 hover:bg-neutral-50"
+                      >
+                        {accessibilityActive ? '접근성 모드 끄기' : '접근성 모드 켜기'}
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
               ) : null}
-            </button>
+              <button
+                type="button"
+                onClick={handleNotificationsClick}
+                className="relative inline-flex h-11 w-11 items-center justify-center rounded-md hover:bg-neutral-100"
+                aria-label="알림"
+              >
+                <Bell aria-hidden="true" className="h-5 w-5" />
+                {showBadge ? (
+                  <span className="absolute top-[0.5px] right-[0.5px] h-2.5 w-2.5 rounded-full bg-red-500" />
+                ) : null}
+              </button>
+            </>
           )}
         </div>
       </div>

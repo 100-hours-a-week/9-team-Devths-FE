@@ -1,7 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 
 import { BOARD_TAGS } from '@/constants/board';
 
@@ -44,7 +44,11 @@ export default function BoardTagFilter({
         className="flex w-full items-center justify-between text-sm font-semibold text-neutral-700"
       >
         태그 필터
-        {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        {open ? (
+          <ChevronUp aria-hidden="true" className="h-4 w-4" />
+        ) : (
+          <ChevronDown aria-hidden="true" className="h-4 w-4" />
+        )}
       </button>
 
       {open ? (
@@ -65,6 +69,7 @@ export default function BoardTagFilter({
                   )}
                   aria-pressed={isActive}
                 >
+                  {isActive ? <Check className="mr-1 inline h-3 w-3" aria-hidden="true" /> : null}
                   {tag}
                 </button>
               );

@@ -1,6 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
+import { Check } from 'lucide-react';
 
 import { BOARD_SORT_OPTIONS } from '@/constants/board';
 
@@ -30,6 +31,7 @@ export default function BoardSortTabs({ value, onChange }: BoardSortTabsProps) {
             )}
             aria-pressed={isActive}
           >
+            {isActive ? <Check className="mr-1 inline h-3 w-3" aria-hidden="true" /> : null}
             {option.label}
           </button>
         );

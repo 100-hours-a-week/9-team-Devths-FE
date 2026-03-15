@@ -356,6 +356,215 @@
   }
 }
 
+/* ── 키보드 포커스 스타일 ────────────────────────────────── */
+@layer base {
+  :focus-visible {
+    outline: 3px solid #05c075;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  html.accessibility-mode :focus-visible {
+    outline: 3px solid #006b3f;
+    outline-offset: 3px;
+  }
+}
+
+/* ── Accessibility mode: 가변 레이아웃 (글자 크기 대응) ────── */
+@layer utilities {
+  /*
+   * 고정 높이 버튼/입력창을 min-height로 전환
+   * 아이콘 전용 버튼(정사각형 h-*=w-*)은 제외
+   */
+  html.accessibility-mode button[class*='h-8']:not([class*='w-8']),
+  html.accessibility-mode button[class*='h-9']:not([class*='w-9']),
+  html.accessibility-mode button[class*='h-10']:not([class*='w-10']),
+  html.accessibility-mode button[class*='h-12']:not([class*='w-12']),
+  html.accessibility-mode button[class*='h-14']:not([class*='w-14']) {
+    height: auto;
+    min-height: 2.5rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  /* 입력창 고정 높이 → min-height */
+  html.accessibility-mode input[class*='h-10'],
+  html.accessibility-mode input[class*='h-12'] {
+    height: auto;
+    min-height: 2.5rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  /* 한 줄 가정 텍스트 자름 해제 (p, span, h* 텍스트 요소만) */
+  html.accessibility-mode p.truncate,
+  html.accessibility-mode span.truncate,
+  html.accessibility-mode h1.truncate,
+  html.accessibility-mode h2.truncate,
+  html.accessibility-mode h3.truncate {
+    overflow: visible;
+    text-overflow: unset;
+    white-space: normal;
+  }
+
+  /* 한 줄 line-clamp 제거 (텍스트 요소만) */
+  html.accessibility-mode p.line-clamp-1,
+  html.accessibility-mode span.line-clamp-1 {
+    -webkit-line-clamp: unset;
+    overflow: visible;
+    display: block;
+  }
+}
+
+/* ── Accessibility mode: 글자 크기 확대 ─────────────────── */
+html.accessibility-mode {
+  font-size: 118.75%; /* 16px → 19px, rem 단위 전체 비례 확대 */
+}
+
+/* ── Accessibility mode: 고대비 ──────────────────────────── */
+@layer utilities {
+  /* 연한 중립 텍스트 → 진하게 */
+  html.accessibility-mode .text-neutral-300 {
+    color: #595959;
+  }
+  html.accessibility-mode .text-neutral-400 {
+    color: #525252;
+  }
+  html.accessibility-mode .text-neutral-500 {
+    color: #404040;
+  }
+  html.accessibility-mode .text-neutral-600 {
+    color: #262626;
+  }
+
+  /* 앱 전용 연한 회색 텍스트 */
+  html.accessibility-mode .text-\[\#8B95A1\] {
+    color: #404040;
+  }
+  html.accessibility-mode .text-\[\#8A8A8A\] {
+    color: #404040;
+  }
+  html.accessibility-mode .text-\[\#6B7684\] {
+    color: #404040;
+  }
+  html.accessibility-mode .text-\[\#CCCCCC\] {
+    color: #525252;
+  }
+
+  /* 초록 텍스트 → 대비 4.5:1 이상 (#006B3F = 6.6:1) */
+  html.accessibility-mode .text-\[\#05C075\] {
+    color: #006b3f;
+  }
+  html.accessibility-mode .text-\[\#00C473\] {
+    color: #006b3f;
+  }
+  html.accessibility-mode .text-\[\#1FAE73\] {
+    color: #006b3f;
+  }
+  html.accessibility-mode .text-emerald-600,
+  html.accessibility-mode .text-green-600 {
+    color: #006b3f;
+  }
+
+  /* 빨간 버튼/배지 배경 → 흰 텍스트 대비 4.5:1 이상 */
+  /* #E5484D(4.2:1) → #C62828(5.6:1) */
+  html.accessibility-mode .bg-\[\#E5484D\] {
+    background-color: #c62828;
+  }
+  html.accessibility-mode .hover\:bg-\[\#D6383C\]:hover {
+    background-color: #b71c1c;
+  }
+  /* bg-red-500(4.3:1) → bg-red-700(7.5:1) */
+  html.accessibility-mode .bg-red-500 {
+    background-color: #b91c1c;
+  }
+  html.accessibility-mode .hover\:bg-red-600:hover {
+    background-color: #991b1b;
+  }
+
+  /* 캘린더 태그 텍스트: #B08200(3.5:1) → #7A5200(6.9:1) */
+  html.accessibility-mode .text-\[\#B08200\] {
+    color: #7a5200;
+  }
+
+  /* 초록 버튼 배경 → 흰 텍스트 대비 4.5:1 이상 (#006B3F = 6.6:1) */
+  html.accessibility-mode .bg-\[\#05C075\] {
+    background-color: #006b3f;
+  }
+  html.accessibility-mode .bg-\[\#05C075\]\/90 {
+    background-color: #006b3f;
+  }
+  html.accessibility-mode .bg-\[\#00C473\] {
+    background-color: #006b3f;
+  }
+  html.accessibility-mode .bg-\[\#00A85F\],
+  html.accessibility-mode .bg-\[\#04A865\],
+  html.accessibility-mode .bg-\[\#049e61\] {
+    background-color: #006b3f;
+  }
+  html.accessibility-mode .bg-emerald-600 {
+    background-color: #006b3f;
+  }
+  html.accessibility-mode .hover\:bg-\[\#05C075\]\/90:hover,
+  html.accessibility-mode .hover\:bg-\[\#04A865\]:hover,
+  html.accessibility-mode .active\:bg-\[\#00A85F\]:active {
+    background-color: #00512e;
+  }
+  html.accessibility-mode .hover\:bg-emerald-700:hover,
+  html.accessibility-mode .bg-emerald-700 {
+    background-color: #00512e;
+  }
+
+  /* 연한 테두리 → 진하게 */
+  html.accessibility-mode .border-neutral-100 {
+    border-color: #a3a3a3;
+  }
+  html.accessibility-mode .border-neutral-200 {
+    border-color: #737373;
+  }
+  html.accessibility-mode .divide-neutral-200 > * + * {
+    border-color: #737373;
+  }
+  html.accessibility-mode .border-\[\#E8E8E8\] {
+    border-color: #a3a3a3;
+  }
+  html.accessibility-mode .border-black\/10 {
+    border-color: rgb(0 0 0 / 0.3);
+  }
+
+  /* 플레이스홀더 텍스트 */
+  html.accessibility-mode input::placeholder,
+  html.accessibility-mode textarea::placeholder {
+    color: #525252 !important;
+    opacity: 1;
+  }
+
+  /* 플로팅 버튼 그라디언트 → 단색 진한 초록 (흰 텍스트 6.6:1) */
+  html.accessibility-mode .from-\[\#1CD48A\] {
+    background-image: none;
+    background-color: #006b3f;
+  }
+  html.accessibility-mode .hover\:from-\[\#2DE09A\]:hover,
+  html.accessibility-mode .hover\:to-\[\#07B374\]:hover {
+    background-image: none;
+    background-color: #00512e;
+  }
+
+  /* 게시판 태그 선택 상태: bg-[#E9F9F1] text-[#05C075] */
+  /* text 이미 처리됨. bg는 더 진하게 */
+  html.accessibility-mode .bg-\[\#E9F9F1\] {
+    background-color: #d0f0e2;
+  }
+  html.accessibility-mode .border-\[\#05C075\] {
+    border-color: #006b3f;
+  }
+
+  /* 비활성 요소 불투명도 완화 */
+  html.accessibility-mode .disabled\:opacity-50:disabled {
+    opacity: 0.7;
+  }
+}
+
 @keyframes typing-indicator {
   0%,
   80%,

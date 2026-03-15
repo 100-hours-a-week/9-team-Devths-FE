@@ -8,10 +8,12 @@ import { useEffect, useRef, useState } from 'react';
 
 import BoardPostCard from '@/components/board/BoardPostCard';
 import ConfirmModal from '@/components/common/ConfirmModal';
+import { useHeader } from '@/components/layout/HeaderContext';
 import EditProfileModal from '@/components/mypage/EditProfileModal';
 import WithdrawModal from '@/components/mypage/WithdrawModal';
 import { postLogout } from '@/lib/api/auth';
 import { clearAccessToken } from '@/lib/auth/token';
+import { useAccessibilityMode } from '@/lib/hooks/accessibility/useAccessibilityMode';
 import {
   unregisterFcmToken,
   usePushNotificationToggle,
@@ -27,6 +29,8 @@ import type { BoardPostSummary } from '@/types/board';
 export default function MyPageScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { setOptions, resetOptions } = useHeader();
+  const { isOn: isAccessibilityOn, toggle: toggleAccessibility } = useAccessibilityMode();
   const { data, isLoading, isError } = useMeQuery();
   const {
     data: myPostsData,
@@ -56,6 +60,16 @@ export default function MyPageScreen() {
     toggle: togglePush,
     isSupported: isPushSupported,
   } = usePushNotificationToggle();
+
+  useEffect(() => {
+    setOptions({
+      showAccessibilityButton: true,
+      accessibilityActive: isAccessibilityOn,
+      onAccessibilityClick: toggleAccessibility,
+    });
+
+    return () => resetOptions();
+  }, [isAccessibilityOn, resetOptions, setOptions, toggleAccessibility]);
 
   const handleWithdraw = () => {
     setIsEditOpen(false);
@@ -251,7 +265,7 @@ export default function MyPageScreen() {
                   onClick={() => setIsEditOpen(true)}
                   className="flex items-center gap-1 rounded-full bg-[#05C075] px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-[#04A865]"
                 >
-                  <Pencil className="h-4 w-4" />
+                  <Pencil aria-hidden="true" className="h-4 w-4" />
                   수정
                 </button>
                 <button
