@@ -2,13 +2,13 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Bell, Loader2, Plus, Search } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import BoardPostCard from '@/components/board/BoardPostCard';
 import BoardSortTabs from '@/components/board/BoardSortTabs';
 import BoardTagFilter from '@/components/board/BoardTagFilter';
-import BoardUserMiniProfile from '@/components/board/BoardUserMiniProfile';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
@@ -28,6 +28,8 @@ import { useUnreadCountQuery } from '@/lib/hooks/notifications/useUnreadCountQue
 import { userKeys } from '@/lib/hooks/users/queryKeys';
 
 import type { BoardSort, BoardTag } from '@/types/board';
+
+const BoardUserMiniProfile = dynamic(() => import('@/components/board/BoardUserMiniProfile'));
 
 export default function BoardListPage() {
   const router = useRouter();

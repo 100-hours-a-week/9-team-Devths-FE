@@ -24,10 +24,7 @@ async function getServerAccessToken(cookieHeader: string): Promise<string | null
   }
 }
 
-async function fetchChatRoomsServer(
-  token: string,
-  size: number,
-): Promise<ChatRoomListResponse> {
+async function fetchChatRoomsServer(token: string, size: number): Promise<ChatRoomListResponse> {
   const url = new URL('/api/chatrooms', BASE_URL);
   url.searchParams.set('type', 'PRIVATE');
   url.searchParams.set('size', String(size));
