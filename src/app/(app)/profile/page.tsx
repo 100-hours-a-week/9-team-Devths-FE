@@ -1,7 +1,7 @@
 import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query';
 
-import { prefetchProfile } from '@/lib/api/serverProfilePrefetch';
 import MyPageScreen from '@/components/mypage/MyPageScreen';
+import { prefetchProfile } from '@/lib/api/serverProfilePrefetch';
 
 export default async function ProfilePage() {
   const queryClient = new QueryClient();
