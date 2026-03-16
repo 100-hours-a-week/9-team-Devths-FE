@@ -10,22 +10,6 @@ import type { CursorPage } from '@/types/pagination';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-async function getServerAccessToken(cookieHeader: string): Promise<string | null> {
-  if (!BASE_URL) return null;
-  try {
-    const res = await fetch(new URL('/api/auth/tokens', BASE_URL).toString(), {
-      method: 'POST',
-      headers: { Cookie: cookieHeader },
-      cache: 'no-store',
-    });
-    if (!res.ok) return null;
-    const authHeader = res.headers.get('authorization');
-    return authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
-  } catch {
-    return null;
-  }
-}
-
 async function fetchBoardPostsServer(
   token: string,
   pageParam?: number,
@@ -190,14 +174,11 @@ async function fetchBoardCommentsServer(
 }
 
 export async function prefetchBoardDetail(queryClient: QueryClient, postId: number): Promise<void> {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore
-    .getAll()
-    .map((c) => `${c.name}=${c.value}`)
-    .join('; ');
+  if (!BASE_URL) return;
 
-  const token = await getServerAccessToken(cookieHeader);
-  if (!token || !BASE_URL) return;
+  const cookieStore = await cookies();
+  const token = cookieStore.get('devths_at')?.value;
+  if (!token) return;
 
   await Promise.all([
     queryClient.prefetchQuery({
@@ -212,14 +193,11 @@ export async function prefetchBoardDetail(queryClient: QueryClient, postId: numb
 }
 
 export async function prefetchBoardPosts(queryClient: QueryClient): Promise<void> {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore
-    .getAll()
-    .map((c) => `${c.name}=${c.value}`)
-    .join('; ');
+  if (!BASE_URL) return;
 
-  const token = await getServerAccessToken(cookieHeader);
-  if (!token || !BASE_URL) return;
+  const cookieStore = await cookies();
+  const token = cookieStore.get('devths_at')?.value;
+  if (!token) return;
 
   const params = { size: BOARD_PAGE_SIZE, sort: 'LATEST' as BoardSort, tags: [] as BoardTag[] };
 
