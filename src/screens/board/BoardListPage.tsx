@@ -426,7 +426,7 @@ export default function BoardListPage() {
                     post={post}
                     onClick={handlePostClick}
                     onAuthorClick={handleAuthorClick}
-                    priority={index === 0}
+                    priority={index < 3}
                   />
                 ))}
                 <div className="px-4 pt-2">
