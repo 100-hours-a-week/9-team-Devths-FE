@@ -82,7 +82,7 @@ export default function AppFrame({
   const defaultFrameOptions = useMemo<AppFrameOptions>(() => ({ showBottomNav: true }), []);
   const [frameOptions, setFrameOptions] = useState<AppFrameOptions>(defaultFrameOptions);
   const isBottomNavVisible = true;
-  const [isAuthed, setIsAuthed] = useState<boolean | null>(null);
+  const [isAuthed, setIsAuthed] = useState<boolean | null>(true);
   const [isNavigationBlocked, setIsNavigationBlocked] = useState(false);
   const [blockMessage, setBlockMessage] = useState('');
   const [blockedNavigationHandler, setBlockedNavigationHandler] = useState<
@@ -263,17 +263,13 @@ export default function AppFrame({
                 accessibilityActive={options.accessibilityActive}
                 onAccessibilityClick={options.onAccessibilityClick}
               />
-              {isAuthed === true ? (
+              {isAuthed !== false ? (
                 <div
                   key={pathname}
                   className="page-enter px-4 pb-[var(--bottom-nav-h)] sm:px-6"
                   style={{ viewTransitionName: 'page-content' }}
                 >
                   {children}
-                </div>
-              ) : isAuthed === null ? (
-                <div className="px-4 pb-[var(--bottom-nav-h)] sm:px-6">
-                  <div className="h-screen" />
                 </div>
               ) : null}
             </div>
