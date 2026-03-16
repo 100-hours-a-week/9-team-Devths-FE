@@ -1,4 +1,4 @@
-name: Devths-FE 비운영용 CICD 파이프라인
+name: Devths-FE 비운영용 CI 파이프라인
 
 on:
   push:
@@ -26,12 +26,6 @@ env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   ECR_REGISTRY: ${{ secrets.AWS_ECR_REGISTRY }}
   ECR_TARGET_REPO: "devths/fe-${{ startsWith(github.ref_name, 'release/') && 'stg' || 'dev'}}"
-  S3_BUCKET: ${{ secrets.AWS_S3_BUCKET_V2 }}
-  S3_PREFIX: FE/${{ github.ref_name }}
-
-  # CodeDeploy 설정
-  CODEDEPLOY_APP_NAME: ${{ secrets.CODEDEPLOY_APP_NAME }}
-  CODEDEPLOY_DEPLOYMENT_GROUP: ${{ startsWith(github.ref_name, 'release/') && secrets.CODE_DEPLOY_GROUP_NAME_STAGING_V2 || secrets.CODE_DEPLOY_GROUP_NAME_DEV_V2 }}
 
   # Discord 설정
   DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_NON_PROD_URL }}
@@ -123,7 +117,6 @@ jobs:
     timeout-minutes: 15
     outputs:
       image_tag: ${{ steps.timestamp.outputs.image_tag }}
-      s3_key: ${{ steps.upload.outputs.s3_key }}
     steps:
       - name: 체크아웃
         uses: actions/checkout@v4
@@ -197,155 +190,7 @@ jobs:
           cache-to: type=gha,mode=max
           provenance: false
 
-      - name: 배포 아티팩트 생성
-        id: upload
-        env:
-          IMAGE_TAG: ${{ steps.timestamp.outputs.image_tag }}
-          ECR_REGISTRY: ${{ env.ECR_REGISTRY }}
-          ECR_REPOSITORY: ${{ env.ECR_TARGET_REPO }}
-        run: |
-          set -euo pipefail
-
-          ARTIFACT_NAME="deploy-$IMAGE_TAG.zip"
-          echo "artifact_name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
-
-          echo "📦 배포 아티팩트를 생성합니다: $ARTIFACT_NAME"
-
-          # 임시 디렉토리 생성
-          mkdir -p deploy-temp
-
-          # CodeDeploy 설정 및 스크립트 복사
-          cp appspec.yml deploy-temp/
-          cp -r scripts deploy-temp/
-
-          # Docker Compose 파일 복사
-          cp docker-compose.yml deploy-temp/
-          cp promtail-config.yml deploy-temp/
-
-          # 환경 파일명 결정
-          if [[ "${{ env.BRANCH_NAME }}" == release/* ]]; then
-            ENV_FILE_NAME=".env.stg"
-          else
-            ENV_FILE_NAME=".env.dev"
-          fi
-
-          echo "📝 환경 파일: $ENV_FILE_NAME"
-
-          # 이미지 정보 파일 생성
-          cat > deploy-temp/image-info.env << EOF
-          ECR_REGISTRY=$ECR_REGISTRY
-          ECR_REPOSITORY=$ECR_REPOSITORY
-          IMAGE_TAG=$IMAGE_TAG
-          FULL_IMAGE=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          ENV_FILE=$ENV_FILE_NAME
-          EOF
-
-          # 런타임 환경 변수 파일 생성 (배포용)
-          echo "📝 런타임용 $ENV_FILE_NAME 파일 생성 중..."
-
-          # NEXT_PUBLIC_ 변수들만 추출하여 런타임용 .env 파일 생성
-          grep '^NEXT_PUBLIC_' .env.production > "deploy-temp/$ENV_FILE_NAME" || true
-
-          echo "✅ 생성된 런타임 환경 변수 파일 ($ENV_FILE_NAME):"
-          cat "deploy-temp/$ENV_FILE_NAME"
-
-          # 압축 파일 생성
-          cd deploy-temp
-          zip -r "../$ARTIFACT_NAME" . -q
-          cd ..
-          rm -rf deploy-temp
-
-          # S3 업로드 경로 설정
-          S3_KEY="${{ env.S3_PREFIX }}/$ARTIFACT_NAME"
-          S3_URL="s3://${{ env.S3_BUCKET }}/$S3_KEY"
-          echo "s3_key=$S3_KEY" >> $GITHUB_OUTPUT
-
-          echo "🚀 $ARTIFACT_NAME을 $S3_URL로 업로드합니다..."
-
-          # S3에 압축 파일 업로드
-          aws s3 cp "$ARTIFACT_NAME" "$S3_URL" --only-show-errors
-
-          echo "✅ S3 업로드 완료: $S3_URL"
-
-  # 4. CodeDeploy 배포
-  deploy:
-    needs: [build]
-    runs-on: ubuntu-22.04
-    timeout-minutes: 15
-    outputs:
-      deployment_id: ${{ steps.create.outputs.deployment_id }}
-      deployment_status: ${{ steps.result.outputs.status }}
-      deployment_error: ${{ steps.result.outputs.error_message }}
-    steps:
-      - name: AWS 자격 증명 설정
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: AWS CodeDeploy 배포 시작
-        id: create
-        run: |
-          set -euo pipefail
-          echo "🚀 CodeDeploy 배포를 시작합니다..."
-
-          DEPLOYMENT_ID=$(aws deploy create-deployment \
-            --application-name "${{ env.CODEDEPLOY_APP_NAME }}" \
-            --deployment-group-name "${{ env.CODEDEPLOY_DEPLOYMENT_GROUP }}" \
-            --s3-location bucket="${{ env.S3_BUCKET }}",key="${{ needs.build.outputs.s3_key }}",bundleType=zip \
-            --description "Deploy Docker Image: ${{ env.ECR_REGISTRY }}/${{ env.ECR_TARGET_REPO }}:${{ needs.build.outputs.image_tag }}" \
-            --query 'deploymentId' \
-            --output text)
-
-          echo "deployment_id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
-          echo "✅ 배포 ID: $DEPLOYMENT_ID"
-
-      - name: 배포 완료(헬스체크 포함)까지 대기
-        id: wait
-        run: |
-          set -euo pipefail
-          DEPLOYMENT_ID="${{ steps.create.outputs.deployment_id }}"
-          echo "⏳ 배포 상태를 확인합니다 (ID: $DEPLOYMENT_ID)..."
-
-          # 배포 완료까지 대기 (최대 3분)
-          aws deploy wait deployment-successful \
-            --deployment-id "$DEPLOYMENT_ID" \
-            --cli-read-timeout 180
-
-          echo "✅ CodeDeploy 배포가 성공적으로 완료되었습니다!"
-
-      - name: 배포 결과 조회
-        id: result
-        if: always()
-        run: |
-          set -euo pipefail
-
-          DEPLOYMENT_ID="${{ steps.create.outputs.deployment_id }}"
-          if [ -z "${DEPLOYMENT_ID:-}" ]; then
-            echo "status=UNKNOWN" >> $GITHUB_OUTPUT
-            echo "error_message=Failed to create deployment (deployment_id missing)" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          STATUS=$(aws deploy get-deployment --deployment-id "$DEPLOYMENT_ID" --query 'deploymentInfo.status' --output text)
-          ERROR_MESSAGE=$(aws deploy get-deployment --deployment-id "$DEPLOYMENT_ID" --query 'deploymentInfo.errorInformation.message' --output text 2>/dev/null || true)
-
-          if [ "${ERROR_MESSAGE:-}" = "None" ] || [ "${ERROR_MESSAGE:-}" = "null" ]; then
-            ERROR_MESSAGE=""
-          fi
-
-          ERROR_MESSAGE_CLEAN=$(echo "${ERROR_MESSAGE:-}" | tr '\n' ' ' | head -c 400)
-
-          echo "status=$STATUS" >> $GITHUB_OUTPUT
-          echo "error_message=$ERROR_MESSAGE_CLEAN" >> $GITHUB_OUTPUT
-
-          echo "📌 최종 상태: $STATUS"
-          if [ -n "$ERROR_MESSAGE_CLEAN" ]; then
-            echo "📌 에러: $ERROR_MESSAGE_CLEAN"
-          fi
-
-  # 5. CI 디스코드 알림
+  # 4. CI 디스코드 알림
   notify-ci:
     runs-on: ubuntu-22.04
     timeout-minutes: 15
@@ -368,49 +213,11 @@ jobs:
             - Build: ${{ needs.build.result == 'success' && ' ✅' || ' ❌' }}
 
             **🐳 Docker 이미지**: `${{ needs.build.outputs.image_tag }}`
-            **🪣 S3 Key**: `${{ needs.build.outputs.s3_key }}`
+
+            **📌 다음 단계**: ArgoCD에서 배포가 진행됩니다. 배포 결과는 ArgoCD 알림을 확인해주세요.
 
             **🔗 링크**: [커밋 확인하기](${{ github.event.repository.html_url }}/commit/${{ github.sha }})
 
           color: "${{ (needs.lint.result == 'success' && needs.static-analysis.result == 'success' && needs.build.result == 'success') && 65280 || 16711680 }}"
           username: GitHub FE NonProd Merge Bot
           avatar_url: ${{ env.DISCORD_AVATAR_URL }}
-
-  # 6. CD 디스코드 알림
-  notify-cd:
-    runs-on: ubuntu-22.04
-    timeout-minutes: 15
-    needs: [build, deploy]
-    if: always() && !github.event.created
-    steps:
-      - name: Discord 알림 전송
-        uses: sarisia/actions-status-discord@v1
-        with:
-          webhook: ${{ env.DISCORD_WEBHOOK_URL }}
-          status: ${{ needs.deploy.result == 'success' && 'success' || 'failure' }}
-          title: "${{ env.BRANCH_NAME }} CD 결과 [${{ needs.deploy.result == 'success' && '✅성공' || '❌실패' }}]"
-          description: |
-            **브랜치**: `${{ env.BRANCH_NAME }}`
-            **환경**: ${{ env.ENV_TYPE }}
-
-            **🐳 Docker 이미지**: `${{ needs.build.outputs.image_tag }}`
-            **🪣 S3 Key**: `${{ needs.build.outputs.s3_key }}`
-            **🚀 배포 결과**: ${{ needs.deploy.outputs.deployment_status || needs.deploy.result }}
-            **🆔 Deployment ID**: `${{ needs.deploy.outputs.deployment_id }}`
-            **🧾 에러**: ${{ needs.deploy.outputs.deployment_error || '없음' }}
-
-            **🔗 링크**: [커밋 확인하기](${{ github.event.repository.html_url }}/commit/${{ github.sha }})
-
-          color: "${{ needs.deploy.result == 'success' && 65280 || 16711680 }}"
-          username: GitHub FE NonProd Deploy Bot
-          avatar_url: ${{ env.DISCORD_AVATAR_URL }}
-
-  # 7. E2E 테스트 (배포 성공 시 실행)
-  e2e-test:
-    needs: [deploy]
-    if: startsWith(github.ref_name, 'release/') && !github.event.created
-    uses: ./.github/workflows/devths-playwright.yml
-    with:
-      target_url: 'https://stg.devths.com'
-    secrets:
-      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_NON_PROD_URL }}
