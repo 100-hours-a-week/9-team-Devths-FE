@@ -38,7 +38,7 @@ async function fetchBoardPostsServer(
 
   const res = await fetch(url.toString(), {
     headers: { Authorization: `Bearer ${token}` },
-    cache: 'no-store',
+    next: { revalidate: 30 },
   });
 
   if (!res.ok) throw new Error('Failed to fetch posts');
