@@ -10,6 +10,9 @@ const withBundleAnalyzer = bundleAnalyzer({
 const nextConfig: NextConfig = {
   devIndicators: false,
   output: 'standalone', // Docker 환경에서 경량 이미지 생성
+  experimental: {
+    inlineCss: true,
+  },
   images: {
     remotePatterns: [
       {

@@ -202,11 +202,7 @@ export default function AppFrame({
   }, [blockMessage, isNavigationBlocked]);
 
   const withViewTransition = (action: () => void) => {
-    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
-      document.startViewTransition(action);
-    } else {
-      action();
-    }
+    action();
   };
 
   const requestNavigation = useCallback(
