@@ -62,7 +62,6 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link rel="preload" href="/icons/Devths2.png" as="image" type="image/png" />
-        <link rel="preload" href="/images/background.webp" as="image" type="image/webp" />
         <link rel="preconnect" href="https://devths-storage-prod.s3.ap-northeast-2.amazonaws.com" />
         {API_ORIGIN ? <link rel="preconnect" href={API_ORIGIN} /> : null}
         <meta name="theme-color" content="#3AB569" />
