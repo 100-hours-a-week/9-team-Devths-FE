@@ -259,7 +259,7 @@ export default function ChatPlaceholderPage() {
     <>
       <main className={isEmptyState ? '' : 'px-3 pt-4 pb-24'}>
         {isLoading ? (
-          <div className="mt-4 flex h-[40vh] items-center justify-center rounded-2xl border border-neutral-200 bg-white text-sm text-neutral-500">
+          <div className="mt-4 flex h-[40vh] items-center justify-center text-sm text-neutral-500">
             채팅방 목록을 불러오는 중입니다...
           </div>
         ) : null}
