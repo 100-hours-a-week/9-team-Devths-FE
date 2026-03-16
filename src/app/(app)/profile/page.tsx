@@ -1,5 +1,15 @@
-import MyPageScreen from '@/components/mypage/MyPageScreen';
+import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query';
 
-export default function ProfilePage() {
-  return <MyPageScreen />;
+import MyPageScreen from '@/components/mypage/MyPageScreen';
+import { prefetchProfile } from '@/lib/api/serverProfilePrefetch';
+
+export default async function ProfilePage() {
+  const queryClient = new QueryClient();
+  await prefetchProfile(queryClient);
+
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <MyPageScreen />
+    </HydrationBoundary>
+  );
 }
