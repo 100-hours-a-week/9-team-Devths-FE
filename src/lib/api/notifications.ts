@@ -1,4 +1,5 @@
-import { api, type ApiClientResult } from '@/lib/api/client';
+import { api, apiRequest, type ApiClientResult } from '@/lib/api/client';
+import { getAccessToken } from '@/lib/auth/token';
 
 import type { NotificationListResponse, UnreadCountResponse } from '@/types/notifications';
 
@@ -40,7 +41,14 @@ export async function postFcmToken(
 }
 
 export async function deleteFcmToken(deviceId: string): Promise<ApiClientResult<unknown>> {
-  return api.delete(`/api/notifications/tokens/${encodeURIComponent(deviceId)}`);
+  const token = getAccessToken();
+  return apiRequest({
+    method: 'DELETE',
+    path: `/api/notifications/tokens/${encodeURIComponent(deviceId)}`,
+    withAuth: false,
+    credentials: 'include',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
 }
 
 export async function patchFcmToken(
