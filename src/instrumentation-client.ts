@@ -31,6 +31,14 @@ Sentry.init({
   // Enable sending user PII (Personally Identifiable Information)
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
   sendDefaultPii: true,
+
+  beforeSend(event) {
+    // FCM 토큰 삭제(로그아웃 시)는 서버 500 응답이 예상되는 상황이므로 Sentry 전송 제외
+    if (event.request?.url?.includes('/api/notifications/tokens')) {
+      return null;
+    }
+    return event;
+  },
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
