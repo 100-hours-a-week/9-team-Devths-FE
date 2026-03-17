@@ -12,7 +12,7 @@ import { useHeader } from '@/components/layout/HeaderContext';
 import EditProfileModal from '@/components/mypage/EditProfileModal';
 import WithdrawModal from '@/components/mypage/WithdrawModal';
 import { postLogout } from '@/lib/api/auth';
-import { clearAccessToken } from '@/lib/auth/token';
+import { clearAccessToken, clearLoggingOut, markLoggingOut } from '@/lib/auth/token';
 import { useAccessibilityMode } from '@/lib/hooks/accessibility/useAccessibilityMode';
 import {
   unregisterFcmToken,
@@ -90,6 +90,7 @@ export default function MyPageScreen() {
     if (isLoggingOut) return;
 
     setIsLoggingOut(true);
+    markLoggingOut();
     try {
       const isFcmUnregistered = await unregisterFcmToken();
       if (!isFcmUnregistered) {
@@ -103,6 +104,7 @@ export default function MyPageScreen() {
       queryClient.clear();
       router.replace('/');
     } catch {
+      clearLoggingOut();
       toast('로그아웃에 실패했습니다.');
       setIsLoggingOut(false);
     }
