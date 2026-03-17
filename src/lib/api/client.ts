@@ -7,6 +7,9 @@ import {
 
 import type { ApiErrorResponse, ApiResponse } from '@/types/api';
 
+// 토큰 갱신 성공 시 발행하는 전역 이벤트 (STOMP 재연결 트리거 등에 활용)
+export const ACCESS_TOKEN_REFRESHED_EVENT = 'access-token-refreshed';
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 let isRefreshing = false;
@@ -31,6 +34,9 @@ async function refreshAccessToken(): Promise<boolean> {
 
     if (newToken) {
       setAccessToken(newToken);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent(ACCESS_TOKEN_REFRESHED_EVENT));
+      }
       return true;
     }
 
