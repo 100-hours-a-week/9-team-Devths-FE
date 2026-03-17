@@ -96,7 +96,7 @@ export default function MyPageScreen() {
         toast('푸시 알림 해제에 실패했지만 로그아웃은 계속 진행합니다.');
       }
       const result = await postLogout();
-      if (!result.ok) {
+      if (!result.ok && result.status !== 401) {
         throw new Error('로그아웃에 실패했습니다.');
       }
       clearAccessToken();

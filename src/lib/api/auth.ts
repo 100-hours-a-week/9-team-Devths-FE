@@ -1,4 +1,5 @@
 import { apiRequest } from '@/lib/api/client';
+import { getAccessToken } from '@/lib/auth/token';
 
 import type { ApiErrorResponse, ApiResponse } from '@/types/api';
 
@@ -76,10 +77,13 @@ export type PostLogoutResult = {
 };
 
 export async function postLogout(): Promise<PostLogoutResult> {
+  const token = getAccessToken();
   const { ok, status, json } = await apiRequest<null>({
     method: 'POST',
     path: '/api/auth/logout',
-    withAuth: true,
+    withAuth: false,
+    credentials: 'include',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
 
   return { ok, status, json };
