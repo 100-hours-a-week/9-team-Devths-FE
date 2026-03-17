@@ -10,10 +10,17 @@ import Header from '@/components/layout/Header';
 import { HeaderContext, type HeaderOptions } from '@/components/layout/HeaderContext';
 import { NavigationGuardContext } from '@/components/layout/NavigationGuardContext';
 import LlmAnalysisTaskWatcher from '@/components/llm/analysis/LlmAnalysisTaskWatcher';
-import { ensureAccessToken } from '@/lib/api/client';
-import { clearAccessToken, getUserIdFromAccessToken, setAuthRedirect } from '@/lib/auth/token';
+import { ACCESS_TOKEN_REFRESHED_EVENT, ensureAccessToken } from '@/lib/api/client';
+import {
+  clearAccessToken,
+  getAccessToken,
+  getUserIdFromAccessToken,
+  isAccessTokenExpired,
+  setAuthRedirect,
+} from '@/lib/auth/token';
 import { applyRealtimeRoomNotification } from '@/lib/chat/realtimeRoomCache';
 import { clearRejoinedRoomUiOverride } from '@/lib/chat/rejoinedRoomUiCache';
+import { chatStompManager } from '@/lib/chat/stompManager';
 import { chatKeys } from '@/lib/hooks/chat/queryKeys';
 import { useChatRealtimeConnection } from '@/lib/hooks/chat/useChatRealtimeConnection';
 import { useChatSubscriptions } from '@/lib/hooks/chat/useChatSubscriptions';
@@ -82,7 +89,12 @@ export default function AppFrame({
   const defaultFrameOptions = useMemo<AppFrameOptions>(() => ({ showBottomNav: true }), []);
   const [frameOptions, setFrameOptions] = useState<AppFrameOptions>(defaultFrameOptions);
   const isBottomNavVisible = true;
-  const [isAuthed, setIsAuthed] = useState<boolean | null>(true);
+  const [isAuthed, setIsAuthed] = useState<boolean | null>(null);
+  const isAuthedRef = useRef<boolean | null>(null);
+
+  useEffect(() => {
+    isAuthedRef.current = isAuthed;
+  }, [isAuthed]);
   const [isNavigationBlocked, setIsNavigationBlocked] = useState(false);
   const [blockMessage, setBlockMessage] = useState('');
   const [blockedNavigationHandler, setBlockedNavigationHandler] = useState<
@@ -140,6 +152,24 @@ export default function AppFrame({
     onUserNotification: handleChatUserNotification,
   });
 
+  // 이벤트 기반 재연결: 토큰 갱신 성공 직후 STOMP가 끊겨 있으면 즉시 복구 (네비게이션 없이도 동작)
+  useEffect(() => {
+    const handleTokenRefreshed = () => {
+      const token = getAccessToken();
+      if (!token || isAccessTokenExpired(token)) return;
+
+      const stompStatus = chatStompManager.connectionStatus;
+      if (stompStatus === 'disconnected' || stompStatus === 'error') {
+        chatStompManager.connect();
+      }
+    };
+
+    window.addEventListener(ACCESS_TOKEN_REFRESHED_EVENT, handleTokenRefreshed);
+    return () => {
+      window.removeEventListener(ACCESS_TOKEN_REFRESHED_EVENT, handleTokenRefreshed);
+    };
+  }, []);
+
   useEffect(() => {
     setOptions(defaultOptions);
   }, [defaultOptions]);
@@ -151,6 +181,8 @@ export default function AppFrame({
     let isCancelled = false;
 
     const checkAuth = async () => {
+      if (isAuthedRef.current === false) return;
+
       const restored = await ensureAccessToken();
       if (isCancelled) {
         return;
@@ -158,6 +190,11 @@ export default function AppFrame({
 
       if (restored) {
         setIsAuthed(true);
+        // 네비게이션 시점 안전망: 이벤트 기반 복구가 안 된 경우를 대비
+        const stompStatus = chatStompManager.connectionStatus;
+        if (stompStatus === 'disconnected' || stompStatus === 'error') {
+          chatStompManager.connect();
+        }
         return;
       }
 
