@@ -15,7 +15,7 @@ export const BOARD_SORT_OPTIONS = [
   { key: 'FOLLOWING', label: '팔로잉' },
 ] as const satisfies readonly { key: BoardSort; label: string }[];
 
-export const POPULAR_MIN_LIKES = 500;
+export const POPULAR_MIN_LIKES = 5;
 
 export const BOARD_PAGE_SIZE = 10;
 export const FOLLOWINGS_FETCH_SIZE = 100;
