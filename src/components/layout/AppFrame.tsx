@@ -13,7 +13,9 @@ import LlmAnalysisTaskWatcher from '@/components/llm/analysis/LlmAnalysisTaskWat
 import { ACCESS_TOKEN_REFRESHED_EVENT, ensureAccessToken } from '@/lib/api/client';
 import {
   clearAccessToken,
+  clearLoggingOut,
   getAccessToken,
+  getIsLoggingOut,
   getUserIdFromAccessToken,
   isAccessTokenExpired,
   setAuthRedirect,
@@ -182,6 +184,11 @@ export default function AppFrame({
 
     const checkAuth = async () => {
       if (isAuthedRef.current === false) return;
+      if (getIsLoggingOut()) {
+        clearLoggingOut();
+        setIsAuthed(false);
+        return;
+      }
 
       const restored = await ensureAccessToken();
       if (isCancelled) {

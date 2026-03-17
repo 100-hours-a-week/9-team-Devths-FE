@@ -1,3 +1,17 @@
+let isLoggingOut = false;
+
+export function markLoggingOut() {
+  isLoggingOut = true;
+}
+
+export function clearLoggingOut() {
+  isLoggingOut = false;
+}
+
+export function getIsLoggingOut() {
+  return isLoggingOut;
+}
+
 const ACCESS_TOKEN_KEY = 'devths_access_token';
 const ACCESS_TOKEN_COOKIE = 'devths_at';
 const TEMP_TOKEN_KEY = 'devths_signup_temp_token';
@@ -6,6 +20,7 @@ const AUTH_REDIRECT_KEY = 'devths_auth_redirect';
 
 export function setAccessToken(token: string) {
   if (typeof window === 'undefined') return;
+  isLoggingOut = false;
   localStorage.setItem(ACCESS_TOKEN_KEY, token);
 
   const payload = parseJwtPayload(token);
