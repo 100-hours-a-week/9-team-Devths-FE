@@ -154,7 +154,8 @@ class ChatStompManager {
         const token = getAccessToken();
 
         if (!token) {
-          this.logWarn('beforeConnect failed: access token not found');
+          this.connectRequested = false;
+          this.logWarn('beforeConnect failed: access token not found, stop reconnecting');
           this.notifyFailureOnce('auth-missing', '실시간 연결 인증에 실패했습니다.');
           throw new Error('Missing access token for STOMP CONNECT');
         }
