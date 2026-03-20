@@ -1068,10 +1068,10 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
       ) : null}
 
       {isSettingsPage ? (
-        <div className="fixed inset-x-0 top-14 bottom-0 z-40 overflow-y-auto">
-          <section className="mx-auto min-h-full w-full max-w-[430px] bg-white">
-            <div className="mx-auto flex min-h-full w-full max-w-[392px] flex-col px-5 pt-4 pb-6">
-              <div>
+        <div className="fixed inset-x-0 top-14 bottom-0 z-40 overflow-hidden bg-white">
+          <section className="mx-auto flex h-full w-full max-w-[430px] flex-col bg-white">
+            <div className="flex-1 overflow-y-auto">
+              <div className="mx-auto w-full max-w-[392px] px-5 pt-4 pb-6">
                 <div className="divide-y divide-neutral-200">
                   <section className="py-4">
                     <div className="flex items-center justify-between">
@@ -1109,65 +1109,12 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
                       />
                     </div>
                   </section>
-
-                  <section className="py-4">
-                    <p className="text-sm font-semibold text-neutral-900">
-                      최근 사진/파일 미리보기
-                    </p>
-                    <p className="mt-1 text-xs text-neutral-500">최근 공유된 이미지 최대 4장</p>
-
-                    {data?.recentImages?.length ? (
-                      <ul className="mt-3 grid grid-cols-2 gap-2">
-                        {data.recentImages.map((recentImage) => {
-                          const imageSrc = resolveChatAssetUrl(recentImage.s3Key);
-
-                          if (!imageSrc) {
-                            return (
-                              <li
-                                key={recentImage.attachmentId}
-                                className="flex aspect-square items-center justify-center rounded-lg border border-neutral-200 bg-neutral-50 px-1 text-center text-[10px] leading-4 text-neutral-400"
-                              >
-                                미리보기 불가
-                              </li>
-                            );
-                          }
-
-                          return (
-                            <li key={recentImage.attachmentId}>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setImagePreview({
-                                    src: imageSrc,
-                                    alt: recentImage.originalName || '최근 이미지 미리보기',
-                                  })
-                                }
-                                className="block w-full overflow-hidden rounded-lg border border-neutral-200"
-                                aria-label={`${recentImage.originalName || '최근 이미지'} 확대 보기`}
-                              >
-                                <Image
-                                  src={imageSrc}
-                                  alt={recentImage.originalName || '최근 이미지'}
-                                  width={120}
-                                  height={120}
-                                  className="aspect-square h-auto w-full object-cover"
-                                  unoptimized
-                                />
-                              </button>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    ) : (
-                      <p className="mt-3 px-1 py-2 text-xs text-neutral-500">
-                        아직 공유된 이미지가 없습니다.
-                      </p>
-                    )}
-                  </section>
                 </div>
               </div>
+            </div>
 
-              <div className="mt-auto pt-5">
+            <div className="shrink-0 border-t border-neutral-200 bg-white px-5 pt-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-[0_-6px_16px_rgba(15,23,42,0.04)]">
+              <div className="mx-auto w-full max-w-[392px]">
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
