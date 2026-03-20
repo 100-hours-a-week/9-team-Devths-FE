@@ -1068,10 +1068,10 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
       ) : null}
 
       {isSettingsPage ? (
-        <div className="fixed inset-x-0 top-14 bottom-0 z-40 overflow-y-auto">
-          <section className="mx-auto min-h-full w-full max-w-[430px] bg-white">
-            <div className="mx-auto flex min-h-full w-full max-w-[392px] flex-col px-5 pt-4 pb-6">
-              <div>
+        <div className="fixed inset-x-0 top-14 bottom-0 z-40 overflow-hidden bg-white">
+          <section className="mx-auto flex h-full w-full max-w-[430px] flex-col bg-white">
+            <div className="flex-1 overflow-y-auto">
+              <div className="mx-auto w-full max-w-[392px] px-5 pt-4 pb-6">
                 <div className="divide-y divide-neutral-200">
                   <section className="py-4">
                     <div className="flex items-center justify-between">
@@ -1111,8 +1111,10 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
                   </section>
                 </div>
               </div>
+            </div>
 
-              <div className="mt-auto pt-5">
+            <div className="shrink-0 border-t border-neutral-200 bg-white px-5 pt-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-[0_-6px_16px_rgba(15,23,42,0.04)]">
+              <div className="mx-auto w-full max-w-[392px]">
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
