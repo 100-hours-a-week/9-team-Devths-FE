@@ -15,7 +15,7 @@ async function fetchChatRoomsServer(token: string, size: number): Promise<ChatRo
 
   const res = await fetch(url.toString(), {
     headers: { Authorization: `Bearer ${token}` },
-    next: { revalidate: 30 },
+    cache: 'no-store',
   });
   if (!res.ok) throw new Error('Failed to fetch chat rooms');
 
