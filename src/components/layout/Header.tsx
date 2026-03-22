@@ -151,7 +151,6 @@ export default function Header({
                     ref={accessibilityTriggerRef}
                     type="button"
                     onClick={handleAccessibilityButtonClick}
-                    aria-pressed={accessibilityActive}
                     aria-expanded={isPopoverOpen}
                     aria-haspopup="menu"
                     className={`inline-flex h-11 w-11 items-center justify-center rounded-md transition ${
