@@ -1344,6 +1344,8 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
                         ) : null}
                         <button
                           type="button"
+                          role="switch"
+                          aria-checked={isAlarmOnInput}
                           onClick={() => setIsAlarmOnInput((prev) => !prev)}
                           className={clsx(
                             'relative inline-flex h-7 w-12 items-center rounded-full transition',
