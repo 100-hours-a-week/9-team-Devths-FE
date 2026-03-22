@@ -67,6 +67,11 @@ export default function RootLayout({
         <meta name="theme-color" content="#3AB569" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if(localStorage.getItem('accessibility_mode')==='true'){document.documentElement.classList.add('accessibility-mode');}}catch(e){}`,
+          }}
+        />
         {GA_MEASUREMENT_ID ? (
           <>
             <Script
