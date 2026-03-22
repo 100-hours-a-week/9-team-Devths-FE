@@ -3,6 +3,9 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 type Props = {
   isOpen: boolean;
   title: string;
@@ -23,6 +26,8 @@ export default function ConfirmModal({
   onCancel,
 }: Props) {
   const modalRootRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<Element | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -35,6 +40,63 @@ export default function ConfirmModal({
       document.body.style.overflow = '';
     };
   }, [isOpen]);
+
+  // 포커스 이동 및 복원
+  useEffect(() => {
+    if (isOpen) {
+      triggerRef.current = document.activeElement;
+
+      const raf = requestAnimationFrame(() => {
+        const firstFocusable = panelRef.current?.querySelector<HTMLElement>(FOCUSABLE);
+        firstFocusable?.focus();
+      });
+
+      return () => cancelAnimationFrame(raf);
+    } else {
+      if (triggerRef.current instanceof HTMLElement) {
+        triggerRef.current.focus();
+      }
+      triggerRef.current = null;
+    }
+  }, [isOpen]);
+
+  // Tab 포커스 트랩 + Escape 닫기
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onCancel();
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+
+      const panel = panelRef.current;
+      if (!panel) return;
+
+      const focusables = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE));
+      if (focusables.length === 0) return;
+
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+
+      if (event.shiftKey) {
+        if (document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onCancel]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -87,7 +149,7 @@ export default function ConfirmModal({
         tabIndex={-1}
       />
 
-      <div className="relative z-10 mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+      <div ref={panelRef} className="relative z-10 mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
         <h2 id="confirm-modal-title" className="text-lg font-semibold text-neutral-900">
           {title}
         </h2>
