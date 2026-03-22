@@ -1285,7 +1285,16 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
       ) : null}
 
       {attachmentValidationMessage ? (
-        <div className="fixed inset-0 z-[205] flex items-center justify-center px-4">
+        <div
+          className="fixed inset-0 z-[205] flex items-center justify-center px-4"
+          {...(isAccessibilityOn
+            ? {
+                role: 'dialog',
+                'aria-modal': true,
+                'aria-labelledby': 'attachment-validation-modal-title',
+              }
+            : {})}
+        >
           <button
             type="button"
             aria-label="유효성 검사 안내 닫기"
@@ -1293,7 +1302,12 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
             className="absolute inset-0 bg-black/50"
           />
           <section className="relative z-10 w-full max-w-[360px] rounded-2xl bg-white p-5 shadow-2xl">
-            <h3 className="text-base font-semibold text-neutral-900">유효성 검사 실패</h3>
+            <h3
+              id={isAccessibilityOn ? 'attachment-validation-modal-title' : undefined}
+              className="text-base font-semibold text-neutral-900"
+            >
+              유효성 검사 실패
+            </h3>
             <p className="mt-2 text-sm leading-6 text-neutral-600">{attachmentValidationMessage}</p>
             <button
               type="button"
