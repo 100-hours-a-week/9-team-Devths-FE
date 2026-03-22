@@ -345,6 +345,7 @@ export default function MyPageScreen() {
                     type="button"
                     role="switch"
                     aria-checked={isPushActive}
+                    aria-label={`푸시 알림 ${isPushActive ? '켜짐' : '꺼짐'}`}
                     onClick={() => void togglePush()}
                     disabled={isPushPending}
                     className={`relative h-6 w-11 rounded-full transition-colors disabled:opacity-50 ${isPushActive ? 'bg-[#05C075]' : 'bg-neutral-300'}`}
@@ -369,9 +370,13 @@ export default function MyPageScreen() {
               }`}
             />
           ) : null}
-          <div className="relative grid grid-cols-2 gap-1">
+          <div role="tablist" aria-label="내 활동" className="relative grid grid-cols-2 gap-1">
             <button
               type="button"
+              role="tab"
+              aria-selected={activeContentTab === 'posts'}
+              aria-controls="mypage-panel-posts"
+              id="mypage-tab-posts"
               onClick={() => setActiveContentTab('posts')}
               className={`rounded-lg px-1 py-2 text-sm font-semibold transition-colors ${
                 isAccessibilityOn
@@ -387,6 +392,10 @@ export default function MyPageScreen() {
             </button>
             <button
               type="button"
+              role="tab"
+              aria-selected={activeContentTab === 'comments'}
+              aria-controls="mypage-panel-comments"
+              id="mypage-tab-comments"
               onClick={() => setActiveContentTab('comments')}
               className={`rounded-lg px-1 py-2 text-sm font-semibold transition-colors ${
                 isAccessibilityOn
@@ -403,8 +412,13 @@ export default function MyPageScreen() {
           </div>
         </div>
 
-        {activeContentTab === 'posts' ? (
-          <div className="mt-4 space-y-2">
+        <div
+          role="tabpanel"
+          id="mypage-panel-posts"
+          aria-labelledby="mypage-tab-posts"
+          className="mt-4 space-y-2"
+          hidden={activeContentTab !== 'posts'}
+        >
             {isMyPostsLoading ? (
               Array.from({ length: 3 }).map((_, index) => (
                 <div
@@ -440,9 +454,14 @@ export default function MyPageScreen() {
                 ) : null}
               </>
             )}
-          </div>
-        ) : (
-          <div className="mt-4 space-y-2">
+        </div>
+        <div
+          role="tabpanel"
+          id="mypage-panel-comments"
+          aria-labelledby="mypage-tab-comments"
+          className="mt-4 space-y-2"
+          hidden={activeContentTab !== 'comments'}
+        >
             {isMyCommentsLoading ? (
               Array.from({ length: 3 }).map((_, index) => (
                 <div
@@ -491,8 +510,7 @@ export default function MyPageScreen() {
                 ) : null}
               </>
             )}
-          </div>
-        )}
+        </div>
       </section>
 
       <EditProfileModal

@@ -156,9 +156,13 @@ export default function FollowListScreen() {
   return (
     <main className="-mx-4 flex flex-col pb-4 sm:-mx-6">
       <section className="bg-white px-6 py-4">
-        <div className="-mx-6 flex border-b border-neutral-200">
+        <div role="tablist" aria-label="팔로우 목록" className="-mx-6 flex border-b border-neutral-200">
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'followers'}
+            aria-controls="follow-panel-followers"
+            id="follow-tab-followers"
             onClick={() => handleChangeTab('followers')}
             className={`flex-1 border-b-2 px-6 py-2 text-sm font-semibold transition-colors ${
               activeTab === 'followers'
@@ -170,6 +174,10 @@ export default function FollowListScreen() {
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'followings'}
+            aria-controls="follow-panel-followings"
+            id="follow-tab-followings"
             onClick={() => handleChangeTab('followings')}
             className={`flex-1 border-b-2 px-6 py-2 text-sm font-semibold transition-colors ${
               activeTab === 'followings'
@@ -181,8 +189,13 @@ export default function FollowListScreen() {
           </button>
         </div>
 
-        {activeTab === 'followers' ? (
-          <div className="mt-4 space-y-2">
+        <div
+          role="tabpanel"
+          id="follow-panel-followers"
+          aria-labelledby="follow-tab-followers"
+          className="mt-4 space-y-2"
+          hidden={activeTab !== 'followers'}
+        >
             {isFollowersLoading ? (
               Array.from({ length: 5 }).map((_, index) => (
                 <div
@@ -248,9 +261,14 @@ export default function FollowListScreen() {
                 ) : null}
               </ul>
             )}
-          </div>
-        ) : (
-          <div className="mt-4 space-y-2">
+        </div>
+        <div
+          role="tabpanel"
+          id="follow-panel-followings"
+          aria-labelledby="follow-tab-followings"
+          className="mt-4 space-y-2"
+          hidden={activeTab !== 'followings'}
+        >
             {isFollowingsLoading ? (
               Array.from({ length: 5 }).map((_, index) => (
                 <div
@@ -316,8 +334,7 @@ export default function FollowListScreen() {
                 ) : null}
               </ul>
             )}
-          </div>
-        )}
+        </div>
       </section>
 
       <FollowUserProfileModal

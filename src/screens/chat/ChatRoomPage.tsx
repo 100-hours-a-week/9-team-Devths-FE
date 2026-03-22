@@ -1351,7 +1351,7 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
                             'relative inline-flex h-7 w-12 items-center rounded-full transition',
                             isAlarmOnInput ? 'bg-[#05C075]' : 'bg-neutral-300',
                           )}
-                          aria-label="알림 토글"
+                          aria-label={`알림 ${isAlarmOnInput ? '켜짐' : '꺼짐'}`}
                         >
                           <span
                             className={clsx(
