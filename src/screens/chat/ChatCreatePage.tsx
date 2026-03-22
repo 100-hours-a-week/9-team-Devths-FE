@@ -5,6 +5,7 @@ import { Check, Search } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 
 import { useHeader } from '@/components/layout/HeaderContext';
 import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
@@ -222,10 +223,13 @@ export default function ChatCreatePage() {
   return (
     <main className="px-4 pt-4 pb-24">
       <section>
-        <p className="px-1 text-sm font-semibold text-[#191F28]">유저 검색</p>
+        <label htmlFor="chat-create-search" className="px-1 text-sm font-semibold text-[#191F28]">
+          유저 검색
+        </label>
         <form onSubmit={handleSearchSubmit} className="mt-2">
           <div className="flex items-center gap-2 rounded-2xl border border-neutral-200 bg-white px-4 py-3">
             <input
+              id="chat-create-search"
               value={inputValue}
               onChange={(event) => setInputValue(event.target.value)}
               placeholder="이름을 입력하세요"
@@ -357,14 +361,17 @@ export default function ChatCreatePage() {
         </button>
       </section>
 
-      {successModal ? (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/45" />
-          <div className="relative z-10 mx-4 w-full max-w-[280px] rounded-2xl bg-white px-5 py-6 text-center shadow-xl">
-            <p className="text-base font-semibold text-neutral-900">{successModal.message}</p>
-          </div>
-        </div>
-      ) : null}
+      {successModal
+        ? createPortal(
+            <div className="fixed inset-0 z-[200] flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/45 backdrop-blur-[2px]" />
+              <div className="relative z-10 mx-4 w-full max-w-[280px] rounded-2xl bg-white px-5 py-6 text-center shadow-xl">
+                <p className="text-base font-semibold text-neutral-900">{successModal.message}</p>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </main>
   );
 }

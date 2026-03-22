@@ -156,9 +156,17 @@ export default function FollowListScreen() {
   return (
     <main className="-mx-4 flex flex-col pb-4 sm:-mx-6">
       <section className="bg-white px-6 py-4">
-        <div className="-mx-6 flex border-b border-neutral-200">
+        <div
+          role="tablist"
+          aria-label="팔로우 목록"
+          className="-mx-6 flex border-b border-neutral-200"
+        >
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'followers'}
+            aria-controls="follow-panel-followers"
+            id="follow-tab-followers"
             onClick={() => handleChangeTab('followers')}
             className={`flex-1 border-b-2 px-6 py-2 text-sm font-semibold transition-colors ${
               activeTab === 'followers'
@@ -170,6 +178,10 @@ export default function FollowListScreen() {
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'followings'}
+            aria-controls="follow-panel-followings"
+            id="follow-tab-followings"
             onClick={() => handleChangeTab('followings')}
             className={`flex-1 border-b-2 px-6 py-2 text-sm font-semibold transition-colors ${
               activeTab === 'followings'
@@ -181,143 +193,146 @@ export default function FollowListScreen() {
           </button>
         </div>
 
-        {activeTab === 'followers' ? (
-          <div className="mt-4 space-y-2">
-            {isFollowersLoading ? (
-              Array.from({ length: 5 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3"
-                >
-                  <div className="h-10 w-10 animate-pulse rounded-full bg-neutral-200" />
-                  <div className="h-4 w-24 animate-pulse rounded bg-neutral-200" />
-                </div>
-              ))
-            ) : isFollowersError ? (
-              <p className="py-8 text-center text-sm text-red-500">
-                팔로워 목록을 불러오지 못했습니다.
-              </p>
-            ) : followers.length === 0 ? (
-              <p className="py-8 text-center text-sm text-neutral-500">팔로워가 없습니다.</p>
-            ) : (
-              <ul className="space-y-2">
-                {followers.map((follower) => (
-                  <li key={follower.id}>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleOpenProfileModal({
-                          userId: follower.userId,
-                          nickname: follower.nickname,
-                          profileImage: follower.profileImage,
-                          isFollowing: follower.isFollowing,
-                        })
-                      }
-                      aria-label={`${follower.nickname} 프로필 보기`}
-                      className="flex w-full items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left hover:border-[#05C075]"
-                    >
-                      {follower.profileImage ? (
-                        <Image
-                          src={follower.profileImage}
-                          alt={`${follower.nickname} 프로필`}
-                          width={40}
-                          height={40}
-                          className="h-10 w-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-200 text-sm font-semibold text-neutral-600">
-                          {follower.nickname.slice(0, 1)}
-                        </div>
-                      )}
-
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-neutral-900">
-                          {follower.nickname}
-                        </p>
+        <div
+          role="tabpanel"
+          id="follow-panel-followers"
+          aria-labelledby="follow-tab-followers"
+          className="mt-4 space-y-2"
+          hidden={activeTab !== 'followers'}
+        >
+          {isFollowersLoading ? (
+            Array.from({ length: 5 }).map((_, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3"
+              >
+                <div className="h-10 w-10 animate-pulse rounded-full bg-neutral-200" />
+                <div className="h-4 w-24 animate-pulse rounded bg-neutral-200" />
+              </div>
+            ))
+          ) : isFollowersError ? (
+            <p className="py-8 text-center text-sm text-red-500">
+              팔로워 목록을 불러오지 못했습니다.
+            </p>
+          ) : followers.length === 0 ? (
+            <p className="py-8 text-center text-sm text-neutral-500">팔로워가 없습니다.</p>
+          ) : (
+            <ul className="space-y-2">
+              {followers.map((follower) => (
+                <li key={follower.id}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleOpenProfileModal({
+                        userId: follower.userId,
+                        nickname: follower.nickname,
+                        profileImage: follower.profileImage,
+                        isFollowing: follower.isFollowing,
+                      })
+                    }
+                    aria-label={`${follower.nickname} 프로필 보기`}
+                    className="flex w-full items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left hover:border-[#05C075]"
+                  >
+                    {follower.profileImage ? (
+                      <Image
+                        src={follower.profileImage}
+                        alt={`${follower.nickname} 프로필`}
+                        width={40}
+                        height={40}
+                        className="h-10 w-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-200 text-sm font-semibold text-neutral-600">
+                        {follower.nickname.slice(0, 1)}
                       </div>
-                    </button>
-                  </li>
-                ))}
-                {hasFollowersNextPage ? (
-                  <div ref={infiniteScrollTriggerRef} className="h-1" />
-                ) : null}
-                {isFollowersFetchingNextPage ? (
-                  <p className="py-2 text-center text-xs text-neutral-400">
-                    팔로워를 불러오는 중...
-                  </p>
-                ) : null}
-              </ul>
-            )}
-          </div>
-        ) : (
-          <div className="mt-4 space-y-2">
-            {isFollowingsLoading ? (
-              Array.from({ length: 5 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3"
-                >
-                  <div className="h-10 w-10 animate-pulse rounded-full bg-neutral-200" />
-                  <div className="h-4 w-24 animate-pulse rounded bg-neutral-200" />
-                </div>
-              ))
-            ) : isFollowingsError ? (
-              <p className="py-8 text-center text-sm text-red-500">
-                팔로잉 목록을 불러오지 못했습니다.
-              </p>
-            ) : followings.length === 0 ? (
-              <p className="py-8 text-center text-sm text-neutral-500">팔로잉이 없습니다.</p>
-            ) : (
-              <ul className="space-y-2">
-                {followings.map((following) => (
-                  <li key={following.id}>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleOpenProfileModal({
-                          userId: following.userId,
-                          nickname: following.nickname,
-                          profileImage: following.profileImage,
-                          isFollowing: following.isFollowing,
-                        })
-                      }
-                      aria-label={`${following.nickname} 프로필 보기`}
-                      className="flex w-full items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left hover:border-[#05C075]"
-                    >
-                      {following.profileImage ? (
-                        <Image
-                          src={following.profileImage}
-                          alt={`${following.nickname} 프로필`}
-                          width={40}
-                          height={40}
-                          className="h-10 w-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-200 text-sm font-semibold text-neutral-600">
-                          {following.nickname.slice(0, 1)}
-                        </div>
-                      )}
+                    )}
 
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-neutral-900">
-                          {following.nickname}
-                        </p>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-neutral-900">
+                        {follower.nickname}
+                      </p>
+                    </div>
+                  </button>
+                </li>
+              ))}
+              {hasFollowersNextPage ? <div ref={infiniteScrollTriggerRef} className="h-1" /> : null}
+              {isFollowersFetchingNextPage ? (
+                <p className="py-2 text-center text-xs text-neutral-400">팔로워를 불러오는 중...</p>
+              ) : null}
+            </ul>
+          )}
+        </div>
+        <div
+          role="tabpanel"
+          id="follow-panel-followings"
+          aria-labelledby="follow-tab-followings"
+          className="mt-4 space-y-2"
+          hidden={activeTab !== 'followings'}
+        >
+          {isFollowingsLoading ? (
+            Array.from({ length: 5 }).map((_, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3"
+              >
+                <div className="h-10 w-10 animate-pulse rounded-full bg-neutral-200" />
+                <div className="h-4 w-24 animate-pulse rounded bg-neutral-200" />
+              </div>
+            ))
+          ) : isFollowingsError ? (
+            <p className="py-8 text-center text-sm text-red-500">
+              팔로잉 목록을 불러오지 못했습니다.
+            </p>
+          ) : followings.length === 0 ? (
+            <p className="py-8 text-center text-sm text-neutral-500">팔로잉이 없습니다.</p>
+          ) : (
+            <ul className="space-y-2">
+              {followings.map((following) => (
+                <li key={following.id}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleOpenProfileModal({
+                        userId: following.userId,
+                        nickname: following.nickname,
+                        profileImage: following.profileImage,
+                        isFollowing: following.isFollowing,
+                      })
+                    }
+                    aria-label={`${following.nickname} 프로필 보기`}
+                    className="flex w-full items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left hover:border-[#05C075]"
+                  >
+                    {following.profileImage ? (
+                      <Image
+                        src={following.profileImage}
+                        alt={`${following.nickname} 프로필`}
+                        width={40}
+                        height={40}
+                        className="h-10 w-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-200 text-sm font-semibold text-neutral-600">
+                        {following.nickname.slice(0, 1)}
                       </div>
-                    </button>
-                  </li>
-                ))}
-                {hasFollowingsNextPage ? (
-                  <div ref={infiniteScrollTriggerRef} className="h-1" />
-                ) : null}
-                {isFollowingsFetchingNextPage ? (
-                  <p className="py-2 text-center text-xs text-neutral-400">
-                    팔로잉을 불러오는 중...
-                  </p>
-                ) : null}
-              </ul>
-            )}
-          </div>
-        )}
+                    )}
+
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-neutral-900">
+                        {following.nickname}
+                      </p>
+                    </div>
+                  </button>
+                </li>
+              ))}
+              {hasFollowingsNextPage ? (
+                <div ref={infiniteScrollTriggerRef} className="h-1" />
+              ) : null}
+              {isFollowingsFetchingNextPage ? (
+                <p className="py-2 text-center text-xs text-neutral-400">팔로잉을 불러오는 중...</p>
+              ) : null}
+            </ul>
+          )}
+        </div>
       </section>
 
       <FollowUserProfileModal

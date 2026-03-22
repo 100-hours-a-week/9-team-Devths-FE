@@ -41,6 +41,8 @@ export default function BoardTagFilter({
       <button
         type="button"
         onClick={onToggleOpen}
+        aria-expanded={open}
+        aria-controls="board-tag-filter-content"
         className="flex w-full items-center justify-between text-sm font-semibold text-neutral-700"
       >
         태그 필터
@@ -53,7 +55,7 @@ export default function BoardTagFilter({
 
       {open ? (
         <>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div id="board-tag-filter-content" className="mt-3 flex flex-wrap gap-2">
             {BOARD_TAGS.map((tag) => {
               const isActive = selected.includes(tag);
               return (

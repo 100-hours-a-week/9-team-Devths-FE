@@ -59,7 +59,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ko">
       <head>
         <link rel="preload" href="/icons/Devths2.png" as="image" type="image/png" />
         <link rel="preconnect" href="https://devths-storage-prod.s3.ap-northeast-2.amazonaws.com" />
@@ -67,6 +67,11 @@ export default function RootLayout({
         <meta name="theme-color" content="#3AB569" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if(localStorage.getItem('accessibility_mode')==='true'){document.documentElement.classList.add('accessibility-mode');}}catch(e){}`,
+          }}
+        />
         {GA_MEASUREMENT_ID ? (
           <>
             <Script

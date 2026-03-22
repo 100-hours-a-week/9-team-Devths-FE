@@ -23,6 +23,7 @@ import {
 import { applyRealtimeRoomNotification } from '@/lib/chat/realtimeRoomCache';
 import { clearRejoinedRoomUiOverride } from '@/lib/chat/rejoinedRoomUiCache';
 import { chatStompManager } from '@/lib/chat/stompManager';
+import { useAccessibilityMode } from '@/lib/hooks/accessibility/useAccessibilityMode';
 import { chatKeys } from '@/lib/hooks/chat/queryKeys';
 import { useChatRealtimeConnection } from '@/lib/hooks/chat/useChatRealtimeConnection';
 import { useChatSubscriptions } from '@/lib/hooks/chat/useChatSubscriptions';
@@ -91,6 +92,7 @@ export default function AppFrame({
   const defaultFrameOptions = useMemo<AppFrameOptions>(() => ({ showBottomNav: true }), []);
   const [frameOptions, setFrameOptions] = useState<AppFrameOptions>(defaultFrameOptions);
   const isBottomNavVisible = true;
+  const { isOn: isAccessibilityOn } = useAccessibilityMode();
   const [isAuthed, setIsAuthed] = useState<boolean | null>(null);
   const isAuthedRef = useRef<boolean | null>(null);
 
@@ -294,25 +296,42 @@ export default function AppFrame({
           >
             <LlmAnalysisTaskWatcher />
             <div className="mx-auto min-h-dvh w-full bg-white sm:max-w-[430px] sm:shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
+              {isAccessibilityOn ? (
+                <a
+                  href="#main-content"
+                  className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-1/2 focus:z-[300] focus:-translate-x-1/2 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-neutral-900 focus:shadow-lg"
+                >
+                  본문으로 이동
+                </a>
+              ) : null}
               <Header
                 title={options.title}
                 showBackButton={options.showBackButton}
                 onBackClick={options.onBackClick}
                 rightSlot={options.rightSlot}
-                showSettingsButton={options.showSettingsButton}
-                onSettingsClick={options.onSettingsClick}
                 showAccessibilityButton={options.showAccessibilityButton}
                 accessibilityActive={options.accessibilityActive}
                 onAccessibilityClick={options.onAccessibilityClick}
               />
               {isAuthed !== false ? (
-                <div
-                  key={pathname}
-                  className="page-enter px-4 pb-[var(--bottom-nav-h)] sm:px-6"
-                  style={{ viewTransitionName: 'page-content' }}
-                >
-                  {children}
-                </div>
+                isAccessibilityOn ? (
+                  <main
+                    key={pathname}
+                    id="main-content"
+                    className="page-enter px-4 pb-[var(--bottom-nav-h)] sm:px-6"
+                    style={{ viewTransitionName: 'page-content' }}
+                  >
+                    {children}
+                  </main>
+                ) : (
+                  <div
+                    key={pathname}
+                    className="page-enter px-4 pb-[var(--bottom-nav-h)] sm:px-6"
+                    style={{ viewTransitionName: 'page-content' }}
+                  >
+                    {children}
+                  </div>
+                )
               ) : null}
             </div>
 
