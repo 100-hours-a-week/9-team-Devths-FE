@@ -296,6 +296,14 @@ export default function AppFrame({
           >
             <LlmAnalysisTaskWatcher />
             <div className="mx-auto min-h-dvh w-full bg-white sm:max-w-[430px] sm:shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
+              {isAccessibilityOn ? (
+                <a
+                  href="#main-content"
+                  className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-1/2 focus:z-[300] focus:-translate-x-1/2 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-neutral-900 focus:shadow-lg"
+                >
+                  본문으로 이동
+                </a>
+              ) : null}
               <Header
                 title={options.title}
                 showBackButton={options.showBackButton}
