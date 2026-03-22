@@ -27,6 +27,7 @@ export default function BaseModal({
   contentClassName,
   variant = 'center',
 }: BaseModalProps) {
+  const modalRootRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<Element | null>(null);
 
@@ -85,6 +86,39 @@ export default function BaseModal({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [open, onClose]);
 
+  useEffect(() => {
+    if (!open) return;
+
+    const modalRoot = modalRootRef.current;
+    if (!modalRoot) return;
+    if (!document.documentElement.classList.contains('accessibility-mode')) return;
+
+    const siblings = Array.from(document.body.children).filter(
+      (element): element is HTMLElement => element instanceof HTMLElement && element !== modalRoot,
+    );
+    const previousStates = siblings.map((element) => ({
+      element,
+      ariaHidden: element.getAttribute('aria-hidden'),
+      inert: element.inert,
+    }));
+
+    siblings.forEach((element) => {
+      element.setAttribute('aria-hidden', 'true');
+      element.inert = true;
+    });
+
+    return () => {
+      previousStates.forEach(({ element, ariaHidden, inert }) => {
+        if (ariaHidden === null) {
+          element.removeAttribute('aria-hidden');
+        } else {
+          element.setAttribute('aria-hidden', ariaHidden);
+        }
+        element.inert = inert;
+      });
+    };
+  }, [open]);
+
   if (!open) return null;
 
   const baseClass =
@@ -94,6 +128,7 @@ export default function BaseModal({
 
   return createPortal(
     <div
+      ref={modalRootRef}
       className="fixed inset-0 z-50"
       role="dialog"
       aria-modal="true"

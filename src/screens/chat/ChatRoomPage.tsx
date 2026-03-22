@@ -40,6 +40,7 @@ import { applyRealtimeRoomNotification } from '@/lib/chat/realtimeRoomCache';
 import { clearRejoinedRoomUiOverride } from '@/lib/chat/rejoinedRoomUiCache';
 import { chatStompManager } from '@/lib/chat/stompManager';
 import { ApiError } from '@/lib/errors/ApiError';
+import { useAccessibilityMode } from '@/lib/hooks/accessibility/useAccessibilityMode';
 import { chatKeys } from '@/lib/hooks/chat/queryKeys';
 import { useAttachmentHandler } from '@/lib/hooks/chat/useAttachmentHandler';
 import { useChatMessagesInfiniteQuery } from '@/lib/hooks/chat/useChatMessagesInfiniteQuery';
@@ -124,6 +125,7 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
   const queryClient = useQueryClient();
   const { setOptions: setFrameOptions, resetOptions: resetFrameOptions } = useAppFrame();
   const { setOptions, resetOptions } = useHeader();
+  const { isOn: isAccessibilityOn } = useAccessibilityMode();
   const currentUserId = getUserIdFromAccessToken();
   const [messageInput, setMessageInput] = useState('');
   const [expandedMessageIds, setExpandedMessageIds] = useState<Set<number>>(new Set());
@@ -1076,27 +1078,40 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
                   <section className="py-4">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-semibold text-neutral-900">알림 설정</p>
-                      <button
-                        type="button"
-                        onClick={() => setIsAlarmOnInput((prev) => !prev)}
-                        className={clsx(
-                          'relative inline-flex h-7 w-12 items-center rounded-full transition',
-                          isAlarmOnInput ? 'bg-[#05C075]' : 'bg-neutral-300',
-                        )}
-                        aria-label="알림 토글"
-                      >
-                        <span
+                      <div className="flex items-center gap-2">
+                        {isAccessibilityOn ? (
+                          <span className="text-xs font-medium text-neutral-600" aria-live="polite">
+                            {isAlarmOnInput ? '켜짐' : '꺼짐'}
+                          </span>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => setIsAlarmOnInput((prev) => !prev)}
                           className={clsx(
-                            'inline-block h-5 w-5 rounded-full bg-white transition',
-                            isAlarmOnInput ? 'translate-x-6' : 'translate-x-1',
+                            'relative inline-flex h-7 w-12 items-center rounded-full transition',
+                            isAlarmOnInput ? 'bg-[#05C075]' : 'bg-neutral-300',
                           )}
-                        />
-                      </button>
+                          aria-label="알림 토글"
+                        >
+                          <span
+                            className={clsx(
+                              'inline-block h-5 w-5 rounded-full bg-white transition',
+                              isAlarmOnInput ? 'translate-x-6' : 'translate-x-1',
+                            )}
+                          />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="mt-4">
-                      <p className="mb-2 text-sm font-semibold text-neutral-900">채팅방 이름</p>
+                      <label
+                        htmlFor="chat-room-name-input"
+                        className="mb-2 block text-sm font-semibold text-neutral-900"
+                      >
+                        채팅방 이름
+                      </label>
                       <input
+                        id="chat-room-name-input"
                         value={roomNameInput}
                         onChange={(event) => setRoomNameInput(event.target.value)}
                         disabled={isPrivateRoom}

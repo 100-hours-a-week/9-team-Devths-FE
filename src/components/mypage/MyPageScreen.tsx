@@ -309,18 +309,25 @@ export default function MyPageScreen() {
                   <p className="text-sm font-semibold text-neutral-900">푸시 알림</p>
                   <p className="text-xs text-neutral-500">새 알림을 푸시로 받습니다</p>
                 </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={isPushActive}
-                  onClick={() => void togglePush()}
-                  disabled={isPushPending}
-                  className={`relative h-6 w-11 rounded-full transition-colors disabled:opacity-50 ${isPushActive ? 'bg-[#05C075]' : 'bg-neutral-300'}`}
-                >
-                  <span
-                    className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${isPushActive ? 'translate-x-5' : 'translate-x-0'}`}
-                  />
-                </button>
+                <div className="flex items-center gap-2">
+                  {isAccessibilityOn ? (
+                    <span className="text-xs font-medium text-neutral-600" aria-live="polite">
+                      {isPushActive ? '켜짐' : '꺼짐'}
+                    </span>
+                  ) : null}
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={isPushActive}
+                    onClick={() => void togglePush()}
+                    disabled={isPushPending}
+                    className={`relative h-6 w-11 rounded-full transition-colors disabled:opacity-50 ${isPushActive ? 'bg-[#05C075]' : 'bg-neutral-300'}`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${isPushActive ? 'translate-x-5' : 'translate-x-0'}`}
+                    />
+                  </button>
+                </div>
               </div>
             ) : null}
           </div>

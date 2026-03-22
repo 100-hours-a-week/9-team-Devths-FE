@@ -223,10 +223,13 @@ export default function ChatCreatePage() {
   return (
     <main className="px-4 pt-4 pb-24">
       <section>
-        <p className="px-1 text-sm font-semibold text-[#191F28]">유저 검색</p>
+        <label htmlFor="chat-create-search" className="px-1 text-sm font-semibold text-[#191F28]">
+          유저 검색
+        </label>
         <form onSubmit={handleSearchSubmit} className="mt-2">
           <div className="flex items-center gap-2 rounded-2xl border border-neutral-200 bg-white px-4 py-3">
             <input
+              id="chat-create-search"
               value={inputValue}
               onChange={(event) => setInputValue(event.target.value)}
               placeholder="이름을 입력하세요"

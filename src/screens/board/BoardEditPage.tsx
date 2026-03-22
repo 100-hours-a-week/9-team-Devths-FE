@@ -490,12 +490,18 @@ export default function BoardEditPage() {
       <section className="mt-4 space-y-4">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-neutral-900">제목</span>
-            <span className="text-xs text-rose-500">*</span>
+            <label htmlFor="board-edit-title" className="text-sm font-semibold text-neutral-900">
+              제목
+            </label>
+            <span className="text-xs text-rose-500" aria-hidden="true">
+              *
+            </span>
+            <span className="sr-only">(필수)</span>
           </div>
           <input
+            id="board-edit-title"
             type="text"
-            aria-label="게시글 제목"
+            aria-describedby={titleError ? 'board-edit-title-error' : undefined}
             value={title}
             maxLength={BOARD_TITLE_MAX_LENGTH}
             onChange={(event) => setTitle(event.target.value)}
@@ -503,7 +509,9 @@ export default function BoardEditPage() {
             className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-[#05C075] focus:ring-2 focus:ring-[#05C075]/20 focus:outline-none"
           />
           <div className="flex items-center justify-between text-xs text-neutral-400">
-            <span>{titleError ?? ' '}</span>
+            <span id="board-edit-title-error" role={titleError ? 'alert' : undefined}>
+              {titleError ?? ' '}
+            </span>
             <span>
               {title.trim().length}/{BOARD_TITLE_MAX_LENGTH}
             </span>
@@ -513,7 +521,12 @@ export default function BoardEditPage() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-neutral-900">내용</span>
+              <label
+                htmlFor="board-edit-content"
+                className="text-sm font-semibold text-neutral-900"
+              >
+                내용
+              </label>
               <span className="text-xs text-rose-500" aria-hidden="true">
                 *
               </span>
@@ -551,7 +564,7 @@ export default function BoardEditPage() {
             </div>
           ) : (
             <textarea
-              aria-label="게시글 내용"
+              id="board-edit-content"
               value={content}
               onChange={(event) => setContent(event.target.value)}
               maxLength={BOARD_CONTENT_MAX_LENGTH}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
 type Props = {
@@ -22,6 +22,8 @@ export default function ConfirmModal({
   onConfirm,
   onCancel,
 }: Props) {
+  const modalRootRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -34,10 +36,44 @@ export default function ConfirmModal({
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const modalRoot = modalRootRef.current;
+    if (!modalRoot) return;
+    if (!document.documentElement.classList.contains('accessibility-mode')) return;
+
+    const siblings = Array.from(document.body.children).filter(
+      (element): element is HTMLElement => element instanceof HTMLElement && element !== modalRoot,
+    );
+    const previousStates = siblings.map((element) => ({
+      element,
+      ariaHidden: element.getAttribute('aria-hidden'),
+      inert: element.inert,
+    }));
+
+    siblings.forEach((element) => {
+      element.setAttribute('aria-hidden', 'true');
+      element.inert = true;
+    });
+
+    return () => {
+      previousStates.forEach(({ element, ariaHidden, inert }) => {
+        if (ariaHidden === null) {
+          element.removeAttribute('aria-hidden');
+        } else {
+          element.setAttribute('aria-hidden', ariaHidden);
+        }
+        element.inert = inert;
+      });
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return createPortal(
     <div
+      ref={modalRootRef}
       className="fixed inset-0 z-[200] flex items-center justify-center"
       role="dialog"
       aria-modal="true"
