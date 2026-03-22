@@ -138,7 +138,7 @@ export default function BaseModal({
         type="button"
         className="fixed inset-0 z-50 bg-black/50"
         onClick={onClose}
-        aria-label="닫기"
+        aria-hidden="true"
         tabIndex={-1}
       />
 
