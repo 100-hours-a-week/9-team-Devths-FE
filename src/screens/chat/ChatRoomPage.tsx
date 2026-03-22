@@ -569,7 +569,7 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
         className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-neutral-100"
         aria-label="채팅방 설정 열기"
       >
-        <Menu className="h-5 w-5" />
+        <Menu aria-hidden="true" className="h-5 w-5" />
       </button>
     ),
     [handleSettingsClick],
@@ -810,7 +810,7 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
         {!isMessagesLoading && !isMessagesError && messages.length === 0 ? (
           <div className="flex h-full min-h-[240px] flex-col items-center justify-center px-4 text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#00C473]/10">
-              <MessageSquarePlus className="h-8 w-8 text-[#00C473]" strokeWidth={1.75} />
+              <MessageSquarePlus aria-hidden="true" className="h-8 w-8 text-[#00C473]" strokeWidth={1.75} />
             </div>
             <p className="mt-5 text-base font-semibold text-[#191F28]">아직 메시지가 없습니다.</p>
             <p className="mt-2 text-sm text-[#8B95A1]">첫 메시지를 보내 대화를 시작해보세요</p>
@@ -860,11 +860,11 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
 
                   {shouldShowLastReadDivider ? (
                     <div ref={unreadDividerRef} className="my-3 flex items-center gap-2">
-                      <span className="h-px flex-1 bg-neutral-200" />
+                      <span aria-hidden="true" className="h-px flex-1 bg-neutral-200" />
                       <span className="text-[11px] font-medium text-neutral-500">
                         여기까지 읽었습니다
                       </span>
-                      <span className="h-px flex-1 bg-neutral-200" />
+                      <span aria-hidden="true" className="h-px flex-1 bg-neutral-200" />
                     </div>
                   ) : null}
 
@@ -1121,9 +1121,9 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
             aria-label="채팅 첨부 열기"
           >
             {isAttachmentUploading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
+              <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin" />
             ) : (
-              <Paperclip className="h-5 w-5" />
+              <Paperclip aria-hidden="true" className="h-5 w-5" />
             )}
           </button>
 
@@ -1259,7 +1259,7 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
                 disabled={isAttachmentUploading}
                 className="flex items-center justify-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-3 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 disabled:opacity-60"
               >
-                <FileImage className="h-4 w-4" />
+                <FileImage aria-hidden="true" className="h-4 w-4" />
                 이미지 첨부
               </button>
               <button
@@ -1268,7 +1268,7 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
                 disabled={isAttachmentUploading}
                 className="flex items-center justify-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-3 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 disabled:opacity-60"
               >
-                <FileText className="h-4 w-4" />
+                <FileText aria-hidden="true" className="h-4 w-4" />
                 파일 첨부
               </button>
             </div>
