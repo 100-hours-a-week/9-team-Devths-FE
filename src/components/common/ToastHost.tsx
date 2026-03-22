@@ -20,7 +20,6 @@ export default function ToastHost() {
       {toasts.map((t) => (
         <div
           key={t.id}
-          role={isAccessibilityOn ? 'status' : undefined}
           className="rounded-2xl bg-zinc-900 px-4 py-3 text-sm text-white shadow-lg"
         >
           {t.message}
