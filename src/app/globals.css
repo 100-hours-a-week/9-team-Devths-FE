@@ -414,6 +414,10 @@
     overflow: visible;
     display: block;
   }
+
+  html.accessibility-mode .break-keep {
+    word-break: keep-all;
+  }
 }
 
 /* ── Accessibility mode: 글자 크기 확대 ─────────────────── */

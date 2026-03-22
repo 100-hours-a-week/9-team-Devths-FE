@@ -567,7 +567,7 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
         type="button"
         onClick={handleSettingsClick}
         className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-neutral-100"
-        aria-label="채팅방 설정"
+        aria-label="채팅방 설정 열기"
       >
         <Menu className="h-5 w-5" />
       </button>
@@ -877,7 +877,7 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
                   >
                     <div
                       className={clsx(
-                        'max-w-[78%] min-w-0',
+                        isAccessibilityOn ? 'max-w-full min-w-0' : 'max-w-[78%] min-w-0',
                         message.type === 'SYSTEM' ? 'max-w-full' : '',
                       )}
                     >
@@ -1087,7 +1087,12 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
       </section>
 
       <div className="border-t border-neutral-200 bg-white px-3 pt-2 pb-5">
-        <form onSubmit={handleSendMessage} className="flex items-end gap-2">
+        <form
+          onSubmit={handleSendMessage}
+          className={clsx(
+            isAccessibilityOn ? 'flex flex-col items-stretch gap-3' : 'flex items-end gap-2',
+          )}
+        >
           <input
             ref={imageAttachmentInputRef}
             type="file"
@@ -1113,7 +1118,7 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
             onClick={handleAttachmentTriggerClick}
             disabled={isAttachmentUploading}
             className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-neutral-200 bg-white text-neutral-700 shadow-sm transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:text-neutral-300"
-            aria-label="파일 첨부"
+            aria-label="채팅 첨부 열기"
           >
             {isAttachmentUploading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -1165,11 +1170,16 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
                   ? 'bg-neutral-200 text-neutral-500'
                   : 'bg-[#05C075] text-white hover:bg-[#049e61]',
               )}
-              aria-label="전송"
+              aria-label="메시지 전송"
             >
               <SendHorizonal className="h-5 w-5" />
             </button>
-            <div className="absolute top-full left-1/2 mt-1 -translate-x-1/2 text-center text-[11px] text-neutral-400">
+            <div
+              className={clsx(
+                'text-center text-[11px] text-neutral-400',
+                isAccessibilityOn ? 'mt-1' : 'absolute top-full left-1/2 mt-1 -translate-x-1/2',
+              )}
+            >
               {messageInput.length}/2000
             </div>
           </div>
@@ -1187,7 +1197,7 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
         >
           <button
             type="button"
-            aria-label="이미지 닫기"
+            aria-label="이미지 미리보기 닫기"
             onClick={closeImagePreview}
             className="absolute inset-0"
           />
@@ -1215,7 +1225,7 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
         <div className="fixed inset-0 z-[175] flex items-end justify-center">
           <button
             type="button"
-            aria-label="첨부 모달 닫기"
+            aria-label="첨부 선택 닫기"
             onClick={closeAttachmentPicker}
             className="absolute inset-0 bg-black/45"
           />
@@ -1237,7 +1247,12 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
               이미지 최대 9장(5MB 이하, JPG/JPEG/PNG/WEBP), 파일 1개(PDF, 5MB 이하)
             </p>
 
-            <div className="mt-4 grid grid-cols-2 gap-2">
+            <div
+              className={clsx(
+                'mt-4 gap-2',
+                isAccessibilityOn ? 'grid grid-cols-1' : 'grid grid-cols-2',
+              )}
+            >
               <button
                 type="button"
                 onClick={handlePickImageAttachments}
@@ -1273,7 +1288,7 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
         <div className="fixed inset-0 z-[205] flex items-center justify-center px-4">
           <button
             type="button"
-            aria-label="유효성 검사 모달 닫기"
+            aria-label="유효성 검사 안내 닫기"
             onClick={() => setAttachmentValidationMessage(null)}
             className="absolute inset-0 bg-black/50"
           />
@@ -1359,7 +1374,12 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
 
             <div className="shrink-0 border-t border-neutral-200 bg-white px-5 pt-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-[0_-6px_16px_rgba(15,23,42,0.04)]">
               <div className="mx-auto w-full max-w-[392px]">
-                <div className="grid grid-cols-2 gap-2">
+                <div
+                  className={clsx(
+                    'gap-2',
+                    isAccessibilityOn ? 'grid grid-cols-1' : 'grid grid-cols-2',
+                  )}
+                >
                   <button
                     type="button"
                     onClick={() => setIsLeaveConfirmOpen(true)}

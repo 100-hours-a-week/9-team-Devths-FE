@@ -115,7 +115,7 @@ export default function Header({
               type="button"
               onClick={handleBackClick}
               className="inline-flex h-11 w-11 items-center justify-center rounded-md hover:bg-neutral-100"
-              aria-label="뒤로가기"
+              aria-label="이전 화면으로 이동"
             >
               <ChevronLeft aria-hidden="true" className="h-5 w-5" />
             </button>
@@ -187,7 +187,7 @@ export default function Header({
                 type="button"
                 onClick={handleNotificationsClick}
                 className="relative inline-flex h-11 w-11 items-center justify-center rounded-md hover:bg-neutral-100"
-                aria-label="알림"
+                aria-label="알림 페이지 열기"
               >
                 <Bell aria-hidden="true" className="h-5 w-5" />
                 {showBadge ? (
