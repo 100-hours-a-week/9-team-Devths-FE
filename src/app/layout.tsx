@@ -59,7 +59,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ko">
       <head>
         <link rel="preload" href="/icons/Devths2.png" as="image" type="image/png" />
         <link rel="preconnect" href="https://devths-storage-prod.s3.ap-northeast-2.amazonaws.com" />
