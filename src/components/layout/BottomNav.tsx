@@ -48,6 +48,7 @@ export default function BottomNav({ hidden = false }: BottomNavProps) {
 
   return (
     <nav
+      aria-label="하단 내비게이션"
       className={clsx(
         'fixed bottom-0 left-1/2 z-50 w-full -translate-x-1/2 bg-white transition-transform duration-200 sm:max-w-[430px]',
         hidden ? 'pointer-events-none translate-y-full' : 'translate-y-0',
@@ -66,6 +67,7 @@ export default function BottomNav({ hidden = false }: BottomNavProps) {
                   key={tab.label}
                   href={tab.href}
                   onClick={handleNavigate(tab.href)}
+                  aria-current={isActive ? 'page' : undefined}
                   className="flex flex-col items-center justify-center"
                 >
                   <div className="-mt-6 flex h-14 w-14 items-center justify-center rounded-full bg-[#05C075] shadow-lg">
@@ -106,6 +108,7 @@ export default function BottomNav({ hidden = false }: BottomNavProps) {
                 key={tab.label}
                 href={tab.href}
                 onClick={handleNavigate(tab.href)}
+                aria-current={isActive ? 'page' : undefined}
                 className={clsx(baseClass, activeClass)}
               >
                 <span className="relative inline-flex">

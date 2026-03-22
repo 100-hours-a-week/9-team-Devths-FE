@@ -56,6 +56,49 @@ import { formatDateKey, formatMessageTime, formatStickyDateLabel } from '@/lib/u
 import type { ChatMessageResponse, SendChatMessagePayload } from '@/lib/api/chatMessages';
 import type { IMessage } from '@stomp/stompjs';
 
+const OVERLAY_FOCUSABLE_SELECTOR =
+  'button:not([disabled]), [href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function getFocusableElements(container: HTMLElement | null): HTMLElement[] {
+  if (!container) {
+    return [];
+  }
+
+  return Array.from(container.querySelectorAll<HTMLElement>(OVERLAY_FOCUSABLE_SELECTOR));
+}
+
+function focusFirstElement(container: HTMLElement | null) {
+  const focusables = getFocusableElements(container);
+  if (focusables.length > 0) {
+    focusables[0]?.focus();
+    return;
+  }
+
+  container?.focus();
+}
+
+function trapFocus(event: KeyboardEvent, container: HTMLElement | null) {
+  const focusables = getFocusableElements(container);
+  if (focusables.length === 0) {
+    event.preventDefault();
+    return;
+  }
+
+  const first = focusables[0];
+  const last = focusables[focusables.length - 1];
+
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last?.focus();
+    return;
+  }
+
+  if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first?.focus();
+  }
+}
+
 type ChatRoomPageProps = Readonly<{
   roomId: number | null;
   mode?: 'room' | 'settings';
@@ -138,11 +181,18 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
     src: string;
     alt: string;
   } | null>(null);
+  const [liveAnnouncement, setLiveAnnouncement] = useState('');
   const isSettingsPage = mode === 'settings';
   const activeRoomId = isLeavingRoom ? null : roomId;
   const { data, isLoading, isError, refetch } = useChatRoomDetailQuery(activeRoomId);
   const deleteLongPressTimerRef = useRef<number | null>(null);
   const isMessageInputComposingRef = useRef(false);
+  const liveAnnouncementTimerRef = useRef<number | null>(null);
+  const attachmentTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const imagePreviewRestoreFocusRef = useRef<HTMLElement | null>(null);
+  const imagePreviewDialogRef = useRef<HTMLDivElement | null>(null);
+  const attachmentPickerDialogRef = useRef<HTMLElement | null>(null);
+  const settingsDialogRef = useRef<HTMLDivElement | null>(null);
   const deleteMessageMutation = useDeleteMessageMutation(roomId ?? 0);
   const putRoomSettingsMutation = usePutRoomSettingsMutation(roomId ?? 0);
   const leaveChatRoomMutation = useLeaveChatRoomMutation(roomId ?? 0);
@@ -222,6 +272,48 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
     handleAttachmentChange,
   } = useAttachmentHandler({ roomId, queryClient });
 
+  const announceForScreenReader = useCallback(
+    (message: string) => {
+      if (!isAccessibilityOn) {
+        return;
+      }
+
+      if (liveAnnouncementTimerRef.current !== null) {
+        window.clearTimeout(liveAnnouncementTimerRef.current);
+      }
+
+      setLiveAnnouncement('');
+      liveAnnouncementTimerRef.current = window.setTimeout(() => {
+        setLiveAnnouncement(message);
+      }, 20);
+    },
+    [isAccessibilityOn],
+  );
+
+  const closeImagePreview = useCallback(() => {
+    setImagePreview(null);
+    requestAnimationFrame(() => {
+      imagePreviewRestoreFocusRef.current?.focus();
+    });
+  }, []);
+
+  const openImagePreview = useCallback((preview: { src: string; alt: string }) => {
+    imagePreviewRestoreFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setImagePreview(preview);
+  }, []);
+
+  const closeAttachmentPicker = useCallback(() => {
+    setIsAttachmentPickerOpen(false);
+    requestAnimationFrame(() => {
+      attachmentTriggerRef.current?.focus();
+    });
+  }, [setIsAttachmentPickerOpen]);
+
+  const handleAttachmentTriggerClick = useCallback(() => {
+    handleAttachmentButtonClick();
+  }, [handleAttachmentButtonClick]);
+
   const toggleExpandedMessage = useCallback((messageId: number) => {
     setExpandedMessageIds((prev) => {
       const next = new Set(prev);
@@ -281,8 +373,25 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
           }
         });
       }
+
+      if (incomingMessage.sender?.userId !== currentUserId) {
+        const announcedType =
+          incomingMessage.type === 'IMAGE'
+            ? '새 이미지 메시지'
+            : incomingMessage.type === 'FILE' || incomingMessage.type === 'PDF'
+              ? '새 파일 메시지'
+              : '새 메시지';
+        announceForScreenReader(`${announcedType}가 도착했습니다.`);
+      }
     },
-    [currentUserId, messageListRef, patchLastReadOnce, queryClient, roomId],
+    [
+      announceForScreenReader,
+      currentUserId,
+      messageListRef,
+      patchLastReadOnce,
+      queryClient,
+      roomId,
+    ],
   );
 
   const handleSendMessage = useCallback(
@@ -348,12 +457,14 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
     try {
       await deleteMessageMutation.mutateAsync(deleteTargetMessageId);
       toast('메시지가 삭제되었습니다.');
+      announceForScreenReader('메시지가 삭제되었습니다.');
       setDeleteTargetMessageId(null);
     } catch (error) {
       const err = ApiError.fromUnknown(error);
       toast(err.serverMessage ?? '메시지 삭제에 실패했습니다.');
+      announceForScreenReader(err.serverMessage ?? '메시지 삭제에 실패했습니다.');
     }
-  }, [deleteMessageMutation, deleteTargetMessageId]);
+  }, [announceForScreenReader, deleteMessageMutation, deleteTargetMessageId]);
 
   const handleSaveRoomSettings = useCallback(async () => {
     if (roomId === null || putRoomSettingsMutation.isPending) {
@@ -368,6 +479,7 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
         roomName: isPrivateRoom ? undefined : trimmedRoomName || undefined,
       });
       toast('채팅방 설정이 저장되었습니다.');
+      announceForScreenReader('채팅방 설정이 저장되었습니다.');
       const params = new URLSearchParams();
       const from = searchParams.get('from');
       if (from) {
@@ -378,8 +490,10 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
     } catch (error) {
       const err = ApiError.fromUnknown(error);
       toast(err.serverMessage ?? '채팅방 설정 저장에 실패했습니다.');
+      announceForScreenReader(err.serverMessage ?? '채팅방 설정 저장에 실패했습니다.');
     }
   }, [
+    announceForScreenReader,
     isAlarmOnInput,
     isPrivateRoom,
     putRoomSettingsMutation,
@@ -399,13 +513,15 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
       await leaveChatRoomMutation.mutateAsync();
       setIsLeaveConfirmOpen(false);
       toast('채팅방에서 나갔습니다.');
+      announceForScreenReader('채팅방에서 나갔습니다.');
       router.push('/chat');
     } catch (error) {
       setIsLeavingRoom(false);
       const err = ApiError.fromUnknown(error);
       toast(err.serverMessage ?? '채팅방 나가기에 실패했습니다.');
+      announceForScreenReader(err.serverMessage ?? '채팅방 나가기에 실패했습니다.');
     }
-  }, [leaveChatRoomMutation, roomId, router]);
+  }, [announceForScreenReader, leaveChatRoomMutation, roomId, router]);
 
   const handleCloseSettings = useCallback(() => {
     if (putRoomSettingsMutation.isPending) {
@@ -513,8 +629,89 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
   useEffect(() => {
     return () => {
       clearDeleteLongPressTimer();
+      if (liveAnnouncementTimerRef.current !== null) {
+        window.clearTimeout(liveAnnouncementTimerRef.current);
+      }
     };
   }, [clearDeleteLongPressTimer]);
+
+  useEffect(() => {
+    if (!isAccessibilityOn || !imagePreview) {
+      return;
+    }
+
+    const dialog = imagePreviewDialogRef.current;
+    requestAnimationFrame(() => {
+      focusFirstElement(dialog);
+    });
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeImagePreview();
+        return;
+      }
+
+      if (event.key === 'Tab') {
+        trapFocus(event, dialog);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [closeImagePreview, imagePreview, isAccessibilityOn]);
+
+  useEffect(() => {
+    if (!isAccessibilityOn || !isAttachmentPickerOpen) {
+      return;
+    }
+
+    const dialog = attachmentPickerDialogRef.current;
+    requestAnimationFrame(() => {
+      focusFirstElement(dialog);
+    });
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeAttachmentPicker();
+        return;
+      }
+
+      if (event.key === 'Tab') {
+        trapFocus(event, dialog);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [closeAttachmentPicker, isAccessibilityOn, isAttachmentPickerOpen]);
+
+  useEffect(() => {
+    if (!isAccessibilityOn || !isSettingsPage) {
+      return;
+    }
+
+    const dialog = settingsDialogRef.current;
+    requestAnimationFrame(() => {
+      focusFirstElement(dialog);
+    });
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        handleCloseSettings();
+        return;
+      }
+
+      if (event.key === 'Tab') {
+        trapFocus(event, dialog);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleCloseSettings, isAccessibilityOn, isSettingsPage]);
 
   if (roomId === null) {
     return (
@@ -566,6 +763,11 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
 
   return (
     <main className="-mx-4 flex h-[calc(100dvh-56px-var(--bottom-nav-h))] flex-col sm:-mx-6">
+      {isAccessibilityOn ? (
+        <div className="sr-only" aria-live="assertive" aria-atomic="true">
+          {liveAnnouncement}
+        </div>
+      ) : null}
       <section
         ref={messageListRef}
         onScroll={handleMessageScroll}
@@ -740,7 +942,7 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
                                   toast('이미지를 불러올 수 없습니다.');
                                   return;
                                 }
-                                setImagePreview({
+                                openImagePreview({
                                   src: imageUrl,
                                   alt: `${message.sender?.nickname ?? '채팅'} 이미지`,
                                 });
@@ -906,8 +1108,9 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
             }}
           />
           <button
+            ref={attachmentTriggerRef}
             type="button"
-            onClick={handleAttachmentButtonClick}
+            onClick={handleAttachmentTriggerClick}
             disabled={isAttachmentUploading}
             className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-neutral-200 bg-white text-neutral-700 shadow-sm transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:text-neutral-300"
             aria-label="파일 첨부"
@@ -974,11 +1177,18 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
       </div>
 
       {imagePreview ? (
-        <div className="fixed inset-0 z-[220] flex items-center justify-center bg-black/80 p-4">
+        <div
+          ref={imagePreviewDialogRef}
+          className="fixed inset-0 z-[220] flex items-center justify-center bg-black/80 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="이미지 미리보기"
+          tabIndex={-1}
+        >
           <button
             type="button"
             aria-label="이미지 닫기"
-            onClick={() => setImagePreview(null)}
+            onClick={closeImagePreview}
             className="absolute inset-0"
           />
           <div className="relative z-10 flex max-h-full max-w-full items-center justify-center">
@@ -992,7 +1202,7 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
             />
             <button
               type="button"
-              onClick={() => setImagePreview(null)}
+              onClick={closeImagePreview}
               className="absolute top-2 right-2 rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white"
             >
               닫기
@@ -1006,11 +1216,23 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
           <button
             type="button"
             aria-label="첨부 모달 닫기"
-            onClick={() => setIsAttachmentPickerOpen(false)}
+            onClick={closeAttachmentPicker}
             className="absolute inset-0 bg-black/45"
           />
-          <section className="relative z-10 w-full max-w-[430px] rounded-t-2xl bg-white p-4 shadow-2xl">
-            <h2 className="text-base font-semibold text-neutral-900">파일/이미지 첨부</h2>
+          <section
+            ref={attachmentPickerDialogRef}
+            className="relative z-10 w-full max-w-[430px] rounded-t-2xl bg-white p-4 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="chat-attachment-picker-title"
+            tabIndex={-1}
+          >
+            <h2
+              id="chat-attachment-picker-title"
+              className="text-base font-semibold text-neutral-900"
+            >
+              파일/이미지 첨부
+            </h2>
             <p className="mt-1 text-xs text-neutral-500">
               이미지 최대 9장(5MB 이하, JPG/JPEG/PNG/WEBP), 파일 1개(PDF, 5MB 이하)
             </p>
@@ -1038,7 +1260,7 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
 
             <button
               type="button"
-              onClick={() => setIsAttachmentPickerOpen(false)}
+              onClick={closeAttachmentPicker}
               className="mt-3 w-full rounded-lg bg-neutral-900 px-3 py-2.5 text-sm font-semibold text-white"
             >
               닫기
@@ -1070,7 +1292,14 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
       ) : null}
 
       {isSettingsPage ? (
-        <div className="fixed top-14 bottom-0 left-1/2 z-40 w-full max-w-[430px] -translate-x-1/2 overflow-hidden bg-white">
+        <div
+          ref={settingsDialogRef}
+          className="fixed top-14 bottom-0 left-1/2 z-40 w-full max-w-[430px] -translate-x-1/2 overflow-hidden bg-white"
+          role="dialog"
+          aria-modal="true"
+          aria-label="채팅방 설정"
+          tabIndex={-1}
+        >
           <section className="mx-auto flex h-full w-full max-w-[430px] flex-col bg-white">
             <div className="flex-1 overflow-y-auto">
               <div className="mx-auto w-full max-w-[392px] px-5 pt-4 pb-6">

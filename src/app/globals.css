@@ -433,6 +433,9 @@ html.accessibility-mode {
   html.accessibility-mode .text-neutral-500 {
     color: #404040;
   }
+  html.accessibility-mode .text-neutral-700 {
+    color: #1f1f1f;
+  }
   html.accessibility-mode .text-neutral-600 {
     color: #262626;
   }
@@ -446,6 +449,9 @@ html.accessibility-mode {
   }
   html.accessibility-mode .text-\[\#6B7684\] {
     color: #404040;
+  }
+  html.accessibility-mode .text-\[\#525252\] {
+    color: #333333;
   }
   html.accessibility-mode .text-\[\#CCCCCC\] {
     color: #525252;
@@ -464,6 +470,10 @@ html.accessibility-mode {
   html.accessibility-mode .text-emerald-600,
   html.accessibility-mode .text-green-600 {
     color: #006b3f;
+  }
+  html.accessibility-mode .text-red-500,
+  html.accessibility-mode .text-red-600 {
+    color: #991b1b;
   }
 
   /* 빨간 버튼/배지 배경 → 흰 텍스트 대비 4.5:1 이상 */
