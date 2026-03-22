@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { AppFrameContext, type AppFrameOptions } from '@/components/layout/AppFrameContext';
+import { useAccessibilityMode } from '@/lib/hooks/accessibility/useAccessibilityMode';
 import BottomNav from '@/components/layout/BottomNav';
 import Header from '@/components/layout/Header';
 import { HeaderContext, type HeaderOptions } from '@/components/layout/HeaderContext';
@@ -91,6 +92,7 @@ export default function AppFrame({
   const defaultFrameOptions = useMemo<AppFrameOptions>(() => ({ showBottomNav: true }), []);
   const [frameOptions, setFrameOptions] = useState<AppFrameOptions>(defaultFrameOptions);
   const isBottomNavVisible = true;
+  const { isOn: isAccessibilityOn } = useAccessibilityMode();
   const [isAuthed, setIsAuthed] = useState<boolean | null>(null);
   const isAuthedRef = useRef<boolean | null>(null);
 
@@ -304,13 +306,24 @@ export default function AppFrame({
                 onAccessibilityClick={options.onAccessibilityClick}
               />
               {isAuthed !== false ? (
-                <div
-                  key={pathname}
-                  className="page-enter px-4 pb-[var(--bottom-nav-h)] sm:px-6"
-                  style={{ viewTransitionName: 'page-content' }}
-                >
-                  {children}
-                </div>
+                isAccessibilityOn ? (
+                  <main
+                    key={pathname}
+                    id="main-content"
+                    className="page-enter px-4 pb-[var(--bottom-nav-h)] sm:px-6"
+                    style={{ viewTransitionName: 'page-content' }}
+                  >
+                    {children}
+                  </main>
+                ) : (
+                  <div
+                    key={pathname}
+                    className="page-enter px-4 pb-[var(--bottom-nav-h)] sm:px-6"
+                    style={{ viewTransitionName: 'page-content' }}
+                  >
+                    {children}
+                  </div>
+                )
               ) : null}
             </div>
 
