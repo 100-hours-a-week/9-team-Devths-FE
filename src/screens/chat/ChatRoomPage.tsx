@@ -810,7 +810,11 @@ export default function ChatRoomPage({ roomId, mode = 'room' }: ChatRoomPageProp
         {!isMessagesLoading && !isMessagesError && messages.length === 0 ? (
           <div className="flex h-full min-h-[240px] flex-col items-center justify-center px-4 text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#00C473]/10">
-              <MessageSquarePlus aria-hidden="true" className="h-8 w-8 text-[#00C473]" strokeWidth={1.75} />
+              <MessageSquarePlus
+                aria-hidden="true"
+                className="h-8 w-8 text-[#00C473]"
+                strokeWidth={1.75}
+              />
             </div>
             <p className="mt-5 text-base font-semibold text-[#191F28]">아직 메시지가 없습니다.</p>
             <p className="mt-2 text-sm text-[#8B95A1]">첫 메시지를 보내 대화를 시작해보세요</p>

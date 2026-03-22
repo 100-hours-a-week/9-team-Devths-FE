@@ -149,7 +149,10 @@ export default function ConfirmModal({
         tabIndex={-1}
       />
 
-      <div ref={panelRef} className="relative z-10 mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+      <div
+        ref={panelRef}
+        className="relative z-10 mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
+      >
         <h2 id="confirm-modal-title" className="text-lg font-semibold text-neutral-900">
           {title}
         </h2>
