@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, ChevronLeft, PersonStanding, Settings } from 'lucide-react';
+import { Bell, ChevronLeft, PersonStanding } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
@@ -14,8 +14,6 @@ type HeaderProps = {
   showBackButton?: boolean;
   onBackClick?: () => void;
   rightSlot?: ReactNode;
-  showSettingsButton?: boolean;
-  onSettingsClick?: () => void;
   showAccessibilityButton?: boolean;
   accessibilityActive?: boolean;
   onAccessibilityClick?: () => void;
@@ -26,8 +24,6 @@ export default function Header({
   showBackButton = false,
   onBackClick,
   rightSlot,
-  showSettingsButton = false,
-  onSettingsClick,
   showAccessibilityButton = false,
   accessibilityActive = false,
   onAccessibilityClick,
@@ -50,10 +46,6 @@ export default function Header({
 
   const handleNotificationsClick = () => {
     requestNavigation(() => router.push('/notifications'));
-  };
-
-  const handleSettingsClick = () => {
-    onSettingsClick?.();
   };
 
   const handleAccessibilityButtonClick = () => {
@@ -120,16 +112,6 @@ export default function Header({
         <div className="ml-auto flex items-center justify-end gap-1">
           {rightSlot ?? (
             <>
-              {showSettingsButton ? (
-                <button
-                  type="button"
-                  onClick={handleSettingsClick}
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-md hover:bg-neutral-100"
-                  aria-label="설정"
-                >
-                  <Settings aria-hidden="true" className="h-5 w-5" />
-                </button>
-              ) : null}
               {showAccessibilityButton ? (
                 <div ref={popoverRef} className="relative">
                   <button

@@ -299,8 +299,6 @@ export default function AppFrame({
                 showBackButton={options.showBackButton}
                 onBackClick={options.onBackClick}
                 rightSlot={options.rightSlot}
-                showSettingsButton={options.showSettingsButton}
-                onSettingsClick={options.onSettingsClick}
                 showAccessibilityButton={options.showAccessibilityButton}
                 accessibilityActive={options.accessibilityActive}
                 onAccessibilityClick={options.onAccessibilityClick}

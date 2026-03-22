@@ -9,8 +9,6 @@ type HeaderOptions = {
   showBackButton?: boolean;
   onBackClick?: () => void;
   rightSlot?: ReactNode;
-  showSettingsButton?: boolean;
-  onSettingsClick?: () => void;
   showAccessibilityButton?: boolean;
   accessibilityActive?: boolean;
   onAccessibilityClick?: () => void;
