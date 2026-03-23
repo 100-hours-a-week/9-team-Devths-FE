@@ -1,8 +1,10 @@
 'use client';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import { X } from 'lucide-react';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 import BaseModal from '@/components/common/BaseModal';
 import NicknameField from '@/components/common/NicknameField';
@@ -14,9 +16,9 @@ import { ApiError } from '@/lib/errors/ApiError';
 import { useDeleteProfileImageMutation } from '@/lib/hooks/users/useDeleteProfileImageMutation';
 import { useUpdateMeMutation } from '@/lib/hooks/users/useUpdateMeMutation';
 import { useUploadProfileImageMutation } from '@/lib/hooks/users/useUpdateProfileImageMutation';
+import { nicknameSchema } from '@/lib/schemas/nickname';
 import { toast } from '@/lib/toast/store';
 import { resizeProfileImage } from '@/lib/utils/resizeProfileImage';
-import { validateNickname } from '@/lib/utils/validateNickname';
 
 import type { MeData } from '@/lib/api/users';
 
@@ -33,9 +35,11 @@ type EditFormProps = {
   onWithdraw: () => void;
 };
 
-type EditFormValues = {
-  nickname: string;
-};
+const editProfileSchema = z.object({
+  nickname: nicknameSchema,
+});
+
+type EditFormValues = z.infer<typeof editProfileSchema>;
 
 function EditForm({ initialData, onClose, onWithdraw }: EditFormProps) {
   const {
@@ -44,6 +48,7 @@ function EditForm({ initialData, onClose, onWithdraw }: EditFormProps) {
     setError,
     formState: { isValid },
   } = useForm<EditFormValues>({
+    resolver: zodResolver(editProfileSchema),
     defaultValues: { nickname: initialData?.nickname ?? '' },
     mode: 'onChange',
   });
@@ -197,12 +202,6 @@ function EditForm({ initialData, onClose, onWithdraw }: EditFormProps) {
         <Controller
           name="nickname"
           control={control}
-          rules={{
-            validate: (value) => {
-              const { isValid: valid, errorMessage } = validateNickname(value);
-              return valid ? true : (errorMessage ?? false);
-            },
-          }}
           render={({ field, fieldState }) => (
             <NicknameField
               value={field.value}

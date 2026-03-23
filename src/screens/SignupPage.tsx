@@ -1,10 +1,12 @@
 'use client';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 import InterestChips from '@/components/common/InterestChips';
 import NicknameField from '@/components/common/NicknameField';
@@ -22,15 +24,17 @@ import {
   getTempToken,
   setAccessToken,
 } from '@/lib/auth/token';
+import { nicknameSchema } from '@/lib/schemas/nickname';
 import { toast } from '@/lib/toast/store';
 import { uploadToPresignedUrl } from '@/lib/upload/s3Presigned';
 import { resizeProfileImage } from '@/lib/utils/resizeProfileImage';
-import { getNicknameErrorMessage } from '@/lib/validators/nickname';
 
-type SignupFormValues = {
-  nickname: string;
-  isPrivacyAgreed: boolean;
-};
+const signupSchema = z.object({
+  nickname: nicknameSchema,
+  isPrivacyAgreed: z.boolean().refine((v) => v === true, '개인정보 처리방침 동의가 필요합니다.'),
+});
+
+type SignupFormValues = z.infer<typeof signupSchema>;
 
 export default function SignupPage() {
   const router = useRouter();
@@ -41,6 +45,7 @@ export default function SignupPage() {
     handleSubmit,
     formState: { isSubmitting, isValid },
   } = useForm<SignupFormValues>({
+    resolver: zodResolver(signupSchema),
     defaultValues: { nickname: '', isPrivacyAgreed: false },
     mode: 'onChange',
   });
@@ -252,13 +257,6 @@ export default function SignupPage() {
               <Controller
                 name="nickname"
                 control={control}
-                rules={{
-                  validate: (value) => {
-                    const trimmed = value.trim();
-                    if (!trimmed) return null as unknown as string; // 미입력 시 에러 없이 invalid만
-                    return getNicknameErrorMessage(trimmed) ?? true;
-                  },
-                }}
                 render={({ field, fieldState }) => (
                   <NicknameField
                     value={field.value}
@@ -284,7 +282,7 @@ export default function SignupPage() {
               <label className="flex items-start gap-2 text-sm text-neutral-700">
                 <input
                   type="checkbox"
-                  {...register('isPrivacyAgreed', { required: true })}
+                  {...register('isPrivacyAgreed')}
                   className="mt-0.5 h-4 w-4 rounded border-[#81D247] accent-[#81D247] focus:ring-[#81D247]"
                 />
                 <span>
