@@ -13,6 +13,7 @@ import {
 import { fetchChatMessages } from '@/lib/api/chatMessages';
 import { applyRealtimeRoomMessage } from '@/lib/chat/realtimeMessageCache';
 import { chatStompManager } from '@/lib/chat/stompManager';
+import { useImageProcessor } from '@/lib/hooks/useImageProcessor';
 import { toast } from '@/lib/toast/store';
 import { uploadFile } from '@/lib/upload/uploadFile';
 
@@ -42,6 +43,7 @@ function resolveAttachmentMimeType(file: File, isImageAttachment: boolean): stri
 }
 
 export function useAttachmentHandler({ roomId, queryClient }: Params) {
+  const { compress } = useImageProcessor();
   const [isAttachmentUploading, setIsAttachmentUploading] = useState(false);
   const [isAttachmentPickerOpen, setIsAttachmentPickerOpen] = useState(false);
   const [attachmentValidationMessage, setAttachmentValidationMessage] = useState<string | null>(
@@ -135,8 +137,9 @@ export function useAttachmentHandler({ roomId, queryClient }: Params) {
       setIsAttachmentUploading(true);
 
       try {
-        for (const file of selectedFiles) {
-          const isImageAttachment = ALLOWED_IMAGE_MIME_TYPES.has(file.type);
+        for (const rawFile of selectedFiles) {
+          const isImageAttachment = ALLOWED_IMAGE_MIME_TYPES.has(rawFile.type);
+          const file = isImageAttachment ? await compress(rawFile) : rawFile;
           const normalizedMimeType = resolveAttachmentMimeType(file, isImageAttachment);
 
           const uploaded = await uploadFile({
@@ -196,7 +199,7 @@ export function useAttachmentHandler({ roomId, queryClient }: Params) {
         setIsAttachmentUploading(false);
       }
     },
-    [isAttachmentUploading, openAttachmentValidationModal, queryClient, roomId],
+    [compress, isAttachmentUploading, openAttachmentValidationModal, queryClient, roomId],
   );
 
   return {

@@ -25,6 +25,7 @@ import { createBoardPost } from '@/lib/api/boards';
 import { ApiError } from '@/lib/errors/ApiError';
 import { useBoardAttachments } from '@/lib/hooks/boards/useBoardAttachments';
 import { useBoardForm } from '@/lib/hooks/boards/useBoardForm';
+import { useImageProcessor } from '@/lib/hooks/useImageProcessor';
 import { toast } from '@/lib/toast/store';
 import { uploadFile } from '@/lib/upload/uploadFile';
 import { validateFiles } from '@/lib/validators/attachment';
@@ -64,6 +65,7 @@ export default function BoardCreatePage() {
   const [partialFailOpen, setPartialFailOpen] = useState(false);
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
   const pendingNavigationRef = useRef<(() => void) | null>(null);
+  const { compress } = useImageProcessor();
   const { setBlocked, setBlockMessage, setBlockedNavigationHandler } = useNavigationGuard();
   const queryClient = useQueryClient();
 
@@ -216,8 +218,10 @@ export default function BoardCreatePage() {
       await Promise.all(
         targets.map(async (attachment, index) => {
           try {
+            const file =
+              attachment.type === 'IMAGE' ? await compress(attachment.file) : attachment.file;
             const result = await uploadFile({
-              file: attachment.file,
+              file,
               category: 'AI_CHAT_ATTACHMENT',
               refType: 'POST',
               refId: null,
@@ -230,7 +234,7 @@ export default function BoardCreatePage() {
         }),
       );
     },
-    [updateAttachment],
+    [compress, updateAttachment],
   );
 
   const handleMaskComplete = useCallback(
