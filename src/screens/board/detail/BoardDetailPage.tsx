@@ -450,6 +450,7 @@ export default function BoardDetailPage() {
           };
         },
       );
+      queryClient.invalidateQueries({ queryKey: userKeys.myPosts() });
       toast('게시글이 삭제되었습니다.');
       setIsDeleteConfirmOpen(false);
       requestNavigation(() => {
