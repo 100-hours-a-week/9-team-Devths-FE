@@ -179,7 +179,7 @@ export default function SignupPage() {
       nickname: trimmedNickname,
       interests,
       tempToken,
-      ...(finalProfileImageS3Key ? { profileImageS3Key: finalProfileImageS3Key } : {}),
+      profileImageS3Key: finalProfileImageS3Key,
     });
 
     if (!ok || !json || json.data === null) {

@@ -8,7 +8,15 @@ type CompressRequest = {
 type CompressResponse = { id: string; blob: Blob } | { id: string; error: string };
 
 self.onmessage = async (event: MessageEvent<CompressRequest>) => {
-  const { id, bitmap, maxPx, quality } = event.data;
+  const { id, bitmap, maxPx, quality } = event.data ?? {};
+  if (
+    typeof id !== 'string' ||
+    !(bitmap instanceof ImageBitmap) ||
+    typeof maxPx !== 'number' ||
+    typeof quality !== 'number'
+  ) {
+    return;
+  }
 
   try {
     const { width, height } = bitmap;
