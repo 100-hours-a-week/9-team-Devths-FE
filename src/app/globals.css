@@ -536,7 +536,7 @@ html.accessibility-mode {
   html.accessibility-mode .border-neutral-200 {
     border-color: #737373;
   }
-  html.accessibility-mode .divide-neutral-200 > * + * {
+  html.accessibility-mode .divide-neutral-200 > :not([hidden]) ~ :not([hidden]) {
     border-color: #737373;
   }
   html.accessibility-mode .border-\[\#E8E8E8\] {
