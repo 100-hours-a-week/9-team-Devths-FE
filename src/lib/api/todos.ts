@@ -19,7 +19,6 @@ export type TodoApiResult<T> = {
   message: string | null;
   timestamp: string | null;
   json: ApiEnvelope<T> | null;
-  res: Response;
 };
 
 function unwrapApiResult<T>(result: ApiClientResult<T>): TodoApiResult<T> {
@@ -32,7 +31,6 @@ function unwrapApiResult<T>(result: ApiClientResult<T>): TodoApiResult<T> {
     message: json?.message ?? null,
     timestamp: json?.timestamp ?? null,
     json,
-    res: result.res,
   };
 }
 

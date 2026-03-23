@@ -12,7 +12,12 @@ import { useHeader } from '@/components/layout/HeaderContext';
 import EditProfileModal from '@/components/mypage/EditProfileModal';
 import WithdrawModal from '@/components/mypage/WithdrawModal';
 import { postLogout } from '@/lib/api/auth';
-import { clearAccessToken, clearLoggingOut, markLoggingOut } from '@/lib/auth/token';
+import {
+  clearAccessToken,
+  clearLoggingOut,
+  getUserIdFromAccessToken,
+  markLoggingOut,
+} from '@/lib/auth/token';
 import { useAccessibilityMode } from '@/lib/hooks/accessibility/useAccessibilityMode';
 import {
   unregisterFcmToken,
@@ -131,7 +136,7 @@ export default function MyPageScreen() {
     tags: [],
     createdAt: post.createdAt,
     author: {
-      userId: data?.id ?? data?.userId ?? -1,
+      userId: getUserIdFromAccessToken() ?? -1,
       nickname: data?.nickname ?? '나',
       profileImageUrl: data?.profileImage?.url ?? null,
       interests: [],

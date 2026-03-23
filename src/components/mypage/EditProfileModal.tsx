@@ -60,7 +60,7 @@ function EditForm({ initialData, onClose, onWithdraw }: EditFormProps) {
 
   const hasServerImage =
     Boolean(initialData?.profileImage?.url) && !selectedFile && !isProfileImageDeleted;
-  const userId = initialData?.userId ?? initialData?.id ?? getUserIdFromAccessToken();
+  const userId = getUserIdFromAccessToken();
 
   const handleToggleInterest = (value: string) => {
     setInterests((prev) =>
