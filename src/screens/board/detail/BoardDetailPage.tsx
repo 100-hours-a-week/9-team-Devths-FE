@@ -204,17 +204,18 @@ export default function BoardDetailPage() {
   const handleToggleFollow = async () => {
     if (modalUserId === null || isMine || isFollowPending) return;
 
+    const nextFollowing = !isFollowing;
+    setFollowStateOverrides((prev) => ({ ...prev, [modalUserId]: nextFollowing }));
     try {
       if (isFollowing) {
         await unfollowMutation.mutateAsync(modalUserId);
-        setFollowStateOverrides((prev) => ({ ...prev, [modalUserId]: false }));
       } else {
         await followMutation.mutateAsync(modalUserId);
-        setFollowStateOverrides((prev) => ({ ...prev, [modalUserId]: true }));
       }
 
       void refetchSelectedAuthorProfile();
     } catch (error) {
+      setFollowStateOverrides((prev) => ({ ...prev, [modalUserId]: isFollowing }));
       const err = ApiError.fromUnknown(error);
       toast(err.serverMessage ?? '팔로우 처리에 실패했습니다.');
     }
@@ -524,19 +525,31 @@ export default function BoardDetailPage() {
 
   const handleCommentDeleteConfirm = async () => {
     if (!post || pendingDeleteCommentId === null) return;
+
+    const commentsSnapshot = queryClient.getQueryData<CursorPage<CommentItem>>(
+      boardsKeys.comments(post.postId, 50),
+    );
+    const detailSnapshot = queryClient.getQueryData<PostDetail>(boardsKeys.detail(post.postId));
+    const prevCount = detailSnapshot?.stats.commentCount ?? post.stats.commentCount;
+    const targetCommentId = pendingDeleteCommentId;
+
+    queryClient.setQueryData<CursorPage<CommentItem>>(
+      boardsKeys.comments(post.postId, 50),
+      (old) =>
+        old ? { ...old, items: old.items.filter((c) => c.commentId !== targetCommentId) } : old,
+    );
+    updateCommentCountCache(post.postId, Math.max(0, prevCount - 1));
+    setIsCommentDeleteOpen(false);
+    setPendingDeleteCommentId(null);
+    toast('댓글이 삭제되었습니다.');
+
     try {
-      await deleteComment({ postId: post.postId, commentId: pendingDeleteCommentId });
-      const detailSnapshot = queryClient.getQueryData<PostDetail>(boardsKeys.detail(post.postId));
-      const nextCount = Math.max(
-        0,
-        (detailSnapshot?.stats.commentCount ?? post.stats.commentCount) - 1,
-      );
-      updateCommentCountCache(post.postId, nextCount);
-      await refetchComments();
-      toast('댓글이 삭제되었습니다.');
-      setIsCommentDeleteOpen(false);
-      setPendingDeleteCommentId(null);
+      await deleteComment({ postId: post.postId, commentId: targetCommentId });
     } catch (error) {
+      if (commentsSnapshot) {
+        queryClient.setQueryData(boardsKeys.comments(post.postId, 50), commentsSnapshot);
+      }
+      updateCommentCountCache(post.postId, prevCount);
       toast(ApiError.fromUnknown(error).message);
     }
   };
@@ -765,22 +778,23 @@ export default function BoardDetailPage() {
                       onCancel={() => setReplyTargetId(null)}
                       onSubmit={async (content) => {
                         if (!post) return false;
+                        const detailSnapshot = queryClient.getQueryData<PostDetail>(
+                          boardsKeys.detail(post.postId),
+                        );
+                        const prevCount =
+                          detailSnapshot?.stats.commentCount ?? post.stats.commentCount;
+                        updateCommentCountCache(post.postId, prevCount + 1);
                         try {
                           await createComment({
                             postId: post.postId,
                             content,
                             parentId: commentId,
                           });
-                          const detailSnapshot = queryClient.getQueryData<PostDetail>(
-                            boardsKeys.detail(post.postId),
-                          );
-                          const nextCount =
-                            (detailSnapshot?.stats.commentCount ?? post.stats.commentCount) + 1;
-                          updateCommentCountCache(post.postId, nextCount);
-                          await refetchComments();
+                          void refetchComments();
                           setReplyTargetId(null);
                           return true;
                         } catch (error) {
+                          updateCommentCountCache(post.postId, prevCount);
                           toast(ApiError.fromUnknown(error).message);
                           return false;
                         }
@@ -848,16 +862,17 @@ export default function BoardDetailPage() {
           isSubmitting={isCommentSubmitting}
           onSubmit={async (content) => {
             if (!post) return false;
+            const detailSnapshot = queryClient.getQueryData<PostDetail>(
+              boardsKeys.detail(post.postId),
+            );
+            const prevCount = detailSnapshot?.stats.commentCount ?? post.stats.commentCount;
+            updateCommentCountCache(post.postId, prevCount + 1);
             try {
               await createComment({ postId: post.postId, content });
-              const detailSnapshot = queryClient.getQueryData<PostDetail>(
-                boardsKeys.detail(post.postId),
-              );
-              const nextCount = (detailSnapshot?.stats.commentCount ?? post.stats.commentCount) + 1;
-              updateCommentCountCache(post.postId, nextCount);
-              await refetchComments();
+              void refetchComments();
               return true;
             } catch (error) {
+              updateCommentCountCache(post.postId, prevCount);
               toast(ApiError.fromUnknown(error).message);
               return false;
             }

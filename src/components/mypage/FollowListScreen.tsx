@@ -94,16 +94,16 @@ export default function FollowListScreen() {
   const handleFollowInModal = async () => {
     if (!modalUser) return;
     const wasFollowing = Boolean(modalUser.isFollowing);
+    setSelectedUser((prev) => (prev ? { ...prev, isFollowing: !wasFollowing } : prev));
     try {
       if (wasFollowing) {
         await unfollowMutation.mutateAsync(modalUser.userId);
-        setSelectedUser((prev) => (prev ? { ...prev, isFollowing: false } : prev));
       } else {
         await followMutation.mutateAsync(modalUser.userId);
-        setSelectedUser((prev) => (prev ? { ...prev, isFollowing: true } : prev));
       }
       void refetchSelectedUserProfile();
     } catch (error) {
+      setSelectedUser((prev) => (prev ? { ...prev, isFollowing: wasFollowing } : prev));
       const err = ApiError.fromUnknown(error);
       toast(
         err.serverMessage ??
