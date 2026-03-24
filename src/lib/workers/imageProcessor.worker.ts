@@ -8,6 +8,10 @@ type CompressRequest = {
 type CompressResponse = { id: string; blob: Blob } | { id: string; error: string };
 
 self.onmessage = async (event: MessageEvent<CompressRequest>) => {
+  // Dedicated workers only receive messages from their creator (same origin).
+  // event.origin is always '' for messages from the main thread.
+  if (event.origin !== '' && event.origin !== self.location.origin) return;
+
   const { id, bitmap, maxPx, quality } = event.data ?? {};
   if (
     typeof id !== 'string' ||
