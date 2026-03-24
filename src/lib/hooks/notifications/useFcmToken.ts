@@ -52,10 +52,7 @@ export function useFcmToken() {
       if (permission !== 'granted') return;
 
       const token = await requestFcmToken();
-      if (!token) {
-        toast('푸시 알림 등록에 실패했어요. 잠시 후 다시 시도해 주세요.');
-        return;
-      }
+      if (!token) return;
 
       const deviceId = getOrCreateDeviceId();
 
@@ -67,21 +64,15 @@ export function useFcmToken() {
       }
 
       // 레코드 없음(404) → 신규 등록
-      if (patchResult.status !== 404) {
-        toast('푸시 알림 등록에 실패했어요. 잠시 후 다시 시도해 주세요.');
-        return;
-      }
+      if (patchResult.status !== 404) return;
 
       const postResult = await postFcmToken(deviceId, { token, deviceType: 'WEB' });
-      if (!postResult.ok) {
-        toast('푸시 알림 등록에 실패했어요. 잠시 후 다시 시도해 주세요.');
-        return;
-      }
+      if (!postResult.ok) return;
       localStorage.setItem(PUSH_ACTIVE_KEY, 'true');
     };
 
     void register().catch(() => {
-      toast('푸시 알림 등록에 실패했어요. 잠시 후 다시 시도해 주세요.');
+      /* 자동 등록 실패는 사용자에게 노출하지 않음 */
     });
   }, []);
 }
