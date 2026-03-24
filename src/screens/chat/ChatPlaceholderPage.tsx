@@ -352,7 +352,9 @@ export default function ChatPlaceholderPage() {
                         className="mt-0.5 h-12 w-12 rounded-full object-cover"
                       />
                     ) : (
-                      <div className="mt-0.5 h-12 w-12 rounded-full bg-neutral-200" />
+                      <div className="mt-0.5 flex h-12 w-12 items-center justify-center rounded-full bg-neutral-200 text-sm font-semibold text-neutral-600">
+                        {room.title.slice(0, 1)}
+                      </div>
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[15px] font-semibold text-neutral-900">

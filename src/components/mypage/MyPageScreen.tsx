@@ -12,7 +12,12 @@ import { useHeader } from '@/components/layout/HeaderContext';
 import EditProfileModal from '@/components/mypage/EditProfileModal';
 import WithdrawModal from '@/components/mypage/WithdrawModal';
 import { postLogout } from '@/lib/api/auth';
-import { clearAccessToken, clearLoggingOut, markLoggingOut } from '@/lib/auth/token';
+import {
+  clearAccessToken,
+  clearLoggingOut,
+  getUserIdFromAccessToken,
+  markLoggingOut,
+} from '@/lib/auth/token';
 import { useAccessibilityMode } from '@/lib/hooks/accessibility/useAccessibilityMode';
 import {
   unregisterFcmToken,
@@ -131,7 +136,7 @@ export default function MyPageScreen() {
     tags: [],
     createdAt: post.createdAt,
     author: {
-      userId: data?.id ?? data?.userId ?? -1,
+      userId: getUserIdFromAccessToken() ?? -1,
       nickname: data?.nickname ?? '나',
       profileImageUrl: data?.profileImage?.url ?? null,
       interests: [],
@@ -212,11 +217,7 @@ export default function MyPageScreen() {
           <p className="text-sm text-red-500">프로필을 불러오지 못했습니다.</p>
         ) : (
           <div className="space-y-4">
-            <div
-              className={
-                isAccessibilityOn ? 'flex flex-col items-start gap-4' : 'flex items-center gap-4'
-              }
-            >
+            <div className="flex items-center gap-4">
               {data?.profileImage?.url ? (
                 <Image
                   src={data.profileImage.url}
@@ -265,13 +266,7 @@ export default function MyPageScreen() {
                 )}
               </div>
 
-              <div
-                className={
-                  isAccessibilityOn
-                    ? 'flex w-full flex-wrap items-center gap-2'
-                    : 'flex flex-col items-end gap-2'
-                }
-              >
+              <div className="flex flex-col items-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsEditOpen(true)}
@@ -290,19 +285,11 @@ export default function MyPageScreen() {
               </div>
             </div>
 
-            <div
-              className={
-                isAccessibilityOn ? 'grid grid-cols-1 bg-white' : 'grid grid-cols-2 bg-white'
-              }
-            >
+            <div className="grid grid-cols-2 bg-white">
               <button
                 type="button"
                 onClick={handleMoveFollowers}
-                className={
-                  isAccessibilityOn
-                    ? 'border-b border-neutral-200 bg-white px-3 py-3 text-center hover:bg-neutral-50'
-                    : 'border-r border-neutral-200 bg-white px-3 py-2 text-center hover:bg-neutral-50'
-                }
+                className="border-r border-neutral-200 bg-white px-3 py-2 text-center hover:bg-neutral-50"
                 aria-label="팔로워 목록 보기"
               >
                 <p className="text-[11px] text-neutral-500">팔로워</p>
@@ -324,13 +311,7 @@ export default function MyPageScreen() {
             </div>
 
             {isPushSupported ? (
-              <div
-                className={
-                  isAccessibilityOn
-                    ? 'flex flex-col items-start gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3'
-                    : 'flex items-center justify-between rounded-xl border border-neutral-200 bg-white px-4 py-3'
-                }
-              >
+              <div className="flex items-center justify-between rounded-xl border border-neutral-200 bg-white px-4 py-3">
                 <div>
                   <p className="text-sm font-semibold text-neutral-900">푸시 알림</p>
                   <p className="text-xs text-neutral-500">새 알림을 푸시로 받습니다</p>
@@ -363,13 +344,11 @@ export default function MyPageScreen() {
 
       <section className="mt-0 flex flex-1 flex-col rounded-2xl bg-white px-0 py-4">
         <div className="relative rounded-xl border border-[#05C075]/30 bg-white p-1">
-          {!isAccessibilityOn ? (
-            <span
-              className={`pointer-events-none absolute top-1 left-1 h-[calc(100%-8px)] w-[calc(50%-4px)] rounded-lg bg-[#05C075] shadow-sm transition-transform duration-200 ${
-                activeContentTab === 'posts' ? 'translate-x-0' : 'translate-x-full'
-              }`}
-            />
-          ) : null}
+          <span
+            className={`pointer-events-none absolute top-1 left-1 h-[calc(100%-8px)] w-[calc(50%-4px)] rounded-lg bg-[#05C075] shadow-sm transition-transform duration-200 ${
+              activeContentTab === 'posts' ? 'translate-x-0' : 'translate-x-full'
+            }`}
+          />
           <div role="tablist" aria-label="내 활동" className="relative grid grid-cols-2 gap-1">
             <button
               type="button"
@@ -379,13 +358,9 @@ export default function MyPageScreen() {
               id="mypage-tab-posts"
               onClick={() => setActiveContentTab('posts')}
               className={`rounded-lg px-1 py-2 text-sm font-semibold transition-colors ${
-                isAccessibilityOn
-                  ? activeContentTab === 'posts'
-                    ? 'bg-[#05C075] text-white'
-                    : 'bg-white text-neutral-700 hover:bg-neutral-50'
-                  : activeContentTab === 'posts'
-                    ? 'text-white'
-                    : 'text-neutral-500 hover:text-[#0B6A42]'
+                activeContentTab === 'posts'
+                  ? 'text-white'
+                  : 'text-neutral-500 hover:text-[#0B6A42]'
               }`}
             >
               내가 쓴 글
@@ -398,13 +373,9 @@ export default function MyPageScreen() {
               id="mypage-tab-comments"
               onClick={() => setActiveContentTab('comments')}
               className={`rounded-lg px-1 py-2 text-sm font-semibold transition-colors ${
-                isAccessibilityOn
-                  ? activeContentTab === 'comments'
-                    ? 'bg-[#05C075] text-white'
-                    : 'bg-white text-neutral-700 hover:bg-neutral-50'
-                  : activeContentTab === 'comments'
-                    ? 'text-white'
-                    : 'text-neutral-500 hover:text-[#0B6A42]'
+                activeContentTab === 'comments'
+                  ? 'text-white'
+                  : 'text-neutral-500 hover:text-[#0B6A42]'
               }`}
             >
               내가 쓴 댓글

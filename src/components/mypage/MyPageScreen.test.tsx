@@ -73,7 +73,6 @@ const mockedUseMyPostsInfiniteQuery = vi.mocked(useMyPostsInfiniteQuery);
 const mockedUseMyCommentsInfiniteQuery = vi.mocked(useMyCommentsInfiniteQuery);
 
 const meData: MeData = {
-  id: 1,
   nickname: 'tester',
   profileImage: null,
   stats: {

@@ -1,9 +1,12 @@
 'use client';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 import InterestChips from '@/components/common/InterestChips';
 import NicknameField from '@/components/common/NicknameField';
@@ -21,24 +24,38 @@ import {
   getTempToken,
   setAccessToken,
 } from '@/lib/auth/token';
+import { nicknameSchema } from '@/lib/schemas/nickname';
 import { toast } from '@/lib/toast/store';
 import { uploadToPresignedUrl } from '@/lib/upload/s3Presigned';
 import { resizeProfileImage } from '@/lib/utils/resizeProfileImage';
-import { getNicknameErrorMessage } from '@/lib/validators/nickname';
+
+const signupSchema = z.object({
+  nickname: nicknameSchema,
+  isPrivacyAgreed: z.boolean().refine((v) => v === true, '개인정보 처리방침 동의가 필요합니다.'),
+});
+
+type SignupFormValues = z.infer<typeof signupSchema>;
 
 export default function SignupPage() {
   const router = useRouter();
 
-  const [nickname, setNickname] = useState('');
+  const {
+    control,
+    register,
+    handleSubmit,
+    formState: { isSubmitting, isValid },
+  } = useForm<SignupFormValues>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: { nickname: '', isPrivacyAgreed: false },
+    mode: 'onChange',
+  });
+
   const [interests, setInterests] = useState<InterestValue[]>([]);
   const [isFileTooLargeOpen, setIsFileTooLargeOpen] = useState(false);
 
   const [profilePreviewUrl, setProfilePreviewUrl] = useState<string | null>(null);
   const [isUploadingProfile, setIsUploadingProfile] = useState(false);
   const [profileImageS3Key, setProfileImageS3Key] = useState<string | null>(null);
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPrivacyAgreed, setIsPrivacyAgreed] = useState(false);
 
   const [tempToken, setTempTokenState] = useState<string | null>(null);
   const [email, setEmailState] = useState<string | null>(null);
@@ -55,13 +72,6 @@ export default function SignupPage() {
       router.replace('/');
     }
   }, [router, tempToken, email]);
-
-  const trimmedNickname = nickname.trim();
-  const nicknameErrorMessage = useMemo(() => {
-    if (trimmedNickname.length === 0) return null;
-    return getNicknameErrorMessage(trimmedNickname);
-  }, [trimmedNickname]);
-  const isNicknameValid = trimmedNickname.length > 0 && nicknameErrorMessage === null;
 
   const handleToggleInterest = (value: InterestValue) => {
     setInterests((prev) =>
@@ -151,64 +161,53 @@ export default function SignupPage() {
     await uploadProfileImage(fileToUpload);
   };
 
-  const handleSubmit = async () => {
+  const onSubmit = handleSubmit(async (values) => {
     if (!tempToken || !email) return;
-    if (!isNicknameValid) return;
-    if (!isPrivacyAgreed) {
-      toast('개인정보 처리방침 동의가 필요합니다.');
+
+    const trimmedNickname = values.nickname.trim();
+
+    let finalProfileImageS3Key = profileImageS3Key;
+
+    if (!finalProfileImageS3Key) {
+      const defaultFile = await createDefaultProfileImageFile(trimmedNickname);
+      finalProfileImageS3Key = await uploadProfileImage(defaultFile);
+      if (!finalProfileImageS3Key) return;
+    }
+
+    const { ok, status, json, accessToken } = await postSignup({
+      email,
+      nickname: trimmedNickname,
+      interests,
+      tempToken,
+      profileImageS3Key: finalProfileImageS3Key,
+    });
+
+    if (!ok || !json || json.data === null) {
+      const msg = json?.message ?? `회원가입 실패 (HTTP ${status})`;
+      toast(msg);
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      let finalProfileImageS3Key = profileImageS3Key;
+    toast('회원가입이 완료되었습니다.');
 
-      if (!finalProfileImageS3Key) {
-        const defaultFile = await createDefaultProfileImageFile(trimmedNickname);
-        finalProfileImageS3Key = await uploadProfileImage(defaultFile);
-        if (!finalProfileImageS3Key) return;
-      }
-
-      const { ok, status, json, accessToken } = await postSignup({
-        email,
-        nickname: nickname.trim(),
-        interests,
-        tempToken,
-        ...(finalProfileImageS3Key ? { profileImageS3Key: finalProfileImageS3Key } : {}),
-      });
-
-      if (!ok || !json || json.data === null) {
-        const msg = json?.message ?? `회원가입 실패 (HTTP ${status})`;
-        toast(msg);
-        return;
-      }
-
-      toast('회원가입이 완료되었습니다.');
-
-      if (!accessToken) {
-        toast('로그인 토큰을 받지 못했어요. 다시 로그인해 주세요.');
-        router.replace('/');
-        return;
-      }
-
-      setAccessToken(accessToken);
-
-      clearSignupContext();
-
-      const redirect = getAuthRedirect();
-      if (redirect) {
-        clearAuthRedirect();
-        router.replace(redirect);
-      } else {
-        router.replace('/llm');
-      }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : '회원가입 처리 중 오류가 발생했습니다.';
-      toast(msg);
-    } finally {
-      setIsSubmitting(false);
+    if (!accessToken) {
+      toast('로그인 토큰을 받지 못했어요. 다시 로그인해 주세요.');
+      router.replace('/');
+      return;
     }
-  };
+
+    setAccessToken(accessToken);
+
+    clearSignupContext();
+
+    const redirect = getAuthRedirect();
+    if (redirect) {
+      clearAuthRedirect();
+      router.replace(redirect);
+    } else {
+      router.replace('/llm');
+    }
+  });
 
   if (tempToken === null || email === null || !tempToken || !email) {
     return (
@@ -255,10 +254,16 @@ export default function SignupPage() {
             ) : null}
 
             <div className="px-1">
-              <NicknameField
-                value={nickname}
-                onChange={setNickname}
-                errorMessage={nicknameErrorMessage}
+              <Controller
+                name="nickname"
+                control={control}
+                render={({ field, fieldState }) => (
+                  <NicknameField
+                    value={field.value}
+                    onChange={field.onChange}
+                    errorMessage={fieldState.error?.message ?? null}
+                  />
+                )}
               />
             </div>
 
@@ -277,8 +282,7 @@ export default function SignupPage() {
               <label className="flex items-start gap-2 text-sm text-neutral-700">
                 <input
                   type="checkbox"
-                  checked={isPrivacyAgreed}
-                  onChange={(event) => setIsPrivacyAgreed(event.target.checked)}
+                  {...register('isPrivacyAgreed')}
                   className="mt-0.5 h-4 w-4 rounded border-[#81D247] accent-[#81D247] focus:ring-[#81D247]"
                 />
                 <span>
@@ -296,8 +300,8 @@ export default function SignupPage() {
 
           <footer className="mt-auto pt-8">
             <PrimaryButton
-              disabled={!isNicknameValid || !isPrivacyAgreed || isUploadingProfile || isSubmitting}
-              onClick={handleSubmit}
+              disabled={!isValid || isUploadingProfile || isSubmitting}
+              onClick={onSubmit}
             >
               시작하기
             </PrimaryButton>
