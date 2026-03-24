@@ -1,6 +1,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 
 import { fetchChatMessages } from '@/lib/api/chatMessages';
+import { ApiError } from '@/lib/errors/ApiError';
 import { chatKeys } from '@/lib/hooks/chat/queryKeys';
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -19,32 +20,18 @@ export function useChatMessagesInfiniteQuery({
     queryFn: async ({ pageParam }) => {
       const result = await fetchChatMessages(roomId, {
         size,
-        lastId: pageParam ?? null,
+        lastId: pageParam,
       });
 
-      if (!result.json) {
-        const error = new Error('Failed to fetch chat messages');
-        (error as Error & { status?: number }).status = result.status;
-        throw error;
-      }
-
-      if (!result.ok) {
-        const message =
-          'message' in result.json && typeof result.json.message === 'string'
-            ? result.json.message
-            : 'Failed to fetch chat messages';
-        const error = new Error(message);
-        (error as Error & { status?: number }).status = result.status;
-        throw error;
+      if (!result.json || !result.ok) {
+        throw ApiError.fromResponse(result);
       }
 
       if ('data' in result.json && result.json.data) {
         return result.json.data;
       }
 
-      const error = new Error('Invalid response format');
-      (error as Error & { status?: number }).status = result.status;
-      throw error;
+      throw new ApiError('Invalid response format', result.status);
     },
     initialPageParam: undefined as number | undefined,
     getNextPageParam: (lastPage) => {

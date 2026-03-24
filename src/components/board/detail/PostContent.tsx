@@ -33,7 +33,7 @@ export default function PostContent({
 
   return (
     <div className="mt-3">
-      <h1 className="text-xl font-semibold text-neutral-900">{title}</h1>
+      <h1 className="text-xl font-semibold break-all text-neutral-900">{title}</h1>
       {trimmed.length > 0 ? (
         <div className="markdown-preview mt-2 text-sm" dangerouslySetInnerHTML={{ __html: html }} />
       ) : (
@@ -52,7 +52,7 @@ export default function PostContent({
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={attachment.fileUrl}
-                    alt={attachment.fileName}
+                    alt={`게시글 첨부 이미지: ${attachment.fileName}`}
                     className="w-full object-cover"
                   />
                 </div>

@@ -20,7 +20,6 @@ export type CalendarApiResult<T> = {
   message: string | null;
   timestamp: string | null;
   json: ApiEnvelope<T> | null;
-  res: Response;
 };
 
 export type ListEventsParams = {
@@ -40,7 +39,6 @@ function unwrapApiResult<T>(result: ApiClientResult<T>): CalendarApiResult<T> {
     message: json?.message ?? null,
     timestamp: json?.timestamp ?? null,
     json,
-    res: result.res,
   };
 }
 

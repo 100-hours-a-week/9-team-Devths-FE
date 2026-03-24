@@ -17,28 +17,36 @@ import { useHeader } from '@/components/layout/HeaderContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import {
   BOARD_ATTACHMENT_CONSTRAINTS,
-  BOARD_CONTENT_MAX_LENGTH,
   BOARD_FILE_MIME_TYPES,
   BOARD_IMAGE_MIME_TYPES,
-  BOARD_TITLE_MAX_LENGTH,
-} from '@/constants/boardCreate';
+} from '@/constants/attachment';
+import { BOARD_CONTENT_MAX_LENGTH, BOARD_TITLE_MAX_LENGTH } from '@/constants/boardCreate';
 import { createBoardPost } from '@/lib/api/boards';
+import { ApiError } from '@/lib/errors/ApiError';
 import { useBoardAttachments } from '@/lib/hooks/boards/useBoardAttachments';
+import { useBoardForm } from '@/lib/hooks/boards/useBoardForm';
+import { useImageProcessor } from '@/lib/hooks/useImageProcessor';
 import { toast } from '@/lib/toast/store';
 import { uploadFile } from '@/lib/upload/uploadFile';
 import { validateFiles } from '@/lib/validators/attachment';
-import { validateBoardCreateContent, validateBoardCreateTitle } from '@/lib/validators/boardCreate';
 
-import type { BoardTag } from '@/types/board';
 import type { BoardAttachment } from '@/types/boardCreate';
 
 export default function BoardCreatePage() {
   const router = useRouter();
   const { setOptions, resetOptions } = useHeader();
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [isPreview, setIsPreview] = useState(false);
-  const [tags, setTags] = useState<BoardTag[]>([]);
+  const {
+    title,
+    setTitle,
+    content,
+    setContent,
+    isPreview,
+    setIsPreview,
+    tags,
+    setTags,
+    titleError,
+    isSubmitEnabled,
+  } = useBoardForm();
   const {
     attachments,
     addAttachments,
@@ -51,15 +59,13 @@ export default function BoardCreatePage() {
   const [maskAttachment, setMaskAttachment] = useState<BoardAttachment | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const titleError = useMemo(() => validateBoardCreateTitle(title), [title]);
-  const contentError = useMemo(() => validateBoardCreateContent(content), [content]);
-  const isSubmitEnabled = useMemo(() => !titleError && !contentError, [contentError, titleError]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fileTooLargeOpen, setFileTooLargeOpen] = useState(false);
   const [unsupportedFileOpen, setUnsupportedFileOpen] = useState(false);
   const [partialFailOpen, setPartialFailOpen] = useState(false);
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
   const pendingNavigationRef = useRef<(() => void) | null>(null);
+  const { compress } = useImageProcessor();
   const { setBlocked, setBlockMessage, setBlockedNavigationHandler } = useNavigationGuard();
   const queryClient = useQueryClient();
 
@@ -104,8 +110,7 @@ export default function BoardCreatePage() {
       queryClient.invalidateQueries({ queryKey: ['boards', 'list'], exact: false });
       router.push('/board');
     } catch (error) {
-      const message = error instanceof Error ? error.message : '게시글 등록에 실패했습니다.';
-      toast(message);
+      toast(ApiError.fromUnknown(error).message);
     } finally {
       setIsSubmitting(false);
     }
@@ -144,12 +149,10 @@ export default function BoardCreatePage() {
     setBlocked(isDirty);
     if (isDirty) {
       setBlockMessage('작성 중인 내용이 있습니다.');
-    } else {
-      setBlockMessage('답변 생성 중에는 이동할 수 없습니다.');
     }
     return () => {
       setBlocked(false);
-      setBlockMessage('답변 생성 중에는 이동할 수 없습니다.');
+      setBlockMessage('');
     };
   }, [isDirty, setBlocked, setBlockMessage]);
 
@@ -179,7 +182,7 @@ export default function BoardCreatePage() {
     if (action) {
       action();
     }
-  }, [clearAttachments]);
+  }, [clearAttachments, setContent, setIsPreview, setTags, setTitle]);
 
   const handleExitCancel = useCallback(() => {
     pendingNavigationRef.current = null;
@@ -215,8 +218,10 @@ export default function BoardCreatePage() {
       await Promise.all(
         targets.map(async (attachment, index) => {
           try {
+            const file =
+              attachment.type === 'IMAGE' ? await compress(attachment.file) : attachment.file;
             const result = await uploadFile({
-              file: attachment.file,
+              file,
               category: 'AI_CHAT_ATTACHMENT',
               refType: 'POST',
               refId: null,
@@ -229,7 +234,7 @@ export default function BoardCreatePage() {
         }),
       );
     },
-    [updateAttachment],
+    [compress, updateAttachment],
   );
 
   const handleMaskComplete = useCallback(
@@ -324,11 +329,18 @@ export default function BoardCreatePage() {
       <section className="mt-4 space-y-4">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-neutral-900">제목</span>
-            <span className="text-xs text-rose-500">*</span>
+            <label htmlFor="board-create-title" className="text-sm font-semibold text-neutral-900">
+              제목
+            </label>
+            <span className="text-xs text-rose-500" aria-hidden="true">
+              *
+            </span>
+            <span className="sr-only">(필수)</span>
           </div>
           <input
+            id="board-create-title"
             type="text"
+            aria-describedby={titleError ? 'board-create-title-error' : undefined}
             value={title}
             maxLength={BOARD_TITLE_MAX_LENGTH}
             onChange={(event) => setTitle(event.target.value)}
@@ -336,7 +348,9 @@ export default function BoardCreatePage() {
             className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-[#05C075] focus:ring-2 focus:ring-[#05C075]/20 focus:outline-none"
           />
           <div className="flex items-center justify-between text-xs text-neutral-400">
-            <span>{titleError ?? ' '}</span>
+            <span id="board-create-title-error" role={titleError ? 'alert' : undefined}>
+              {titleError ?? ' '}
+            </span>
             <span>
               {title.trim().length}/{BOARD_TITLE_MAX_LENGTH}
             </span>
@@ -346,8 +360,16 @@ export default function BoardCreatePage() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-neutral-900">내용</span>
-              <span className="text-xs text-rose-500">*</span>
+              <label
+                htmlFor="board-create-content"
+                className="text-sm font-semibold text-neutral-900"
+              >
+                내용
+              </label>
+              <span className="text-xs text-rose-500" aria-hidden="true">
+                *
+              </span>
+              <span className="sr-only">(필수)</span>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -381,6 +403,7 @@ export default function BoardCreatePage() {
             </div>
           ) : (
             <textarea
+              id="board-create-content"
               value={content}
               onChange={(event) => setContent(event.target.value)}
               maxLength={BOARD_CONTENT_MAX_LENGTH}

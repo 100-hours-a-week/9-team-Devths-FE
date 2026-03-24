@@ -8,7 +8,7 @@ function parseKstDate(isoString: string) {
     return new Date(normalized);
   }
 
-  return new Date(`${normalized}+09:00`);
+  return new Date(`${normalized}Z`);
 }
 
 export function formatNotificationDate(isoString: string): string {

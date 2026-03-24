@@ -1,11 +1,32 @@
+let isLoggingOut = false;
+
+export function markLoggingOut() {
+  isLoggingOut = true;
+}
+
+export function clearLoggingOut() {
+  isLoggingOut = false;
+}
+
+export function getIsLoggingOut() {
+  return isLoggingOut;
+}
+
 const ACCESS_TOKEN_KEY = 'devths_access_token';
+const ACCESS_TOKEN_COOKIE = 'devths_at';
 const TEMP_TOKEN_KEY = 'devths_signup_temp_token';
 const SIGNUP_EMAIL_KEY = 'devths_signup_email';
 const AUTH_REDIRECT_KEY = 'devths_auth_redirect';
 
 export function setAccessToken(token: string) {
   if (typeof window === 'undefined') return;
+  isLoggingOut = false;
   localStorage.setItem(ACCESS_TOKEN_KEY, token);
+
+  const payload = parseJwtPayload(token);
+  const exp = payload?.exp;
+  const maxAge = typeof exp === 'number' ? Math.max(0, exp - Math.floor(Date.now() / 1000)) : 7200;
+  document.cookie = `${ACCESS_TOKEN_COOKIE}=${token}; Path=/; Secure; SameSite=Lax; Max-Age=${maxAge}`;
 }
 
 export function getAccessToken() {
@@ -84,6 +105,7 @@ export function getUserIdFromAccessToken(): number | null {
 export function clearAccessToken() {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(ACCESS_TOKEN_KEY);
+  document.cookie = `${ACCESS_TOKEN_COOKIE}=; Path=/; Max-Age=0`;
 }
 
 export function setTempToken(token: string) {

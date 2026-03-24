@@ -20,17 +20,18 @@ export default function LlmRoomList({
   onAnalyzingRoomClick,
 }: Props) {
   return (
-    <div className="divide-y divide-neutral-200">
+    <ul className="divide-y divide-neutral-200">
       {rooms.map((room) => (
-        <LlmRoomListItem
-          key={room.id}
-          room={room}
-          isAnalyzing={activeAnalysisRoomId === room.numericId}
-          onEnter={() => onEnterRoom(room.id, room.numericId)}
-          onAnalyzingClick={() => onAnalyzingRoomClick?.(room.id, room.numericId)}
-          onDelete={onDeleteRoom}
-        />
+        <li key={room.id}>
+          <LlmRoomListItem
+            room={room}
+            isAnalyzing={activeAnalysisRoomId === room.numericId}
+            onEnter={() => onEnterRoom(room.id, room.numericId)}
+            onAnalyzingClick={() => onAnalyzingRoomClick?.(room.id, room.numericId)}
+            onDelete={onDeleteRoom}
+          />
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }

@@ -65,10 +65,10 @@ export default function PostHeader({
           type="button"
           onClick={onOptionsClick}
           ref={optionsButtonRef}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-neutral-100"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-md hover:bg-neutral-100"
           aria-label="게시글 옵션"
         >
-          <MoreVertical className="h-4 w-4 text-neutral-500" />
+          <MoreVertical aria-hidden="true" className="h-4 w-4 text-neutral-500" />
         </button>
       ) : null}
     </div>

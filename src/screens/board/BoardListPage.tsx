@@ -2,33 +2,34 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Bell, Loader2, Plus, Search } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import BoardPostCard from '@/components/board/BoardPostCard';
 import BoardSortTabs from '@/components/board/BoardSortTabs';
 import BoardTagFilter from '@/components/board/BoardTagFilter';
-import BoardUserMiniProfile from '@/components/board/BoardUserMiniProfile';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
-import { BOARD_TAG_MAX, POPULAR_MIN_LIKES } from '@/constants/board';
-import { fetchMyFollowings, fetchUserProfile } from '@/lib/api/users';
+import {
+  BOARD_PAGE_SIZE,
+  BOARD_TAG_MAX,
+  FOLLOWINGS_FETCH_SIZE,
+  PULL_MAX,
+  PULL_THRESHOLD,
+} from '@/constants/board';
+import { fetchMyFollowings } from '@/lib/api/users';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
 import { useBoardListInfiniteQuery } from '@/lib/hooks/boards/useBoardListInfiniteQuery';
+import { useBoardMiniProfile } from '@/lib/hooks/boards/useBoardMiniProfile';
+import { useFilteredPosts } from '@/lib/hooks/boards/useFilteredPosts';
 import { useUnreadCountQuery } from '@/lib/hooks/notifications/useUnreadCountQuery';
 import { userKeys } from '@/lib/hooks/users/queryKeys';
-import { useFollowUserMutation } from '@/lib/hooks/users/useFollowUserMutation';
-import { useUnfollowUserMutation } from '@/lib/hooks/users/useUnfollowUserMutation';
-import { toast } from '@/lib/toast/store';
-import { parseBoardDateTime } from '@/lib/utils/board';
 
 import type { BoardSort, BoardTag } from '@/types/board';
 
-const PAGE_SIZE = 10;
-const FOLLOWINGS_FETCH_SIZE = 100;
-const PULL_MAX = 120;
-const PULL_THRESHOLD = 72;
+const BoardUserMiniProfile = dynamic(() => import('@/components/board/BoardUserMiniProfile'));
 
 export default function BoardListPage() {
   const router = useRouter();
@@ -40,26 +41,34 @@ export default function BoardListPage() {
   const [sort, setSort] = useState<BoardSort>('LATEST');
   const [selectedTags, setSelectedTags] = useState<BoardTag[]>([]);
   const [isTagOpen, setIsTagOpen] = useState(false);
-  const [isMiniProfileOpen, setIsMiniProfileOpen] = useState(false);
-  const [selectedAuthorId, setSelectedAuthorId] = useState<number | null>(null);
-  const [followStateOverrides, setFollowStateOverrides] = useState<Record<number, boolean>>({});
   const [pullDistance, setPullDistance] = useState(0);
   const [isPulling, setIsPulling] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isReadyToRefresh, setIsReadyToRefresh] = useState(false);
   const isRefreshingRef = useRef(false);
   const isReadyToRefreshRef = useRef(false);
-  const followMutation = useFollowUserMutation();
-  const unfollowMutation = useUnfollowUserMutation();
 
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useBoardListInfiniteQuery({
-      size: PAGE_SIZE,
+      size: BOARD_PAGE_SIZE,
       sort,
       tags: selectedTags,
     });
 
   const rawPosts = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data]);
+
+  const {
+    isMiniProfileOpen,
+    setIsMiniProfileOpen,
+    modalUser,
+    modalUserId,
+    isMine,
+    isFollowing,
+    isFollowPending,
+    handleAuthorClick,
+    handleToggleFollow,
+  } = useBoardMiniProfile({ rawPosts, currentUserId });
+
   const {
     data: followingAuthorIds,
     isLoading: isFollowingAuthorIdsLoading,
@@ -101,75 +110,7 @@ export default function BoardListPage() {
     enabled: sort === 'FOLLOWING',
   });
 
-  const filteredPosts = useMemo(() => {
-    let filtered = rawPosts;
-
-    if (selectedTags.length > 0) {
-      filtered = filtered.filter((post) => selectedTags.some((tag) => post.tags.includes(tag)));
-    }
-
-    if (sort === 'POPULAR') {
-      filtered = filtered
-        .filter((post) => post.stats.likeCount >= POPULAR_MIN_LIKES)
-        .sort((a, b) => {
-          if (b.stats.likeCount !== a.stats.likeCount) {
-            return b.stats.likeCount - a.stats.likeCount;
-          }
-          return (
-            parseBoardDateTime(b.createdAt).getTime() - parseBoardDateTime(a.createdAt).getTime()
-          );
-        });
-    }
-
-    if (sort === 'FOLLOWING') {
-      const followingAuthorIdSet = new Set(followingAuthorIds ?? []);
-      filtered = filtered.filter((post) => followingAuthorIdSet.has(post.author.userId));
-    }
-
-    return filtered;
-  }, [rawPosts, selectedTags, sort, followingAuthorIds]);
-
-  const selectedAuthor = useMemo(
-    () => rawPosts.find((post) => post.author.userId === selectedAuthorId)?.author ?? null,
-    [rawPosts, selectedAuthorId],
-  );
-  const { data: selectedAuthorProfile, refetch: refetchSelectedAuthorProfile } = useQuery({
-    queryKey: userKeys.profile(selectedAuthorId ?? -1),
-    queryFn: async () => {
-      const result = await fetchUserProfile(selectedAuthorId!);
-
-      if (!result.ok || !result.json) {
-        throw new Error('Failed to fetch user profile');
-      }
-
-      if ('data' in result.json && result.json.data) {
-        return result.json.data;
-      }
-
-      throw new Error('Invalid response format');
-    },
-    enabled: selectedAuthorId !== null,
-  });
-
-  const modalUser = selectedAuthor
-    ? {
-        userId: selectedAuthor.userId,
-        nickname: selectedAuthorProfile?.user.nickname ?? selectedAuthor.nickname,
-        profileImageUrl:
-          selectedAuthorProfile?.profileImage?.url ?? selectedAuthor.profileImageUrl ?? null,
-        interests: selectedAuthorProfile?.interests ?? selectedAuthor.interests ?? [],
-      }
-    : null;
-  const modalUserId = modalUser?.userId ?? null;
-  const isMine = Boolean(
-    modalUserId !== null && currentUserId !== null && modalUserId === currentUserId,
-  );
-  const profileIsFollowing = selectedAuthorProfile?.isFollowing ?? false;
-  const isFollowing =
-    modalUserId !== null && followStateOverrides[modalUserId] !== undefined
-      ? followStateOverrides[modalUserId]
-      : profileIsFollowing;
-  const isFollowPending = followMutation.isPending || unfollowMutation.isPending;
+  const filteredPosts = useFilteredPosts(rawPosts, { sort, selectedTags, followingAuthorIds });
 
   const handleCreatePost = useCallback(() => {
     requestNavigation(() => router.push('/board/create'));
@@ -182,29 +123,6 @@ export default function BoardListPage() {
   const handleNotificationsClick = useCallback(() => {
     requestNavigation(() => router.push('/notifications'));
   }, [requestNavigation, router]);
-
-  const handleAuthorClick = (userId: number) => {
-    setSelectedAuthorId(userId);
-    setIsMiniProfileOpen(true);
-  };
-
-  const handleToggleFollow = async () => {
-    if (modalUserId === null || isMine || isFollowPending) return;
-
-    try {
-      if (isFollowing) {
-        await unfollowMutation.mutateAsync(modalUserId);
-        setFollowStateOverrides((prev) => ({ ...prev, [modalUserId]: false }));
-      } else {
-        await followMutation.mutateAsync(modalUserId);
-        setFollowStateOverrides((prev) => ({ ...prev, [modalUserId]: true }));
-      }
-      void refetchSelectedAuthorProfile();
-    } catch (error) {
-      const err = error as Error & { serverMessage?: string };
-      toast(err.serverMessage ?? '팔로우 처리에 실패했습니다.');
-    }
-  };
 
   const handlePostClick = useCallback(
     (postId: number) => {
@@ -357,12 +275,27 @@ export default function BoardListPage() {
     <>
       <main className="px-3 pt-4 pb-3">
         <div className="flex flex-col gap-3">
-          <BoardSortTabs value={sort} onChange={setSort} />
+          <BoardSortTabs
+            value={sort}
+            onChange={(next) => {
+              if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+                document.startViewTransition(() => setSort(next));
+              } else {
+                setSort(next);
+              }
+            }}
+          />
           <BoardTagFilter
             open={isTagOpen}
             onToggleOpen={() => setIsTagOpen((prev) => !prev)}
             selected={selectedTags}
-            onChangeSelected={setSelectedTags}
+            onChangeSelected={(next) => {
+              if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+                document.startViewTransition(() => setSelectedTags(next));
+              } else {
+                setSelectedTags(next);
+              }
+            }}
             max={BOARD_TAG_MAX}
           />
         </div>
@@ -394,8 +327,35 @@ export default function BoardListPage() {
             }}
           >
             {isLoading ? (
-              <div className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-neutral-500 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
-                게시글을 불러오는 중...
+              <div className="space-y-3" aria-busy="true" aria-label="게시글 불러오는 중">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="animate-pulse rounded-2xl bg-white px-4 py-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]"
+                  >
+                    <div className="flex gap-3">
+                      <div className="h-10 w-10 flex-shrink-0 rounded-full bg-neutral-200" />
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="h-3.5 w-20 rounded bg-neutral-200" />
+                          <div className="h-3 w-12 rounded bg-neutral-100" />
+                        </div>
+                        <div className="h-3 w-24 rounded bg-neutral-100" />
+                        <div className="mt-2 h-4 w-3/4 rounded bg-neutral-200" />
+                        <div className="h-3.5 w-full rounded bg-neutral-100" />
+                        <div className="h-3.5 w-2/3 rounded bg-neutral-100" />
+                        <div className="mt-1 flex gap-1.5">
+                          <div className="h-5 w-14 rounded-full bg-neutral-100" />
+                          <div className="h-5 w-16 rounded-full bg-neutral-100" />
+                        </div>
+                        <div className="mt-1 flex gap-3">
+                          <div className="h-3 w-10 rounded bg-neutral-100" />
+                          <div className="h-3 w-10 rounded bg-neutral-100" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : isError ? (
               <div className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-neutral-500 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
@@ -409,8 +369,35 @@ export default function BoardListPage() {
                 </button>
               </div>
             ) : sort === 'FOLLOWING' && isFollowingAuthorIdsLoading ? (
-              <div className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-neutral-500 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
-                팔로잉 목록을 불러오는 중...
+              <div className="space-y-3" aria-busy="true" aria-label="팔로잉 목록 불러오는 중">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="animate-pulse rounded-2xl bg-white px-4 py-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]"
+                  >
+                    <div className="flex gap-3">
+                      <div className="h-10 w-10 flex-shrink-0 rounded-full bg-neutral-200" />
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="h-3.5 w-20 rounded bg-neutral-200" />
+                          <div className="h-3 w-12 rounded bg-neutral-100" />
+                        </div>
+                        <div className="h-3 w-24 rounded bg-neutral-100" />
+                        <div className="mt-2 h-4 w-3/4 rounded bg-neutral-200" />
+                        <div className="h-3.5 w-full rounded bg-neutral-100" />
+                        <div className="h-3.5 w-2/3 rounded bg-neutral-100" />
+                        <div className="mt-1 flex gap-1.5">
+                          <div className="h-5 w-14 rounded-full bg-neutral-100" />
+                          <div className="h-5 w-16 rounded-full bg-neutral-100" />
+                        </div>
+                        <div className="mt-1 flex gap-3">
+                          <div className="h-3 w-10 rounded bg-neutral-100" />
+                          <div className="h-3 w-10 rounded bg-neutral-100" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : sort === 'FOLLOWING' && isFollowingAuthorIdsError ? (
               <div className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-neutral-500 shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
@@ -435,12 +422,13 @@ export default function BoardListPage() {
               </p>
             ) : (
               <>
-                {filteredPosts.map((post) => (
+                {filteredPosts.map((post, index) => (
                   <BoardPostCard
                     key={post.postId}
                     post={post}
                     onClick={handlePostClick}
                     onAuthorClick={handleAuthorClick}
+                    priority={index < 3}
                   />
                 ))}
                 <div className="px-4 pt-2">

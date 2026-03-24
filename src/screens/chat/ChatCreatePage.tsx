@@ -5,18 +5,18 @@ import { Check, Search } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 
 import { useHeader } from '@/components/layout/HeaderContext';
 import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
+import { MAX_NICKNAME_LENGTH, MIN_NICKNAME_LENGTH } from '@/constants/chat';
 import { applyRejoinedRoomUiOverride } from '@/lib/chat/rejoinedRoomUiCache';
+import { ApiError } from '@/lib/errors/ApiError';
 import { useCreatePrivateRoomMutation } from '@/lib/hooks/chat/useCreatePrivateRoomMutation';
 import { useMyFollowingsInfiniteQuery } from '@/lib/hooks/chat/useMyFollowingsInfiniteQuery';
 import { toast } from '@/lib/toast/store';
 
 import type { ChatFollowingSummaryResponse } from '@/lib/api/chatFollowings';
-
-const MIN_NICKNAME_LENGTH = 2;
-const MAX_NICKNAME_LENGTH = 10;
 
 function sortByNickname(a: ChatFollowingSummaryResponse, b: ChatFollowingSummaryResponse) {
   const nicknameCompare = a.nickname.localeCompare(b.nickname, 'ko');
@@ -213,7 +213,7 @@ export default function ChatCreatePage() {
         message: responseData.isNew ? '채팅방이 생성되었습니다.' : '기존 채팅방으로 이동합니다.',
       });
     } catch (error) {
-      const err = error as Error & { serverMessage?: string };
+      const err = ApiError.fromUnknown(error);
       toast(err.serverMessage ?? '채팅방 생성에 실패했습니다.');
     }
   };
@@ -223,14 +223,17 @@ export default function ChatCreatePage() {
   return (
     <main className="px-4 pt-4 pb-24">
       <section>
-        <p className="px-1 text-sm font-semibold text-[#191F28]">유저 검색</p>
+        <label htmlFor="chat-create-search" className="px-1 text-sm font-semibold text-[#191F28]">
+          유저 검색
+        </label>
         <form onSubmit={handleSearchSubmit} className="mt-2">
           <div className="flex items-center gap-2 rounded-2xl border border-neutral-200 bg-white px-4 py-3">
             <input
+              id="chat-create-search"
               value={inputValue}
               onChange={(event) => setInputValue(event.target.value)}
               placeholder="이름을 입력하세요"
-              className="h-6 w-full border-0 bg-transparent text-sm text-[#191F28] outline-none placeholder:text-[#8B95A1]"
+              className="h-6 w-full border-0 bg-transparent text-base text-[#191F28] outline-none placeholder:text-[#8B95A1]"
               maxLength={MAX_NICKNAME_LENGTH}
             />
             <button
@@ -246,7 +249,11 @@ export default function ChatCreatePage() {
 
       <section className="mt-6">
         <p className="px-1 text-sm font-semibold text-[#191F28]">
-          팔로잉 유저 목록 <span className="text-red-500">*</span>
+          팔로잉 유저 목록{' '}
+          <span className="text-red-500" aria-hidden="true">
+            *
+          </span>
+          <span className="sr-only">(필수)</span>
         </p>
 
         {isLoading ? (
@@ -354,14 +361,17 @@ export default function ChatCreatePage() {
         </button>
       </section>
 
-      {successModal ? (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/45" />
-          <div className="relative z-10 mx-4 w-full max-w-[280px] rounded-2xl bg-white px-5 py-6 text-center shadow-xl">
-            <p className="text-base font-semibold text-neutral-900">{successModal.message}</p>
-          </div>
-        </div>
-      ) : null}
+      {successModal
+        ? createPortal(
+            <div className="fixed inset-0 z-[200] flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/45 backdrop-blur-[2px]" />
+              <div className="relative z-10 mx-4 w-full max-w-[280px] rounded-2xl bg-white px-5 py-6 text-center shadow-xl">
+                <p className="text-base font-semibold text-neutral-900">{successModal.message}</p>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </main>
   );
 }

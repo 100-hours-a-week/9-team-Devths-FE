@@ -101,10 +101,10 @@ export default function CommentItem({
               type="button"
               ref={optionsButtonRef}
               onClick={() => setIsOptionsOpen((prev) => !prev)}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-neutral-100"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-md hover:bg-neutral-100"
               aria-label="댓글 옵션"
             >
-              <MoreVertical className="h-4 w-4 text-neutral-500" />
+              <MoreVertical aria-hidden="true" className="h-4 w-4 text-neutral-500" />
             </button>
             {isOptionsOpen ? (
               <div
@@ -137,7 +137,12 @@ export default function CommentItem({
         ) : null}
       </div>
       {isEditing ? null : (
-        <p className={cn('mt-2 text-xs', isDeleted ? 'text-neutral-400' : 'text-neutral-600')}>
+        <p
+          className={cn(
+            'mt-2 text-xs break-all',
+            isDeleted ? 'text-neutral-400' : 'text-neutral-600',
+          )}
+        >
           {isDeleted ? '삭제된 댓글입니다.' : content}
         </p>
       )}

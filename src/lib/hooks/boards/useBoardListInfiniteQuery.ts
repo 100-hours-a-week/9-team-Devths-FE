@@ -21,12 +21,13 @@ export function useBoardListInfiniteQuery(params: UseBoardListInfiniteQueryParam
         size,
         sort,
         tags,
-        lastId: pageParam ?? null,
+        lastId: pageParam,
       });
 
       return result;
     },
-    initialPageParam: null as number | null,
-    getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.lastId : null),
+    initialPageParam: undefined as number | undefined,
+    getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.lastId : undefined),
+    staleTime: 30 * 1000,
   });
 }

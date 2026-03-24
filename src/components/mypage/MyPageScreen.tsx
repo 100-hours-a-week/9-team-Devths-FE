@@ -8,10 +8,21 @@ import { useEffect, useRef, useState } from 'react';
 
 import BoardPostCard from '@/components/board/BoardPostCard';
 import ConfirmModal from '@/components/common/ConfirmModal';
+import { useHeader } from '@/components/layout/HeaderContext';
 import EditProfileModal from '@/components/mypage/EditProfileModal';
 import WithdrawModal from '@/components/mypage/WithdrawModal';
 import { postLogout } from '@/lib/api/auth';
-import { clearAccessToken } from '@/lib/auth/token';
+import {
+  clearAccessToken,
+  clearLoggingOut,
+  getUserIdFromAccessToken,
+  markLoggingOut,
+} from '@/lib/auth/token';
+import { useAccessibilityMode } from '@/lib/hooks/accessibility/useAccessibilityMode';
+import {
+  unregisterFcmToken,
+  usePushNotificationToggle,
+} from '@/lib/hooks/notifications/useFcmToken';
 import { useMeQuery } from '@/lib/hooks/users/useMeQuery';
 import { useMyCommentsInfiniteQuery } from '@/lib/hooks/users/useMyCommentsInfiniteQuery';
 import { useMyPostsInfiniteQuery } from '@/lib/hooks/users/useMyPostsInfiniteQuery';
@@ -23,6 +34,8 @@ import type { BoardPostSummary } from '@/types/board';
 export default function MyPageScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { setOptions, resetOptions } = useHeader();
+  const { isOn: isAccessibilityOn, toggle: toggleAccessibility } = useAccessibilityMode();
   const { data, isLoading, isError } = useMeQuery();
   const {
     data: myPostsData,
@@ -46,6 +59,22 @@ export default function MyPageScreen() {
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const {
+    isActive: isPushActive,
+    isPending: isPushPending,
+    toggle: togglePush,
+    isSupported: isPushSupported,
+  } = usePushNotificationToggle();
+
+  useEffect(() => {
+    setOptions({
+      showAccessibilityButton: true,
+      accessibilityActive: isAccessibilityOn,
+      onAccessibilityClick: toggleAccessibility,
+    });
+
+    return () => resetOptions();
+  }, [isAccessibilityOn, resetOptions, setOptions, toggleAccessibility]);
 
   const handleWithdraw = () => {
     setIsEditOpen(false);
@@ -66,15 +95,21 @@ export default function MyPageScreen() {
     if (isLoggingOut) return;
 
     setIsLoggingOut(true);
+    markLoggingOut();
     try {
+      const isFcmUnregistered = await unregisterFcmToken();
+      if (!isFcmUnregistered) {
+        toast('푸시 알림 해제에 실패했지만 로그아웃은 계속 진행합니다.');
+      }
       const result = await postLogout();
-      if (!result.ok) {
+      if (!result.ok && result.status !== 401) {
         throw new Error('로그아웃에 실패했습니다.');
       }
       clearAccessToken();
       queryClient.clear();
       router.replace('/');
     } catch {
+      clearLoggingOut();
       toast('로그아웃에 실패했습니다.');
       setIsLoggingOut(false);
     }
@@ -101,7 +136,7 @@ export default function MyPageScreen() {
     tags: [],
     createdAt: post.createdAt,
     author: {
-      userId: data?.id ?? data?.userId ?? -1,
+      userId: getUserIdFromAccessToken() ?? -1,
       nickname: data?.nickname ?? '나',
       profileImageUrl: data?.profileImage?.url ?? null,
       interests: [],
@@ -237,8 +272,8 @@ export default function MyPageScreen() {
                   onClick={() => setIsEditOpen(true)}
                   className="flex items-center gap-1 rounded-full bg-[#05C075] px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-[#04A865]"
                 >
-                  <Pencil className="h-4 w-4" />
-                  수정
+                  <Pencil aria-hidden="true" className="h-4 w-4" />
+                  프로필 수정
                 </button>
                 <button
                   type="button"
@@ -255,6 +290,7 @@ export default function MyPageScreen() {
                 type="button"
                 onClick={handleMoveFollowers}
                 className="border-r border-neutral-200 bg-white px-3 py-2 text-center hover:bg-neutral-50"
+                aria-label="팔로워 목록 보기"
               >
                 <p className="text-[11px] text-neutral-500">팔로워</p>
                 <p className="mt-1 text-sm font-semibold text-neutral-900">
@@ -265,6 +301,7 @@ export default function MyPageScreen() {
                 type="button"
                 onClick={handleMoveFollowings}
                 className="bg-white px-3 py-2 text-center hover:bg-neutral-50"
+                aria-label="팔로잉 목록 보기"
               >
                 <p className="text-[11px] text-neutral-500">팔로잉</p>
                 <p className="mt-1 text-sm font-semibold text-neutral-900">
@@ -272,6 +309,35 @@ export default function MyPageScreen() {
                 </p>
               </button>
             </div>
+
+            {isPushSupported ? (
+              <div className="flex items-center justify-between rounded-xl border border-neutral-200 bg-white px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-neutral-900">푸시 알림</p>
+                  <p className="text-xs text-neutral-500">새 알림을 푸시로 받습니다</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {isAccessibilityOn ? (
+                    <span className="text-xs font-medium text-neutral-600" aria-live="polite">
+                      {isPushActive ? '켜짐' : '꺼짐'}
+                    </span>
+                  ) : null}
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={isPushActive}
+                    aria-label={`푸시 알림 ${isPushActive ? '켜짐' : '꺼짐'}`}
+                    onClick={() => void togglePush()}
+                    disabled={isPushPending}
+                    className={`relative h-6 w-11 rounded-full transition-colors disabled:opacity-50 ${isPushActive ? 'bg-[#05C075]' : 'bg-neutral-300'}`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${isPushActive ? 'translate-x-5' : 'translate-x-0'}`}
+                    />
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
         )}
       </section>
@@ -283,9 +349,13 @@ export default function MyPageScreen() {
               activeContentTab === 'posts' ? 'translate-x-0' : 'translate-x-full'
             }`}
           />
-          <div className="relative grid grid-cols-2">
+          <div role="tablist" aria-label="내 활동" className="relative grid grid-cols-2 gap-1">
             <button
               type="button"
+              role="tab"
+              aria-selected={activeContentTab === 'posts'}
+              aria-controls="mypage-panel-posts"
+              id="mypage-tab-posts"
               onClick={() => setActiveContentTab('posts')}
               className={`rounded-lg px-1 py-2 text-sm font-semibold transition-colors ${
                 activeContentTab === 'posts'
@@ -297,6 +367,10 @@ export default function MyPageScreen() {
             </button>
             <button
               type="button"
+              role="tab"
+              aria-selected={activeContentTab === 'comments'}
+              aria-controls="mypage-panel-comments"
+              id="mypage-tab-comments"
               onClick={() => setActiveContentTab('comments')}
               className={`rounded-lg px-1 py-2 text-sm font-semibold transition-colors ${
                 activeContentTab === 'comments'
@@ -309,96 +383,99 @@ export default function MyPageScreen() {
           </div>
         </div>
 
-        {activeContentTab === 'posts' ? (
-          <div className="mt-4 space-y-2">
-            {isMyPostsLoading ? (
-              Array.from({ length: 3 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3"
-                >
-                  <div className="h-4 w-40 animate-pulse rounded bg-neutral-200" />
-                  <div className="mt-2 h-3 w-28 animate-pulse rounded bg-neutral-200" />
-                </div>
-              ))
-            ) : isMyPostsError ? (
-              <p className="py-8 text-center text-sm text-red-500">
-                내가 쓴 글 목록을 불러오지 못했습니다.
-              </p>
-            ) : (
-              <>
-                {myPosts.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-neutral-500">
-                    아직 작성한 게시글이 없습니다.
-                  </p>
-                ) : (
-                  myPostCards.map((post) => (
-                    <BoardPostCard key={post.postId} post={post} onClick={handleMovePostDetail} />
-                  ))
-                )}
-                {isMyPostsHasNextPage ? (
-                  <div ref={infiniteScrollTriggerRef} className="h-1" />
-                ) : null}
-                {isMyPostsFetchingNextPage ? (
-                  <p className="py-2 text-center text-xs text-neutral-400">
-                    게시글을 불러오는 중...
-                  </p>
-                ) : null}
-              </>
-            )}
-          </div>
-        ) : (
-          <div className="mt-4 space-y-2">
-            {isMyCommentsLoading ? (
-              Array.from({ length: 3 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3"
-                >
-                  <div className="h-4 w-40 animate-pulse rounded bg-neutral-200" />
-                  <div className="mt-2 h-3 w-28 animate-pulse rounded bg-neutral-200" />
-                </div>
-              ))
-            ) : isMyCommentsError ? (
-              <p className="py-8 text-center text-sm text-red-500">
-                내가 쓴 댓글 목록을 불러오지 못했습니다.
-              </p>
-            ) : (
-              <>
-                {myComments.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-neutral-500">
-                    아직 작성한 댓글이 없습니다.
-                  </p>
-                ) : (
-                  myComments.map((comment) => (
-                    <button
-                      key={comment.id}
-                      type="button"
-                      onClick={() => handleMoveCommentPostDetail(comment.postId)}
-                      className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left hover:border-[#05C075]"
-                    >
-                      <p className="line-clamp-1 text-sm font-semibold text-neutral-900">
-                        {comment.postTitle}
-                      </p>
-                      <p className="mt-1 line-clamp-1 text-xs text-neutral-600">
-                        {comment.content}
-                      </p>
-                      <p className="mt-1 text-xs text-neutral-500">
-                        {formatDateTime(comment.createdAt)}
-                      </p>
-                    </button>
-                  ))
-                )}
-                {isMyCommentsHasNextPage ? (
-                  <div ref={infiniteScrollTriggerRef} className="h-1" />
-                ) : null}
-                {isMyCommentsFetchingNextPage ? (
-                  <p className="py-2 text-center text-xs text-neutral-400">댓글을 불러오는 중...</p>
-                ) : null}
-              </>
-            )}
-          </div>
-        )}
+        <div
+          role="tabpanel"
+          id="mypage-panel-posts"
+          aria-labelledby="mypage-tab-posts"
+          className="mt-4 space-y-2"
+          hidden={activeContentTab !== 'posts'}
+        >
+          {isMyPostsLoading ? (
+            Array.from({ length: 3 }).map((_, index) => (
+              <div
+                key={index}
+                className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3"
+              >
+                <div className="h-4 w-40 animate-pulse rounded bg-neutral-200" />
+                <div className="mt-2 h-3 w-28 animate-pulse rounded bg-neutral-200" />
+              </div>
+            ))
+          ) : isMyPostsError ? (
+            <p className="py-8 text-center text-sm text-red-500">
+              내가 쓴 글 목록을 불러오지 못했습니다.
+            </p>
+          ) : (
+            <>
+              {myPosts.length === 0 ? (
+                <p className="py-8 text-center text-sm text-neutral-500">
+                  아직 작성한 게시글이 없습니다.
+                </p>
+              ) : (
+                myPostCards.map((post) => (
+                  <BoardPostCard key={post.postId} post={post} onClick={handleMovePostDetail} />
+                ))
+              )}
+              {isMyPostsHasNextPage ? <div ref={infiniteScrollTriggerRef} className="h-1" /> : null}
+              {isMyPostsFetchingNextPage ? (
+                <p className="py-2 text-center text-xs text-neutral-400">게시글을 불러오는 중...</p>
+              ) : null}
+            </>
+          )}
+        </div>
+        <div
+          role="tabpanel"
+          id="mypage-panel-comments"
+          aria-labelledby="mypage-tab-comments"
+          className="mt-4 space-y-2"
+          hidden={activeContentTab !== 'comments'}
+        >
+          {isMyCommentsLoading ? (
+            Array.from({ length: 3 }).map((_, index) => (
+              <div
+                key={index}
+                className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3"
+              >
+                <div className="h-4 w-40 animate-pulse rounded bg-neutral-200" />
+                <div className="mt-2 h-3 w-28 animate-pulse rounded bg-neutral-200" />
+              </div>
+            ))
+          ) : isMyCommentsError ? (
+            <p className="py-8 text-center text-sm text-red-500">
+              내가 쓴 댓글 목록을 불러오지 못했습니다.
+            </p>
+          ) : (
+            <>
+              {myComments.length === 0 ? (
+                <p className="py-8 text-center text-sm text-neutral-500">
+                  아직 작성한 댓글이 없습니다.
+                </p>
+              ) : (
+                myComments.map((comment) => (
+                  <button
+                    key={comment.id}
+                    type="button"
+                    onClick={() => handleMoveCommentPostDetail(comment.postId)}
+                    className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left hover:border-[#05C075]"
+                  >
+                    <p className="line-clamp-1 text-sm font-semibold text-neutral-900">
+                      {comment.postTitle}
+                    </p>
+                    <p className="mt-1 line-clamp-1 text-xs text-neutral-600">{comment.content}</p>
+                    <p className="mt-1 text-xs text-neutral-500">
+                      {formatDateTime(comment.createdAt)}
+                    </p>
+                  </button>
+                ))
+              )}
+              {isMyCommentsHasNextPage ? (
+                <div ref={infiniteScrollTriggerRef} className="h-1" />
+              ) : null}
+              {isMyCommentsFetchingNextPage ? (
+                <p className="py-2 text-center text-xs text-neutral-400">댓글을 불러오는 중...</p>
+              ) : null}
+            </>
+          )}
+        </div>
       </section>
 
       <EditProfileModal

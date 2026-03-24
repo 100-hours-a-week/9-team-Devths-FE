@@ -51,7 +51,7 @@ export default function CommentComposer({
         placeholder={placeholder}
         maxLength={maxLength}
         disabled={isSubmitting}
-        className="flex-1 rounded-full border border-neutral-200 bg-white px-4 py-2 text-xs text-neutral-700 placeholder:text-neutral-400 focus:border-[#05C075] focus:outline-none"
+        className="flex-1 rounded-full border border-neutral-200 bg-white px-4 py-2 text-base text-neutral-700 placeholder:text-neutral-400 focus:border-[#05C075] focus:outline-none"
         aria-label="댓글 입력"
       />
       {onCancel ? (

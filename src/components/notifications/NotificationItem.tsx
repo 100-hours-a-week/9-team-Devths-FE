@@ -76,8 +76,9 @@ export default function NotificationItem({
           ? 'relative w-full rounded-2xl border border-l-[6px] border-neutral-200 border-l-[#05C075] bg-white px-4 py-3 text-left text-neutral-900'
           : 'relative w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-left text-neutral-500'
       }
-      aria-label="알림 상세 이동"
+      aria-label={`알림 상세 이동${isUnread ? ' (읽지 않음)' : ''}`}
     >
+      {isUnread ? <span className="sr-only">읽지 않은 알림</span> : null}
       <div className="flex items-center justify-between gap-3">
         <span
           className={

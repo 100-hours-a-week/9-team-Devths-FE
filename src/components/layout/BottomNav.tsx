@@ -32,7 +32,7 @@ type BottomNavProps = {
 export default function BottomNav({ hidden = false }: BottomNavProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { isBlocked, requestNavigation } = useNavigationGuard();
+  const { requestNavigation } = useNavigationGuard();
   const { data: chatRealtimeUnread = 0 } = useQuery({
     queryKey: chatKeys.realtimeUnread(),
     queryFn: async () => 0,
@@ -42,17 +42,18 @@ export default function BottomNav({ hidden = false }: BottomNavProps) {
 
   const handleNavigate =
     (href: string) => (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
-      if (!isBlocked) return;
       event.preventDefault();
       requestNavigation(() => router.push(href));
     };
 
   return (
     <nav
+      aria-label="하단 내비게이션"
       className={clsx(
         'fixed bottom-0 left-1/2 z-50 w-full -translate-x-1/2 bg-white transition-transform duration-200 sm:max-w-[430px]',
         hidden ? 'pointer-events-none translate-y-full' : 'translate-y-0',
       )}
+      style={{ viewTransitionName: 'bottom-nav' }}
     >
       <div className="border-t">
         <div className="grid h-16 grid-cols-5 px-2">
@@ -66,10 +67,11 @@ export default function BottomNav({ hidden = false }: BottomNavProps) {
                   key={tab.label}
                   href={tab.href}
                   onClick={handleNavigate(tab.href)}
+                  aria-current={isActive ? 'page' : undefined}
                   className="flex flex-col items-center justify-center"
                 >
                   <div className="-mt-6 flex h-14 w-14 items-center justify-center rounded-full bg-[#05C075] shadow-lg">
-                    <Icon className="h-6 w-6 text-white" />
+                    <Icon aria-hidden="true" className="h-6 w-6 text-white" />
                   </div>
                   <span
                     className={clsx(
@@ -95,7 +97,7 @@ export default function BottomNav({ hidden = false }: BottomNavProps) {
             if (tab.disabled) {
               return (
                 <div key={tab.label} className={clsx(baseClass, activeClass)} aria-disabled="true">
-                  <Icon className="h-5 w-5" />
+                  <Icon aria-hidden="true" className="h-5 w-5" />
                   <span>{tab.label}</span>
                 </div>
               );
@@ -106,12 +108,18 @@ export default function BottomNav({ hidden = false }: BottomNavProps) {
                 key={tab.label}
                 href={tab.href}
                 onClick={handleNavigate(tab.href)}
+                aria-current={isActive ? 'page' : undefined}
                 className={clsx(baseClass, activeClass)}
               >
                 <span className="relative inline-flex">
-                  <Icon className="h-5 w-5" />
+                  <Icon aria-hidden="true" className="h-5 w-5" />
                   {tab.href === '/chat' && !isActive && chatRealtimeUnread > 0 ? (
-                    <span className="absolute -top-1.5 -right-1.5 h-2.5 w-2.5 rounded-full bg-red-500" />
+                    <span
+                      className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-0.5 text-[9px] font-bold text-white"
+                      aria-label={`읽지 않은 메시지 ${chatRealtimeUnread}개`}
+                    >
+                      {chatRealtimeUnread > 99 ? '99+' : chatRealtimeUnread}
+                    </span>
                   ) : null}
                 </span>
                 <span>{tab.label}</span>

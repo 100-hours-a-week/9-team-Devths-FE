@@ -53,7 +53,7 @@ export async function postPresigned(body: PresignedRequest) {
 }
 
 export type FileCategory = 'RESUME' | 'PORTFOLIO' | 'JOB_POSTING' | 'AI_CHAT_ATTACHMENT';
-export type FileRefType = 'CHATROOM' | 'POST' | 'MESSAGE' | 'USER';
+export type FileRefType = 'CHATROOM' | 'POST' | 'USER' | 'AI_CHAT';
 
 export type PostFileMetaRequest = {
   originalName: string;
@@ -63,7 +63,7 @@ export type PostFileMetaRequest = {
   fileSize: number;
   refType: FileRefType;
   refId?: number | null;
-  sortOrder?: number;
+  sortOrder: number;
 };
 
 export type PostFileMetaData = {

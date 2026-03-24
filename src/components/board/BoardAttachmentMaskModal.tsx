@@ -62,7 +62,11 @@ export default function BoardAttachmentMaskModal({
     let tempUrl: string | null = null;
     const image = new Image();
     if (attachment.previewUrl) {
-      image.src = attachment.previewUrl;
+      if (attachment.previewUrl.startsWith('blob:')) {
+        image.src = attachment.previewUrl;
+      } else {
+        image.src = `/api/image-proxy?url=${encodeURIComponent(attachment.previewUrl)}`;
+      }
     } else {
       tempUrl = URL.createObjectURL(attachment.file);
       image.src = tempUrl;

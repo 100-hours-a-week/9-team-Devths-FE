@@ -26,10 +26,10 @@ export function useBoardSearchInfiniteQuery({ keyword, size }: UseBoardSearchInf
       searchBoardPosts({
         size: pageSize,
         keyword: normalizedKeyword,
-        lastId: pageParam ?? null,
+        lastId: pageParam,
       }),
-    initialPageParam: null as number | null,
-    getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.lastId : null),
+    initialPageParam: undefined as number | undefined,
+    getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.lastId : undefined),
     enabled: normalizedKeyword.length > 0,
     refetchOnWindowFocus: true,
   });

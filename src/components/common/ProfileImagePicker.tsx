@@ -113,6 +113,7 @@ export default function ProfileImagePicker({
           )}
         >
           <Plus
+            aria-hidden="true"
             className={cn(
               iconClass,
               hasPreview || hasFallbackInitial ? 'text-white' : 'text-zinc-700',

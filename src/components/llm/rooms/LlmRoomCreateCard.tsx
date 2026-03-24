@@ -47,6 +47,7 @@ export default function LlmRoomCreateCard({ href, disabled, onDisabledClick }: P
         ].join(' ')}
       >
         <Plus
+          aria-hidden="true"
           className={disabled ? 'h-6 w-6 text-[#ADB5BD]' : 'h-6 w-6 text-white'}
           strokeWidth={2.5}
         />

@@ -10,13 +10,24 @@ import Header from '@/components/layout/Header';
 import { HeaderContext, type HeaderOptions } from '@/components/layout/HeaderContext';
 import { NavigationGuardContext } from '@/components/layout/NavigationGuardContext';
 import LlmAnalysisTaskWatcher from '@/components/llm/analysis/LlmAnalysisTaskWatcher';
-import { ensureAccessToken } from '@/lib/api/client';
-import { clearAccessToken, getUserIdFromAccessToken, setAuthRedirect } from '@/lib/auth/token';
+import { ACCESS_TOKEN_REFRESHED_EVENT, ensureAccessToken } from '@/lib/api/client';
+import {
+  clearAccessToken,
+  clearLoggingOut,
+  getAccessToken,
+  getIsLoggingOut,
+  getUserIdFromAccessToken,
+  isAccessTokenExpired,
+  setAuthRedirect,
+} from '@/lib/auth/token';
 import { applyRealtimeRoomNotification } from '@/lib/chat/realtimeRoomCache';
 import { clearRejoinedRoomUiOverride } from '@/lib/chat/rejoinedRoomUiCache';
+import { chatStompManager } from '@/lib/chat/stompManager';
+import { useAccessibilityMode } from '@/lib/hooks/accessibility/useAccessibilityMode';
 import { chatKeys } from '@/lib/hooks/chat/queryKeys';
 import { useChatRealtimeConnection } from '@/lib/hooks/chat/useChatRealtimeConnection';
 import { useChatSubscriptions } from '@/lib/hooks/chat/useChatSubscriptions';
+import { useFcmToken } from '@/lib/hooks/notifications/useFcmToken';
 import { toast } from '@/lib/toast/store';
 
 import type { ChatRoomNotificationResponse } from '@/lib/api/chatMessages';
@@ -81,14 +92,21 @@ export default function AppFrame({
   const defaultFrameOptions = useMemo<AppFrameOptions>(() => ({ showBottomNav: true }), []);
   const [frameOptions, setFrameOptions] = useState<AppFrameOptions>(defaultFrameOptions);
   const isBottomNavVisible = true;
+  const { isOn: isAccessibilityOn } = useAccessibilityMode();
   const [isAuthed, setIsAuthed] = useState<boolean | null>(null);
+  const isAuthedRef = useRef<boolean | null>(null);
+
+  useEffect(() => {
+    isAuthedRef.current = isAuthed;
+  }, [isAuthed]);
   const [isNavigationBlocked, setIsNavigationBlocked] = useState(false);
-  const [blockMessage, setBlockMessage] = useState('답변 생성 중에는 이동할 수 없습니다.');
+  const [blockMessage, setBlockMessage] = useState('');
   const [blockedNavigationHandler, setBlockedNavigationHandler] = useState<
     ((action: () => void) => void) | null
   >(null);
 
   useChatRealtimeConnection({ enabled: isAuthed === true && currentUserId !== null });
+  useFcmToken();
 
   const handleChatUserNotification = useCallback(
     (frame: IMessage) => {
@@ -138,6 +156,24 @@ export default function AppFrame({
     onUserNotification: handleChatUserNotification,
   });
 
+  // 이벤트 기반 재연결: 토큰 갱신 성공 직후 STOMP가 끊겨 있으면 즉시 복구 (네비게이션 없이도 동작)
+  useEffect(() => {
+    const handleTokenRefreshed = () => {
+      const token = getAccessToken();
+      if (!token || isAccessTokenExpired(token)) return;
+
+      const stompStatus = chatStompManager.connectionStatus;
+      if (stompStatus === 'disconnected' || stompStatus === 'error') {
+        chatStompManager.connect();
+      }
+    };
+
+    window.addEventListener(ACCESS_TOKEN_REFRESHED_EVENT, handleTokenRefreshed);
+    return () => {
+      window.removeEventListener(ACCESS_TOKEN_REFRESHED_EVENT, handleTokenRefreshed);
+    };
+  }, []);
+
   useEffect(() => {
     setOptions(defaultOptions);
   }, [defaultOptions]);
@@ -149,6 +185,13 @@ export default function AppFrame({
     let isCancelled = false;
 
     const checkAuth = async () => {
+      if (isAuthedRef.current === false) return;
+      if (getIsLoggingOut()) {
+        clearLoggingOut();
+        setIsAuthed(false);
+        return;
+      }
+
       const restored = await ensureAccessToken();
       if (isCancelled) {
         return;
@@ -156,6 +199,11 @@ export default function AppFrame({
 
       if (restored) {
         setIsAuthed(true);
+        // 네비게이션 시점 안전망: 이벤트 기반 복구가 안 된 경우를 대비
+        const stompStatus = chatStompManager.connectionStatus;
+        if (stompStatus === 'disconnected' || stompStatus === 'error') {
+          chatStompManager.connect();
+        }
         return;
       }
 
@@ -191,26 +239,22 @@ export default function AppFrame({
       toast(blockMessage);
     };
 
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (!isNavigationBlocked) return;
-      event.preventDefault();
-      event.returnValue = '';
-    };
-
     window.history.pushState(null, '', window.location.href);
     window.addEventListener('popstate', handlePopState);
-    window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
       window.removeEventListener('popstate', handlePopState);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [blockMessage, isNavigationBlocked]);
+
+  const withViewTransition = (action: () => void) => {
+    action();
+  };
 
   const requestNavigation = useCallback(
     (action: () => void) => {
       if (!isNavigationBlocked) {
-        action();
+        withViewTransition(action);
         return;
       }
       if (blockedNavigationHandler) {
@@ -222,7 +266,7 @@ export default function AppFrame({
     [blockMessage, blockedNavigationHandler, isNavigationBlocked],
   );
 
-  return isAuthed ? (
+  return (
     <AppFrameContext.Provider
       value={{
         options: frameOptions,
@@ -252,13 +296,43 @@ export default function AppFrame({
           >
             <LlmAnalysisTaskWatcher />
             <div className="mx-auto min-h-dvh w-full bg-white sm:max-w-[430px] sm:shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
+              {isAccessibilityOn ? (
+                <a
+                  href="#main-content"
+                  className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-1/2 focus:z-[300] focus:-translate-x-1/2 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-neutral-900 focus:shadow-lg"
+                >
+                  본문으로 이동
+                </a>
+              ) : null}
               <Header
                 title={options.title}
                 showBackButton={options.showBackButton}
                 onBackClick={options.onBackClick}
                 rightSlot={options.rightSlot}
+                showAccessibilityButton={options.showAccessibilityButton}
+                accessibilityActive={options.accessibilityActive}
+                onAccessibilityClick={options.onAccessibilityClick}
               />
-              <div className="px-4 pb-[var(--bottom-nav-h)] sm:px-6">{children}</div>
+              {isAuthed !== false ? (
+                isAccessibilityOn ? (
+                  <main
+                    key={pathname}
+                    id="main-content"
+                    className="page-enter px-4 pb-[var(--bottom-nav-h)] sm:px-6"
+                    style={{ viewTransitionName: 'page-content' }}
+                  >
+                    {children}
+                  </main>
+                ) : (
+                  <div
+                    key={pathname}
+                    className="page-enter px-4 pb-[var(--bottom-nav-h)] sm:px-6"
+                    style={{ viewTransitionName: 'page-content' }}
+                  >
+                    {children}
+                  </div>
+                )
+              ) : null}
             </div>
 
             {frameOptions.showBottomNav ? <BottomNav hidden={!isBottomNavVisible} /> : null}
@@ -266,5 +340,5 @@ export default function AppFrame({
         </HeaderContext.Provider>
       </NavigationGuardContext.Provider>
     </AppFrameContext.Provider>
-  ) : null;
+  );
 }
