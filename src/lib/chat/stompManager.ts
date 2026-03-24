@@ -3,8 +3,8 @@
 import { Client, type IMessage, type StompHeaders, type StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
-import { buildApiUrl, ensureAccessToken } from '@/lib/api/client';
-import { getAccessToken } from '@/lib/auth/token';
+import { buildApiUrl } from '@/lib/api/client';
+import { getAccessToken, isAccessTokenExpired } from '@/lib/auth/token';
 import { toast } from '@/lib/toast/store';
 
 export type ChatStompConnectionStatus =
@@ -150,13 +150,13 @@ class ChatStompManager {
         }
       },
       beforeConnect: async () => {
-        await ensureAccessToken();
         const token = getAccessToken();
 
-        if (!token) {
-          this.logWarn('beforeConnect failed: access token not found');
+        if (!token || isAccessTokenExpired(token)) {
+          this.connectRequested = false;
+          this.logWarn('beforeConnect failed: access token missing or expired, stop reconnecting');
           this.notifyFailureOnce('auth-missing', '실시간 연결 인증에 실패했습니다.');
-          throw new Error('Missing access token for STOMP CONNECT');
+          throw new Error('Missing or expired access token for STOMP CONNECT');
         }
 
         client.connectHeaders = {

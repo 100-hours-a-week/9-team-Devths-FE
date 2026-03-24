@@ -1,9 +1,9 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import CalendarFilters from '@/components/calendar/CalendarFilters';
-import CalendarView from '@/components/calendar/CalendarView';
 import EventDetailModal from '@/components/calendar/EventDetailModal';
 import EventFormModal, { type EventFormMode } from '@/components/calendar/EventFormModal';
 import BaseModal from '@/components/common/BaseModal';
@@ -15,6 +15,13 @@ import { getSeoulDateRangeFromDatesSet, toLocalDate } from '@/lib/datetime/seoul
 import type { GoogleEventDetailResponse, InterviewStage } from '@/types/calendar';
 import type { CalendarApi, DatesSetArg, EventClickArg, EventInput } from '@fullcalendar/core';
 import type { DateClickArg } from '@fullcalendar/interaction';
+
+const CalendarView = dynamic(() => import('@/components/calendar/CalendarView'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-64 items-center justify-center text-sm text-zinc-500">로딩 중...</div>
+  ),
+});
 
 type DateRange = ReturnType<typeof getSeoulDateRangeFromDatesSet>;
 

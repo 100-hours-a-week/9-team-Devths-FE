@@ -11,7 +11,11 @@ export default function LlmRoomEmptyState({ href }: Props) {
   return (
     <section className="flex min-h-[calc(100dvh-56px-64px)] flex-col items-center justify-center px-5 text-center">
       <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-[#00C473]/10">
-        <MessageSquarePlus className="h-12 w-12 text-[#00C473]" strokeWidth={1.5} />
+        <MessageSquarePlus
+          aria-hidden="true"
+          className="h-12 w-12 text-[#00C473]"
+          strokeWidth={1.5}
+        />
       </div>
 
       <h2 className="mt-8 text-[22px] font-bold tracking-tight text-[#191F28]">

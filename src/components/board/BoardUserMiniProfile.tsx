@@ -92,7 +92,7 @@ export default function BoardUserMiniProfile({
               onClick={onStartChat}
               className="flex flex-1 items-center justify-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
             >
-              <MessageCircle className="h-4 w-4" />
+              <MessageCircle aria-hidden="true" className="h-4 w-4" />
               채팅
             </button>
             <button
@@ -101,7 +101,7 @@ export default function BoardUserMiniProfile({
               disabled={isFollowPending}
               className={`flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white ${followButtonClass}`}
             >
-              <UserPlus className="h-4 w-4" />
+              <UserPlus aria-hidden="true" className="h-4 w-4" />
               {isFollowPending ? '처리 중...' : followButtonLabel}
             </button>
           </div>

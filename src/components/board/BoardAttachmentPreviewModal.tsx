@@ -46,7 +46,7 @@ export default function BoardAttachmentPreviewModal({ attachment, onClose }: Pro
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={previewUrl}
-              alt={attachment.name}
+              alt={`첨부 이미지: ${attachment.name}`}
               style={{ transform: `scale(${zoom / 100})` }}
               className="max-h-[320px] max-w-full rounded-lg object-contain transition-transform"
             />
@@ -61,20 +61,20 @@ export default function BoardAttachmentPreviewModal({ attachment, onClose }: Pro
           type="button"
           onClick={handleZoomOut}
           disabled={zoom <= MIN_ZOOM}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 text-neutral-600 disabled:opacity-40"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 text-neutral-600 disabled:opacity-40"
           aria-label="축소"
         >
-          <Minus className="h-3.5 w-3.5" />
+          <Minus aria-hidden="true" className="h-4 w-4" />
         </button>
         <span>{zoom}%</span>
         <button
           type="button"
           onClick={handleZoomIn}
           disabled={zoom >= MAX_ZOOM}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 text-neutral-600 disabled:opacity-40"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 text-neutral-600 disabled:opacity-40"
           aria-label="확대"
         >
-          <Plus className="h-3.5 w-3.5" />
+          <Plus aria-hidden="true" className="h-4 w-4" />
         </button>
       </div>
     </BaseModal>

@@ -1,4 +1,5 @@
 import { getRoomStorageMode } from '@/lib/storage/aiChatroomStorage';
+import { formatMessageTime, parseServerDateTime } from '@/lib/utils/datetime';
 
 import type { LlmRoom } from '@/components/llm/rooms/types';
 import type { AiChatRoom, ChatMessage } from '@/types/llm';
@@ -23,14 +24,7 @@ export type UIMessage = {
 };
 
 export function parseLlmDateTime(value: string): Date {
-  const normalized = value.includes(' ') ? value.replace(' ', 'T') : value;
-  const hasTimezone = /([zZ]|[+-]\d{2}:\d{2})$/.test(normalized);
-  if (hasTimezone) {
-    return new Date(normalized);
-  }
-
-  // AI chatbot timestamps are serialized without timezone info but represent UTC.
-  return new Date(`${normalized}Z`);
+  return parseServerDateTime(value);
 }
 
 export function formatUpdatedAt(isoString: string): string {
@@ -96,13 +90,4 @@ export function toUIMessage(msg: ChatMessage): UIMessage {
     interviewId: msg.interviewId,
     isInterviewEvaluation,
   };
-}
-
-function formatMessageTime(isoString: string): string {
-  const date = parseLlmDateTime(isoString);
-  return date.toLocaleTimeString('ko-KR', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  });
 }

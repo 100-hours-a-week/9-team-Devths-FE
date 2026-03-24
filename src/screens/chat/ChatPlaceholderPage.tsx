@@ -9,32 +9,21 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useHeader } from '@/components/layout/HeaderContext';
 import { useNavigationGuard } from '@/components/layout/NavigationGuardContext';
 import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
+import { ROOM_NAME_MAX_LENGTH, ROOM_PAGE_SIZE } from '@/constants/chat';
 import { fetchChatRooms } from '@/lib/api/chatRooms';
 import { chatKeys } from '@/lib/hooks/chat/queryKeys';
 import { useChatRoomsInfiniteQuery } from '@/lib/hooks/chat/useChatRoomsInfiniteQuery';
+import { parseServerDateTime } from '@/lib/utils/datetime';
 
 import type { ChatRoomListResponse } from '@/lib/api/chatRooms';
 import type { RejoinedRoomUiOverrideMap } from '@/lib/chat/rejoinedRoomUiCache';
-
-const ROOM_PAGE_SIZE = 10;
-const ROOM_NAME_MAX_LENGTH = 6;
-
-function parseKstDateTime(value: string): Date {
-  const normalized = value.includes(' ') ? value.replace(' ', 'T') : value;
-  const hasTimezone = /([zZ]|[+-]\d{2}:\d{2})$/.test(normalized);
-  if (hasTimezone) {
-    return new Date(normalized);
-  }
-  // Backend chat timestamps are currently serialized without timezone info but represent UTC.
-  return new Date(`${normalized}Z`);
-}
 
 function formatRoomTime(isoString: string | null): string {
   if (!isoString) {
     return '';
   }
 
-  const date = parseKstDateTime(isoString);
+  const date = parseServerDateTime(isoString);
   if (Number.isNaN(date.getTime())) {
     return '';
   }
@@ -87,7 +76,7 @@ function resolveTimestamp(value: string | null): number | null {
     return null;
   }
 
-  const parsed = parseKstDateTime(value);
+  const parsed = parseServerDateTime(value);
   if (Number.isNaN(parsed.getTime())) {
     return null;
   }
@@ -270,7 +259,7 @@ export default function ChatPlaceholderPage() {
     <>
       <main className={isEmptyState ? '' : 'px-3 pt-4 pb-24'}>
         {isLoading ? (
-          <div className="mt-4 flex h-[40vh] items-center justify-center rounded-2xl border border-neutral-200 bg-white text-sm text-neutral-500">
+          <div className="mt-4 flex h-[40vh] items-center justify-center text-sm text-neutral-500">
             채팅방 목록을 불러오는 중입니다...
           </div>
         ) : null}
@@ -363,7 +352,9 @@ export default function ChatPlaceholderPage() {
                         className="mt-0.5 h-12 w-12 rounded-full object-cover"
                       />
                     ) : (
-                      <div className="mt-0.5 h-12 w-12 rounded-full bg-neutral-200" />
+                      <div className="mt-0.5 flex h-12 w-12 items-center justify-center rounded-full bg-neutral-200 text-sm font-semibold text-neutral-600">
+                        {room.title.slice(0, 1)}
+                      </div>
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[15px] font-semibold text-neutral-900">

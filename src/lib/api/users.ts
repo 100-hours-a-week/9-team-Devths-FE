@@ -4,8 +4,6 @@ import type { ApiErrorResponse, ApiResponse } from '@/types/api';
 import type { CursorListResponse } from '@/types/pagination';
 
 export type MeData = {
-  userId?: number;
-  id?: number;
   nickname: string;
   profileImage: { id: number; url: string } | null;
   stats: { followerCount: number; followingCount: number };
@@ -324,14 +322,14 @@ export async function postSignup(body: SignupRequest): Promise<PostSignupResult>
     ...(body.profileImageS3Key ? { profileImageS3Key: body.profileImageS3Key } : {}),
   };
 
-  const { ok, status, json, res } = await apiRequest<SignupData>({
+  const { ok, status, json, headers } = await apiRequest<SignupData>({
     method: 'POST',
     path: '/api/users',
     body: payload,
     withAuth: false,
   });
 
-  const authHeader = res.headers.get('authorization');
+  const authHeader = headers['authorization'];
   const accessToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
   return { ok, status, json, accessToken };

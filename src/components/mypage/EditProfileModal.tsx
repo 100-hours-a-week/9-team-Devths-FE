@@ -1,7 +1,10 @@
 'use client';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import { X } from 'lucide-react';
 import { useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 import BaseModal from '@/components/common/BaseModal';
 import NicknameField from '@/components/common/NicknameField';
@@ -9,11 +12,13 @@ import ProfileImagePicker from '@/components/common/ProfileImagePicker';
 import FileTooLargeModal from '@/components/signup/FileTooLargeModal';
 import { INTEREST_OPTIONS, normalizeInterests } from '@/constants/interests';
 import { getUserIdFromAccessToken } from '@/lib/auth/token';
+import { ApiError } from '@/lib/errors/ApiError';
 import { useDeleteProfileImageMutation } from '@/lib/hooks/users/useDeleteProfileImageMutation';
 import { useUpdateMeMutation } from '@/lib/hooks/users/useUpdateMeMutation';
 import { useUploadProfileImageMutation } from '@/lib/hooks/users/useUpdateProfileImageMutation';
+import { nicknameSchema } from '@/lib/schemas/nickname';
 import { toast } from '@/lib/toast/store';
-import { validateNickname } from '@/lib/utils/validateNickname';
+import { resizeProfileImage } from '@/lib/utils/resizeProfileImage';
 
 import type { MeData } from '@/lib/api/users';
 
@@ -30,8 +35,24 @@ type EditFormProps = {
   onWithdraw: () => void;
 };
 
+const editProfileSchema = z.object({
+  nickname: nicknameSchema,
+});
+
+type EditFormValues = z.infer<typeof editProfileSchema>;
+
 function EditForm({ initialData, onClose, onWithdraw }: EditFormProps) {
-  const [nickname, setNickname] = useState(initialData?.nickname ?? '');
+  const {
+    control,
+    handleSubmit,
+    setError,
+    formState: { isValid },
+  } = useForm<EditFormValues>({
+    resolver: zodResolver(editProfileSchema),
+    defaultValues: { nickname: initialData?.nickname ?? '' },
+    mode: 'onChange',
+  });
+
   const [interests, setInterests] = useState<string[]>(
     normalizeInterests(initialData?.interests ?? []),
   );
@@ -41,12 +62,8 @@ function EditForm({ initialData, onClose, onWithdraw }: EditFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProfileImageDeleted, setIsProfileImageDeleted] = useState(false);
   const [isFileTooLargeOpen, setIsFileTooLargeOpen] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState<{
-    type: 'success' | 'error';
-    text: string;
-  } | null>(null);
+  const [deleteSuccessMessage, setDeleteSuccessMessage] = useState<string | null>(null);
 
-  const nicknameValidation = validateNickname(nickname);
   const updateMutation = useUpdateMeMutation();
   const uploadImageMutation = useUploadProfileImageMutation();
   const deleteProfileImageMutation = useDeleteProfileImageMutation();
@@ -58,21 +75,26 @@ function EditForm({ initialData, onClose, onWithdraw }: EditFormProps) {
 
   const hasServerImage =
     Boolean(initialData?.profileImage?.url) && !selectedFile && !isProfileImageDeleted;
-  const userId = initialData?.userId ?? initialData?.id ?? getUserIdFromAccessToken();
+  const userId = getUserIdFromAccessToken();
 
   const handleToggleInterest = (value: string) => {
     setInterests((prev) =>
       prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
     );
-    setSubmitMessage(null);
   };
 
-  const handleSelectImage = (file: File) => {
-    const url = URL.createObjectURL(file);
+  const handleSelectImage = async (file: File) => {
+    let fileToUse = file;
+    try {
+      fileToUse = await resizeProfileImage(file);
+    } catch {
+      // 리사이즈 실패 시 원본 파일 사용
+    }
+    const url = URL.createObjectURL(fileToUse);
     setPreviewUrl(url);
-    setSelectedFile(file);
+    setSelectedFile(fileToUse);
     setIsProfileImageDeleted(false);
-    setSubmitMessage(null);
+    setDeleteSuccessMessage(null);
   };
 
   const handleDeleteImage = async () => {
@@ -88,76 +110,59 @@ function EditForm({ initialData, onClose, onWithdraw }: EditFormProps) {
         await deleteProfileImageMutation.mutateAsync({ fileId });
         setPreviewUrl(null);
         setIsProfileImageDeleted(true);
-        setSubmitMessage({ type: 'success', text: '프로필 사진이 삭제되었습니다.' });
+        setDeleteSuccessMessage('프로필 사진이 삭제되었습니다.');
       } catch {
-        setSubmitMessage({ type: 'error', text: '프로필 사진 삭제에 실패했습니다.' });
+        setDeleteSuccessMessage(null);
       }
     }
   };
 
-  const handleNicknameChange = (value: string) => {
-    setNickname(value);
-    setSubmitMessage(null);
-  };
-
-  const handleSubmit = async () => {
-    if (!nicknameValidation.isValid) return;
-
-    setSubmitMessage(null);
-
-    // 변경 사항 체크
+  const onSubmit = handleSubmit(async (values) => {
     const initialNickname = initialData?.nickname ?? '';
     const initialInterests = normalizeInterests(initialData?.interests ?? []);
 
     const hasImageChange = Boolean(selectedFile) || isProfileImageDeleted;
-    const hasNicknameChange = nickname !== initialNickname;
+    const hasNicknameChange = values.nickname !== initialNickname;
     const hasInterestsChange =
       interests.length !== initialInterests.length ||
       interests.some((v) => !initialInterests.includes(v as (typeof initialInterests)[number]));
 
-    const hasAnyChange = hasImageChange || hasNicknameChange || hasInterestsChange;
-
-    if (!hasAnyChange) {
-      setSubmitMessage({ type: 'error', text: '변경된 내용이 없습니다.' });
+    if (!hasImageChange && !hasNicknameChange && !hasInterestsChange) {
+      setError('nickname', { message: '변경된 내용이 없습니다.' });
       return;
     }
 
     try {
       if (selectedFile) {
         if (!userId) {
-          setSubmitMessage({ type: 'error', text: '유저 정보를 확인할 수 없습니다.' });
+          setError('nickname', { message: '유저 정보를 확인할 수 없습니다.' });
           return;
         }
 
-        await uploadImageMutation.mutateAsync({ file: selectedFile!, userId });
+        await uploadImageMutation.mutateAsync({ file: selectedFile, userId });
         setSelectedFile(null);
       }
 
       await updateMutation.mutateAsync({
-        nickname,
+        nickname: values.nickname,
         interests: hasInterestsChange ? interests : undefined,
       });
 
       toast('회원 정보가 성공적으로 변경되었습니다.');
       onClose();
     } catch (error) {
-      const err = error as Error & { status?: number; serverMessage?: string };
+      const err = ApiError.fromUnknown(error);
       if (err.status === 409) {
-        setSubmitMessage({ type: 'error', text: '중복된 닉네임입니다.' });
+        setError('nickname', { message: '중복된 닉네임입니다.' });
       } else {
-        setSubmitMessage({
-          type: 'error',
-          text: err.serverMessage ?? '프로필 수정에 실패했습니다.',
+        setError('nickname', {
+          message: err.serverMessage ?? '프로필 수정에 실패했습니다.',
         });
       }
     }
-  };
+  });
 
   const hasProfileImage = Boolean(previewUrl);
-
-  const helperMessage =
-    nicknameValidation.errorMessage ??
-    (submitMessage?.type === 'error' ? submitMessage.text : null);
 
   return (
     <div className="mt-1 flex flex-col gap-0">
@@ -174,7 +179,7 @@ function EditForm({ initialData, onClose, onWithdraw }: EditFormProps) {
         <div className="mt-2 flex flex-col items-center">
           <ProfileImagePicker
             previewUrl={previewUrl}
-            fallbackInitial={nickname}
+            fallbackInitial={initialData?.nickname}
             onSelect={handleSelectImage}
             onFileTooLarge={() => setIsFileTooLargeOpen(true)}
             size="sm"
@@ -194,13 +199,19 @@ function EditForm({ initialData, onClose, onWithdraw }: EditFormProps) {
       </section>
 
       <section className="rounded-2xl bg-white p-2">
-        <NicknameField
-          value={nickname}
-          onChange={handleNicknameChange}
-          errorMessage={helperMessage}
+        <Controller
+          name="nickname"
+          control={control}
+          render={({ field, fieldState }) => (
+            <NicknameField
+              value={field.value}
+              onChange={field.onChange}
+              errorMessage={fieldState.error?.message ?? null}
+            />
+          )}
         />
-        {submitMessage?.type === 'success' && (
-          <p className="-mt-3 text-[11px] text-green-600">{submitMessage.text}</p>
+        {deleteSuccessMessage && (
+          <p className="-mt-3 text-[11px] text-green-600">{deleteSuccessMessage}</p>
         )}
       </section>
 
@@ -215,7 +226,7 @@ function EditForm({ initialData, onClose, onWithdraw }: EditFormProps) {
               className="inline-flex items-center gap-1 rounded-full border border-[#05C075] bg-white px-2.5 py-1 text-xs font-semibold text-[#05C075] shadow-sm"
             >
               {option.label}
-              <X className="h-3.5 w-3.5" />
+              <X aria-hidden="true" className="h-3.5 w-3.5" />
             </button>
           ))}
           {INTEREST_OPTIONS.filter((o) => !interests.includes(o.value)).map((option) => (
@@ -234,8 +245,8 @@ function EditForm({ initialData, onClose, onWithdraw }: EditFormProps) {
       <div className="flex flex-col items-center gap-2.5 pt-3">
         <button
           type="button"
-          onClick={handleSubmit}
-          disabled={!nicknameValidation.isValid || isPending}
+          onClick={onSubmit}
+          disabled={!isValid || isPending}
           className="h-10 w-full rounded-xl bg-[#05C075] text-sm font-semibold text-white shadow-sm hover:bg-[#04A865] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isPending ? '변경 중...' : '변경하기'}

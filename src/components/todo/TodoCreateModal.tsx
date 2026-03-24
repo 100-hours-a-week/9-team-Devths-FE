@@ -88,14 +88,22 @@ export default function TodoCreateModal({
         </div>
 
         <div>
-          <label className="mb-2 block text-xs font-semibold text-black/60">할 일 제목</label>
+          <label
+            htmlFor="todo-create-title"
+            className="mb-2 block text-xs font-semibold text-black/60"
+          >
+            할 일 제목
+          </label>
           <input
+            id="todo-create-title"
             type="text"
+            aria-describedby={errorMessage ? 'todo-create-error' : undefined}
+            aria-invalid={!!errorMessage}
             value={title}
             onChange={(event) => setTitle(event.target.value.slice(0, TODO_TITLE_MAX_LENGTH))}
             maxLength={TODO_TITLE_MAX_LENGTH}
             placeholder="할 일을 입력하세요"
-            className="h-12 w-full rounded-2xl border border-black/10 bg-white px-4 text-sm text-black placeholder:text-black/30 focus:border-black focus:ring-2 focus:ring-[#05C075]/20 focus:outline-none"
+            className="h-12 w-full rounded-2xl border border-black/10 bg-white px-4 text-base text-black placeholder:text-black/30 focus:border-black focus:ring-2 focus:ring-[#05C075]/20 focus:outline-none"
           />
           <div className="mt-1 text-right text-[11px] text-black/40">
             {title.length}/{TODO_TITLE_MAX_LENGTH}
@@ -103,12 +111,18 @@ export default function TodoCreateModal({
         </div>
 
         <div>
-          <label className="mb-2 block text-xs font-semibold text-black/60">마감일</label>
+          <label
+            htmlFor="todo-create-due-date"
+            className="mb-2 block text-xs font-semibold text-black/60"
+          >
+            마감일
+          </label>
           <input
+            id="todo-create-due-date"
             type="date"
             value={dueDate}
             onChange={(event) => setDueDate(event.target.value as LocalDateString)}
-            className="h-12 w-full rounded-2xl border border-black/10 bg-white px-4 text-sm text-black/80 focus:border-black focus:ring-2 focus:ring-[#05C075]/20 focus:outline-none"
+            className="h-12 w-full rounded-2xl border border-black/10 bg-white px-4 text-base text-black/80 focus:border-black focus:ring-2 focus:ring-[#05C075]/20 focus:outline-none"
           />
         </div>
 
@@ -130,7 +144,11 @@ export default function TodoCreateModal({
           </button>
         </div>
 
-        {errorMessage ? <p className="text-center text-xs text-red-500">{errorMessage}</p> : null}
+        {errorMessage ? (
+          <p id="todo-create-error" role="alert" className="text-center text-xs text-red-500">
+            {errorMessage}
+          </p>
+        ) : null}
       </div>
     </BaseModal>
   );

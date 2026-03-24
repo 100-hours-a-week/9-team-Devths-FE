@@ -8,7 +8,7 @@ import { useEffect } from 'react';
 import GoogleLoginButton from '@/components/auth/GoogleLoginButton';
 import LandingCarousel from '@/components/common/LandingCarousel';
 import { ensureAccessToken } from '@/lib/api/client';
-import { getAccessToken } from '@/lib/auth/token';
+import { clearLoggingOut, getAccessToken, getIsLoggingOut } from '@/lib/auth/token';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -20,6 +20,11 @@ export default function LandingPage() {
       const redirect = new URLSearchParams(window.location.search).get('redirect');
       const fallback = '/llm';
       const targetPath = redirect && redirect.startsWith('/') ? redirect : fallback;
+
+      if (getIsLoggingOut()) {
+        clearLoggingOut();
+        return;
+      }
 
       if (getAccessToken()) {
         if (!isCancelled) {
@@ -51,7 +56,7 @@ export default function LandingPage() {
             <h1 className="flex items-center">
               <span className="sr-only">Devths</span>
               <Image
-                src="/icons/Devths.png"
+                src="/icons/Devths.svg"
                 alt="Devths"
                 width={420}
                 height={108}

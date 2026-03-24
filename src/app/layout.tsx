@@ -10,11 +10,13 @@ import './globals.css';
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
+  display: 'swap',
 });
 
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
+  display: 'swap',
 });
 
 const GOOGLE_SITE_VERIFICATION = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
@@ -28,10 +30,28 @@ const verification: Metadata['verification'] = {
 export const metadata: Metadata = {
   title: 'Devths',
   description: 'Devths 서비스 공식 홈페이지',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Devths',
+  },
+  icons: {
+    apple: '/icons/apple-touch-icon.png',
+  },
   ...(Object.keys(verification).length > 0 ? { verification } : {}),
 };
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+
+const API_ORIGIN = (() => {
+  try {
+    const url = process.env.NEXT_PUBLIC_API_BASE_URL;
+    return url ? new URL(url).origin : null;
+  } catch {
+    return null;
+  }
+})();
 
 export default function RootLayout({
   children,
@@ -39,15 +59,26 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ko">
+      <head>
+        <link rel="preload" href="/icons/Devths2.png" as="image" type="image/png" />
+        <link rel="preconnect" href="https://devths-storage-prod.s3.ap-northeast-2.amazonaws.com" />
+        {API_ORIGIN ? <link rel="preconnect" href={API_ORIGIN} /> : null}
+        <meta name="theme-color" content="#3AB569" />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if(localStorage.getItem('accessibility_mode')==='true'){document.documentElement.classList.add('accessibility-mode');}}catch(e){}`,
+          }}
+        />
         {GA_MEASUREMENT_ID ? (
           <>
             <Script
               src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-              strategy="afterInteractive"
+              strategy="lazyOnload"
             />
-            <Script id="ga-init" strategy="afterInteractive">
+            <Script id="ga-init" strategy="lazyOnload">
               {`window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());

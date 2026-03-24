@@ -43,7 +43,11 @@ export default function ListLoadMoreSentinel({
   return (
     <div ref={sentinelRef} className="mt-4 pb-6 text-center">
       {isFetchingNextPage ? (
-        <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-3 py-3 text-[11px] text-neutral-500">
+        <div
+          aria-live="polite"
+          aria-busy="true"
+          className="rounded-2xl border border-dashed border-neutral-200 bg-white px-3 py-3 text-[11px] text-neutral-500"
+        >
           {loadingText}
         </div>
       ) : hasNextPage ? (
@@ -51,7 +55,9 @@ export default function ListLoadMoreSentinel({
           {hasNextText}
         </div>
       ) : (
-        <div className="px-3 py-1 text-[11px] text-neutral-400">{endText}</div>
+        <div aria-live="polite" className="px-3 py-1 text-[11px] text-neutral-400">
+          {endText}
+        </div>
       )}
     </div>
   );

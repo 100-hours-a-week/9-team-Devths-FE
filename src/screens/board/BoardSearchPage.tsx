@@ -7,12 +7,14 @@ import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 're
 import BoardPostCard from '@/components/board/BoardPostCard';
 import { useHeader } from '@/components/layout/HeaderContext';
 import ListLoadMoreSentinel from '@/components/llm/rooms/ListLoadMoreSentinel';
+import {
+  MAX_RECENT_SEARCH_COUNT,
+  RECENT_SEARCH_STORAGE_KEY,
+  SEARCH_PAGE_SIZE,
+  SEARCH_QUERY_PARAM_KEY,
+} from '@/constants/board';
+import { ApiError } from '@/lib/errors/ApiError';
 import { useBoardSearchInfiniteQuery } from '@/lib/hooks/boards/useBoardSearchInfiniteQuery';
-
-const RECENT_SEARCH_STORAGE_KEY = 'devths_board_recent_searches';
-const MAX_RECENT_SEARCH_COUNT = 10;
-const SEARCH_PAGE_SIZE = 20;
-const SEARCH_QUERY_PARAM_KEY = 'q';
 
 type KeywordValidationResult = {
   isValid: boolean;
@@ -272,12 +274,15 @@ export default function BoardSearchPage() {
               <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-neutral-400" />
               <input
                 type="text"
+                aria-label="게시글 검색어"
+                aria-describedby={helperText !== null ? 'board-search-error' : undefined}
+                aria-invalid={helperText !== null}
                 placeholder="Search"
                 value={keywordInput}
                 onFocus={() => setIsSearchInputActive(true)}
                 onClick={() => setIsSearchInputActive(true)}
                 onChange={(event) => handleKeywordChange(event.target.value)}
-                className="h-10 w-full rounded-xl border border-neutral-200 bg-white pr-3 pl-9 text-sm text-neutral-900 transition outline-none focus:border-emerald-500"
+                className="h-10 w-full rounded-xl border border-neutral-200 bg-white pr-3 pl-9 text-base text-neutral-900 transition outline-none focus:border-emerald-500"
               />
             </div>
             <button
@@ -288,7 +293,11 @@ export default function BoardSearchPage() {
               검색
             </button>
           </form>
-          {helperText !== null ? <p className="mt-2 text-xs text-red-500">{helperText}</p> : null}
+          {helperText !== null ? (
+            <p id="board-search-error" role="alert" className="mt-2 text-xs text-red-500">
+              {helperText}
+            </p>
+          ) : null}
 
           {isSearchInputActive && recentKeywords.length > 0 ? (
             <div className="mt-3 rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-3">
@@ -332,7 +341,7 @@ export default function BoardSearchPage() {
               </div>
             ) : isError ? (
               <div className="rounded-xl border border-dashed border-neutral-200 px-3 py-6 text-center text-xs text-neutral-500">
-                <p>{error instanceof Error ? error.message : '검색 결과를 불러오지 못했습니다.'}</p>
+                <p>{ApiError.fromUnknown(error).message}</p>
                 <button
                   type="button"
                   onClick={() => void refetch()}

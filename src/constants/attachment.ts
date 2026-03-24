@@ -30,3 +30,15 @@ export const CHAT_ATTACHMENT_CONSTRAINTS: AttachmentConstraints = {
   imageMimeTypes: IMAGE_MIME_TYPES,
   fileMimeTypes: FILE_MIME_TYPES,
 };
+
+export const BOARD_IMAGE_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png'] as const;
+export const BOARD_FILE_MIME_TYPES = ['application/pdf'] as const;
+export const BOARD_FILE_MAX_SIZE_MB = 10;
+
+export const BOARD_ATTACHMENT_CONSTRAINTS: AttachmentConstraints = {
+  maxImages: 10,
+  maxFiles: 5,
+  maxSizeMB: BOARD_FILE_MAX_SIZE_MB,
+  imageMimeTypes: BOARD_IMAGE_MIME_TYPES,
+  fileMimeTypes: BOARD_FILE_MIME_TYPES,
+};
