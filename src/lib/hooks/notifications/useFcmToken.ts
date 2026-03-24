@@ -25,12 +25,18 @@ export async function unregisterFcmToken(): Promise<boolean> {
   const deviceId = getStoredDeviceId();
   if (!deviceId) return true;
 
+  let success = false;
   try {
     const result = await deleteFcmToken(deviceId);
-    return result.ok || result.status === 404;
+    success = result.ok || result.status === 404;
   } catch {
-    return false;
+    success = false;
+  } finally {
+    // 로그아웃 후 다른 계정(신규 포함)이 같은 디바이스에서 로그인할 때
+    // 동일 deviceId로 POST 충돌(500)이 발생하지 않도록 항상 제거
+    localStorage.removeItem(DEVICE_ID_KEY);
   }
+  return success;
 }
 
 export function useFcmToken() {
