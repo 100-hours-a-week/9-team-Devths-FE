@@ -52,6 +52,20 @@ export function useFcmToken() {
       }
 
       const deviceId = getOrCreateDeviceId();
+
+      // 재로그인 시 기존 레코드가 남아 있을 수 있으므로 PATCH로 재활성화 먼저 시도
+      const patchResult = await patchFcmToken(deviceId, { isActive: true });
+      if (patchResult.ok) {
+        localStorage.setItem(PUSH_ACTIVE_KEY, 'true');
+        return;
+      }
+
+      // 레코드 없음(404) → 신규 등록
+      if (patchResult.status !== 404) {
+        toast('푸시 알림 등록에 실패했어요. 잠시 후 다시 시도해 주세요.');
+        return;
+      }
+
       const postResult = await postFcmToken(deviceId, { token, deviceType: 'WEB' });
       if (!postResult.ok) {
         toast('푸시 알림 등록에 실패했어요. 잠시 후 다시 시도해 주세요.');
