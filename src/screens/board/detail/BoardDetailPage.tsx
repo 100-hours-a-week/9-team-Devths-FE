@@ -455,6 +455,11 @@ export default function BoardDetailPage() {
       toast('게시글이 삭제되었습니다.');
       setIsDeleteConfirmOpen(false);
       requestNavigation(() => {
+        const from = searchParams?.get('from');
+        if (from === 'edit') {
+          router.push('/board');
+          return;
+        }
         if (typeof window !== 'undefined' && window.history.length > 1) {
           router.back();
           return;
