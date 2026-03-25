@@ -230,7 +230,16 @@ export default function BoardPdfMaskModal({
   const handleComplete = useCallback(async () => {
     const { PDFDocument, rgb } = await import('pdf-lib');
 
-    const arrayBuffer = await attachment.file.arrayBuffer();
+    let arrayBuffer: ArrayBuffer;
+    if (attachment.previewUrl && !attachment.previewUrl.startsWith('blob:')) {
+      const res = await fetch(`/api/image-proxy?url=${encodeURIComponent(attachment.previewUrl)}`);
+      arrayBuffer = await res.arrayBuffer();
+    } else if (attachment.previewUrl) {
+      const res = await fetch(attachment.previewUrl);
+      arrayBuffer = await res.arrayBuffer();
+    } else {
+      arrayBuffer = await attachment.file.arrayBuffer();
+    }
     const pdfDoc = await PDFDocument.load(arrayBuffer);
     const pages = pdfDoc.getPages();
 
