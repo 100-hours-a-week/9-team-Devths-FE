@@ -23,10 +23,12 @@ import {
 import { applyRealtimeRoomNotification } from '@/lib/chat/realtimeRoomCache';
 import { clearRejoinedRoomUiOverride } from '@/lib/chat/rejoinedRoomUiCache';
 import { chatStompManager } from '@/lib/chat/stompManager';
+import { onForegroundMessage } from '@/lib/firebase/messaging';
 import { useAccessibilityMode } from '@/lib/hooks/accessibility/useAccessibilityMode';
 import { chatKeys } from '@/lib/hooks/chat/queryKeys';
 import { useChatRealtimeConnection } from '@/lib/hooks/chat/useChatRealtimeConnection';
 import { useChatSubscriptions } from '@/lib/hooks/chat/useChatSubscriptions';
+import { notificationKeys } from '@/lib/hooks/notifications/queryKeys';
 import { useFcmToken } from '@/lib/hooks/notifications/useFcmToken';
 import { toast } from '@/lib/toast/store';
 
@@ -107,6 +109,15 @@ export default function AppFrame({
 
   useChatRealtimeConnection({ enabled: isAuthed === true && currentUserId !== null });
   useFcmToken();
+
+  useEffect(() => {
+    if (isAuthed !== true) return;
+    const unsubscribe = onForegroundMessage(() => {
+      void queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount() });
+      void queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+    });
+    return () => unsubscribe();
+  }, [isAuthed, queryClient]);
 
   const handleChatUserNotification = useCallback(
     (frame: IMessage) => {
