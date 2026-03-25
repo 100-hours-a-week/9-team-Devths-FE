@@ -18,6 +18,8 @@ const eslintConfig = defineConfig([
     'node_modules/**',
     'dist/**',
     'coverage/**',
+
+    'public/pdf.worker.min.mjs',
   ]),
 
   prettier,
