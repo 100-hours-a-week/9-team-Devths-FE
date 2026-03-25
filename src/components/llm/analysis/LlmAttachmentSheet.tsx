@@ -29,8 +29,8 @@ export default function LlmAttachmentSheet({
         aria-label="닫기"
       />
 
-      <div className="absolute bottom-0 left-1/2 w-full -translate-x-1/2 sm:max-w-[430px]">
-        <div className="rounded-t-3xl bg-white p-5 shadow-2xl">
+      <div className="absolute top-1/2 left-1/2 w-full -translate-x-1/2 -translate-y-1/2 px-5 sm:max-w-[430px] sm:px-6">
+        <div className="rounded-3xl bg-white p-5 shadow-2xl">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-neutral-900">{title}</p>
             <button
@@ -82,14 +82,6 @@ export default function LlmAttachmentSheet({
                 <p className="text-sm font-medium text-neutral-900">파일 첨부</p>
                 <p className="mt-0.5 text-xs text-neutral-500">PDF · 최대 1개 · 10MB · 10장 이하</p>
               </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="mt-1 w-full rounded-2xl bg-neutral-900 py-3 text-sm font-semibold text-white hover:bg-neutral-800"
-            >
-              닫기
             </button>
           </div>
         </div>

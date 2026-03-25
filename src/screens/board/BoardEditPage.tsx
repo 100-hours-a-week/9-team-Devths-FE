@@ -332,10 +332,6 @@ export default function BoardEditPage() {
     setPreviewAttachment(target);
   }, []);
   const handleMaskAttachment = useCallback((target: BoardAttachment) => {
-    if (target.type !== 'IMAGE') {
-      toast('이미지 파일만 마스킹할 수 있어요.');
-      return;
-    }
     setMaskAttachment(target);
   }, []);
 

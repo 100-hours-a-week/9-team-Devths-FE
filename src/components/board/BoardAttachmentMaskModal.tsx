@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import BoardPdfMaskModal from '@/components/board/BoardPdfMaskModal';
 import BaseModal from '@/components/common/BaseModal';
 
 import type { BoardAttachment } from '@/types/boardCreate';
@@ -51,14 +52,7 @@ export default function BoardAttachmentMaskModal({
   const [currentRect, setCurrentRect] = useState<MaskRect | null>(null);
   const startPointRef = useRef<{ x: number; y: number } | null>(null);
 
-  const isReady = attachment.type === 'IMAGE';
-
   useEffect(() => {
-    if (!isReady) {
-      imageRef.current = null;
-      return;
-    }
-
     let tempUrl: string | null = null;
     const image = new Image();
     if (attachment.previewUrl) {
@@ -87,7 +81,7 @@ export default function BoardAttachmentMaskModal({
         URL.revokeObjectURL(tempUrl);
       }
     };
-  }, [attachment, isReady]);
+  }, [attachment]);
 
   const redraw = useCallback(
     (previewRect?: MaskRect | null) => {
@@ -115,48 +109,39 @@ export default function BoardAttachmentMaskModal({
   );
 
   useEffect(() => {
-    if (!isReady) return;
     redraw(currentRect);
-  }, [currentRect, isReady, redraw]);
+  }, [currentRect, redraw]);
 
-  const handlePointerDown = useCallback(
-    (event: React.PointerEvent<HTMLCanvasElement>) => {
-      if (!isReady) return;
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
-      const x = (event.clientX - rect.left) * scaleX;
-      const y = (event.clientY - rect.top) * scaleY;
-      startPointRef.current = { x, y };
-      setCurrentRect({ x, y, width: 0, height: 0 });
-    },
-    [isReady],
-  );
+  const handlePointerDown = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (event.clientX - rect.left) * scaleX;
+    const y = (event.clientY - rect.top) * scaleY;
+    startPointRef.current = { x, y };
+    setCurrentRect({ x, y, width: 0, height: 0 });
+  }, []);
 
-  const handlePointerMove = useCallback(
-    (event: React.PointerEvent<HTMLCanvasElement>) => {
-      if (!isReady) return;
-      if (!startPointRef.current) return;
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
-      const x = (event.clientX - rect.left) * scaleX;
-      const y = (event.clientY - rect.top) * scaleY;
-      const start = startPointRef.current;
-      const nextRect = {
-        x: Math.min(start.x, x),
-        y: Math.min(start.y, y),
-        width: Math.abs(x - start.x),
-        height: Math.abs(y - start.y),
-      };
-      setCurrentRect(nextRect);
-    },
-    [isReady],
-  );
+  const handlePointerMove = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!startPointRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (event.clientX - rect.left) * scaleX;
+    const y = (event.clientY - rect.top) * scaleY;
+    const start = startPointRef.current;
+    const nextRect = {
+      x: Math.min(start.x, x),
+      y: Math.min(start.y, y),
+      width: Math.abs(x - start.x),
+      height: Math.abs(y - start.y),
+    };
+    setCurrentRect(nextRect);
+  }, []);
 
   const finalizeRect = useCallback(() => {
     if (!startPointRef.current || !currentRect) return;
@@ -171,14 +156,12 @@ export default function BoardAttachmentMaskModal({
   }, [currentRect]);
 
   const handlePointerUp = useCallback(() => {
-    if (!isReady) return;
     finalizeRect();
-  }, [finalizeRect, isReady]);
+  }, [finalizeRect]);
 
   const handlePointerLeave = useCallback(() => {
-    if (!isReady) return;
     finalizeRect();
-  }, [finalizeRect, isReady]);
+  }, [finalizeRect]);
 
   const handleReset = useCallback(() => {
     setRects([]);
@@ -201,16 +184,18 @@ export default function BoardAttachmentMaskModal({
     onComplete(file, previewUrl);
   }, [attachment, onComplete]);
 
-  const bodyText = useMemo(() => {
-    if (attachment.type !== 'IMAGE') return null;
-    return (
+  const bodyText = useMemo(
+    () => (
       <p className="text-xs text-neutral-500">
         마스킹할 영역을 드래그해 주세요. 여러 영역을 선택할 수 있습니다.
       </p>
-    );
-  }, [attachment.type]);
+    ),
+    [],
+  );
 
-  if (attachment.type !== 'IMAGE') return null;
+  if (attachment.type === 'PDF') {
+    return <BoardPdfMaskModal attachment={attachment} onClose={onClose} onComplete={onComplete} />;
+  }
 
   return (
     <BaseModal open onClose={onClose} title="개인정보 가리기" contentClassName="space-y-4">

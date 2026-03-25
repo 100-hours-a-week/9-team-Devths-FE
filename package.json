@@ -12,7 +12,8 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "check": "pnpm lint && pnpm format:check && pnpm typecheck",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "postinstall": "cp node_modules/pdfjs-dist/build/pdf.worker.min.mjs public/pdf.worker.min.mjs"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.20",
@@ -32,6 +33,7 @@
     "lucide-react": "^0.562.0",
     "next": "16.1.3",
     "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^5.5.207",
     "prom-client": "^15.1.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
