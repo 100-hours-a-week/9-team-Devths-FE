@@ -29,7 +29,7 @@ export default function LlmAttachmentSheet({
         aria-label="닫기"
       />
 
-      <div className="absolute left-1/2 top-1/2 w-full -translate-x-1/2 -translate-y-1/2 px-5 sm:max-w-[430px] sm:px-6">
+      <div className="absolute top-1/2 left-1/2 w-full -translate-x-1/2 -translate-y-1/2 px-5 sm:max-w-[430px] sm:px-6">
         <div className="rounded-3xl bg-white p-5 shadow-2xl">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-neutral-900">{title}</p>
