@@ -20,6 +20,7 @@ const eslintConfig = defineConfig([
     'coverage/**',
 
     'public/pdf.worker.min.mjs',
+    'README.md',
   ]),
 
   prettier,
