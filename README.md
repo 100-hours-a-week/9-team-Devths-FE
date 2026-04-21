@@ -1,7 +1,7 @@
 # Devths
 
 > 개발자를 위한 채용 올인원 도우미
-> [![Devths](https://github.com/user-attachments/assets/621c3700-cfb6-4dc8-8d6b-fff4a2aa4e3b)](https://youtu.be/IIJrNdBj4sY)
+> [![Devths](https://github.com/user-attachments/assets/5f7aaeff-7372-4f3e-87cf-94b26664a309)](https://youtu.be/IIJrNdBj4sY)
 > 사진을 누르면 데모 영상(유튜브)으로 이동합니다!
 
 ---
@@ -13,12 +13,42 @@ AI 기반 이력서 분석, 모의 면접, 커뮤니티, 일정 관리 기능을
 
 ---
 
-## 👩‍💻 팀원
+<h2>👩‍💻 팀원</h2>
 
-| 윤동규                                                                                                          | 안혜원                                                                                                          | 전윤철                                                                                                          | 명혜성                                                                                                             | 이도연                                                                                                             |
-| --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| <img src="https://github.com/user-attachments/assets/3c29ede5-bf54-4a95-a067-64e0332af311" width="120"/><br/>AI | <img src="https://github.com/user-attachments/assets/276b1b37-6805-4bcb-94a3-8956e959ddf5" width="120"/><br/>FE | <img src="https://github.com/user-attachments/assets/68492835-fcc9-4db1-9734-f00ff5e7a612" width="120"/><br/>BE | <img src="https://github.com/user-attachments/assets/cf383d7e-b9c4-4fd2-9c27-6fd8f36ae08c" width="120"/><br/>CLOUD | <img src="https://github.com/user-attachments/assets/efcc24ab-b777-4670-8608-58e9463f4b44" width="120"/><br/>CLOUD |
-| [GitHub](https://github.com/yoondonggyu)                                                                        | [GitHub](https://github.com/neonoclock)                                                                         | [GitHub](https://github.com/mosy2266)                                                                           | [GitHub](https://github.com/Hyeseong-Myeong)                                                                       | [GitHub](https://github.com/doup2001)                                                                              |
+<table>
+  <tr>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/3318d877-5c96-4ac9-84c0-7828cc686272" width="120" /><br/>
+      <b>윤동규</b><br/>
+      AI<br/>
+      <a href="https://github.com/yoondonggyu">GitHub</a>
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/b7f89a1b-8fa6-450c-9ec5-2af612a1ea06" width="120" /><br/>
+      <b>안혜원</b><br/>
+      FE<br/>
+      <a href="https://github.com/neonoclock">GitHub</a>
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/a5a42ff5-2861-427e-82e0-d877169bbcab" width="120" /><br/>
+      <b>전윤철</b><br/>
+      BE<br/>
+      <a href="https://github.com/mosy2266">GitHub</a>
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/2c75cfba-2eda-4f4a-9d4a-b7fdbe78912a" width="120" /><br/>
+      <b>명혜성</b><br/>
+      CLOUD<br/>
+      <a href="https://github.com/Hyeseong-Myeong">GitHub</a>
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/fb22612e-a82d-4d6a-a698-2ebd0a6a6d13" width="120" /><br/>
+      <b>이도연</b><br/>
+      CLOUD<br/>
+      <a href="https://github.com/doup2001">GitHub</a>
+    </td>
+  </tr>
+</table>                                                                           |
 
 ---
 
@@ -97,8 +127,9 @@ AI 기반 이력서 분석, 모의 면접, 커뮤니티, 일정 관리 기능을
 
 ### 🤖 AI 면접 준비
 
-![2](https://github.com/user-attachments/assets/3c00877f-685f-4e00-8888-205a002127d5)
-![3](https://github.com/user-attachments/assets/e30ec7f7-6340-4ff7-bba1-b5c08aed885f)
+<img width="6000" height="3375" alt="2" src="https://github.com/user-attachments/assets/2996b12d-eed2-41d6-abe1-d5fd7e3ccc99" />
+<img width="6000" height="3375" alt="3" src="https://github.com/user-attachments/assets/12ef6b2e-eafc-43d6-9183-e052d508df83" />
+
 
 > AI와 함께 취업 준비의 핵심을 빠르게 완성해요.
 
@@ -118,7 +149,8 @@ AI 기반 이력서 분석, 모의 면접, 커뮤니티, 일정 관리 기능을
 
 ### 🗓️ 캘린더
 
-![4](https://github.com/user-attachments/assets/252f426b-2210-40c9-a40f-7619694b9b4a)
+<img width="6000" height="3375" alt="4" src="https://github.com/user-attachments/assets/05541d0e-a95b-4d69-a693-ff60b846f8d5" />
+
 
 > 캘린더로 취준 일정을 관리하고, 투두리스트로 할 일까지 함께 관리할 수 있어요.
 
@@ -132,7 +164,8 @@ AI 기반 이력서 분석, 모의 면접, 커뮤니티, 일정 관리 기능을
 
 ### ✍🏻 게시판
 
-<img width="990" height="556" alt="스크린샷 2026-03-29 오후 11 40 56" src="https://github.com/user-attachments/assets/5cc0e556-d033-4c02-a5dc-0ba86374f672" />
+<img width="1920" height="1080" alt="제목을 입력해주세요 - 복사본 (1)" src="https://github.com/user-attachments/assets/0c45e988-2979-4421-8f44-182f2c7d1d04" />
+
   > 이력서·포트폴리오·면접·코딩테스트 관련 경험과 정보를 공유하며 취준 기록을 함께 쌓아요.                         
                                                                                                                  
   - **정렬** — 최신순 / 인기순 / 팔로잉 피드 전환                                                                
@@ -145,7 +178,8 @@ AI 기반 이력서 분석, 모의 면접, 커뮤니티, 일정 관리 기능을
 
 ### 💬 1:1 채팅
 
-<img width="990" height="556" alt="스크린샷 2026-03-29 오후 11 41 07" src="https://github.com/user-attachments/assets/64e7eef7-1f3b-46f4-aff3-eeda05f834cd" />
+<img width="1920" height="1080" alt="제목을 입력해주세요 - 복사본 (2)" src="https://github.com/user-attachments/assets/fc3f9432-1372-4296-af56-6827f7a1002e" />
+
   > 궁금한 점이 생기면 1:1 채팅으로 바로 질문하고 이력서·포트폴리오 피드백을 빠르게 주고받아요.                    
                                                                                                                  
   - **실시간 메시지** — WebSocket(SockJS + STOMP) 기반 즉시 전송                                                 
@@ -158,8 +192,16 @@ AI 기반 이력서 분석, 모의 면접, 커뮤니티, 일정 관리 기능을
 ### 🔥 PWA
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/f25e75ce-b354-4525-9906-57d8226a8043" width="49%" />
-  <img src="https://github.com/user-attachments/assets/dca52dc9-6022-43ba-89fc-ce47db2af36e" width="49%" />
+  <table>
+    <tr>
+      <td>
+        <img width="500" src="https://github.com/user-attachments/assets/d01a37c6-19ab-4edc-bb89-7790fd1aaa70" />
+      </td>
+      <td>
+        <img width="500" src="https://github.com/user-attachments/assets/a2fe858a-5f92-4ba3-8057-a8c28b8f9e34" />
+      </td>
+    </tr>
+  </table>
 </p>
 
 > 모바일 홈 화면에 추가하면 네이티브 앱처럼 사용할 수 있어요.
